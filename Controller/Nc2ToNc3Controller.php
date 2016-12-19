@@ -43,10 +43,11 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
  */
 	public function migration() {
 		if ($this->request->is('post')) {
-			Nc2ModelManager::createNc2Connection($this->request->data['Nc2ToNc3']);
-			if (!Nc2ModelManager::validateNc2Connection()) {
-				return $this->error(__d('nc2_to_nc3', 'Nc2 version must be %s', Nc2ModelManager::VALID_VERSION));
+			$config = $this->request->data['Nc2ToNc3'];
+			if (!Nc2ModelManager::migration($this, $config)) {
+				return;
 			}
+
 
 			$Nc2Item = ClassRegistry::init([
 				'class' => 'Nc2Item',
