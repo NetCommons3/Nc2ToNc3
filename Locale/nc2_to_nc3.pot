@@ -1,0 +1,51 @@
+# LANGUAGE translation of CakePHP Application
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: Console/Command/Nc2ToNc3Shell.php:32
+msgid "Nc2 version is %s. It must be %s"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:14
+msgid "Input the database connection information of NetCommons2."
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:23
+msgid "Datasource"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:30
+msgid "Host"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:31
+msgid "Port"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:32
+msgid "Database"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:33
+msgid "Prefix"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:34
+msgid "Login"
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:35
+msgid "Password"
+msgstr ""
+
