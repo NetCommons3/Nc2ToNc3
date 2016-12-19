@@ -65,3 +65,6 @@ msgstr "NetCommons2アップロードファイルのパスを入力してくだ�
 
 msgid "Upload file path"
 msgstr "アップロードファイルパス"
+
+msgid "Connection information invalid.See the error.log."
+msgstr "NetCommons2のデータベースに接続できませんでした。詳細はerror.logファイルを参照してください。"

@@ -9,6 +9,7 @@
  */
 
 App::uses('Nc2ModelManager', 'Nc2ToNc3.Utility');
+App::uses('Nc2ToNc3Controller', 'Nc2ToNc3.Controller');
 
 /**
  * Nc2ToNc3 Shell
@@ -24,12 +25,14 @@ class Nc2ToNc3Shell extends AppShell {
  * @return void
  */
 	public function main() {
+		// Flashメッセージを利用するためコントローラーを使用→不要かも
+		$Nc2ToNc3Controller = new Nc2ToNc3Controller();
+		$Nc2ToNc3Controller->constructClasses();
+
 		$config['database'] = $this->params['database'];
 		$config['prefix'] = $this->params['prefix'];
-		Nc2ModelManager::createNc2Connection($config);
-
-		if (!Nc2ModelManager::validateNc2Connection()) {
-			return $this->error(__d('nc2_to_nc3', 'Nc2 version must be %s', Nc2ModelManager::VALID_VERSION));
+		if (!Nc2ModelManager::migration($Nc2ToNc3Controller, $config)) {
+			return $this->error(CakeSession::read('Message.' . Nc2ModelManager::MESSAGE_KEY));
 		}
 
 		var_dump(99);

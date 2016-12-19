@@ -30,6 +30,13 @@ class Nc2ModelManager {
  */
 	const VALID_VERSION = '2.4.2.1';
 
+/**
+ * The DataSource name for nc2
+ *
+ * @var string
+ */
+	const MESSAGE_KEY = 'Nc2ToNc3ConnectionError';
+
 
 /**
  * Controller with Flash component for error message
@@ -94,10 +101,10 @@ class Nc2ModelManager {
 		} catch (Exception $ex) {
 			//static::$__controller->NetCommons->setFlashNotification('Connection information invalid',['interval' => NetCommonsComponent::ALERT_VALIDATE_ERROR_INTERVAL]);
 			static::$__controller->Session->setFlash(
-				__d('nc2_tonc3', 'Connection information invalid.'),
+				__d('nc2_to_nc3', 'Connection information invalid.See the error.log.'),
 				'default',
 				['class' => 'alert alert-danger'],
-				'Nc2ToNc3ConnectionError'
+				static::MESSAGE_KEY
 			);
 			CakeLog::error($ex);
 			return false;
