@@ -37,7 +37,6 @@ class Nc2ModelManager {
  */
 	const MESSAGE_KEY = 'Nc2ToNc3ConnectionError';
 
-
 /**
  * Controller with Flash component for error message
  *

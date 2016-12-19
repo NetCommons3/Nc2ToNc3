@@ -35,7 +35,7 @@ class Nc2ToNc3Shell extends AppShell {
 			return $this->error(CakeSession::read('Message.' . Nc2ModelManager::MESSAGE_KEY));
 		}
 
-		var_dump(99);
+		$this->out('Success!!');
 	}
 
 /**

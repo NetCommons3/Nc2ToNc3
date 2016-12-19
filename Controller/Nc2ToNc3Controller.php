@@ -48,7 +48,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 				return;
 			}
 
-
+			/*
 			$Nc2Item = ClassRegistry::init([
 				'class' => 'Nc2Item',
 				'table' => 'items',
@@ -56,7 +56,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 			]);
 
 			var_dump($Nc2Item->find('first'));
-
+			*/
 
 		} else {
 			$connectionObjects = ConnectionManager::enumConnectionObjects();
