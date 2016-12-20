@@ -8,7 +8,6 @@
  * @license http://www.netcommons.org/license.txt NetCommons License
  */
 
-App::uses('Nc2ModelManager', 'Nc2ToNc3.Utility');
 App::uses('Nc2ToNc3Controller', 'Nc2ToNc3.Controller');
 
 /**
@@ -17,7 +16,7 @@ App::uses('Nc2ToNc3Controller', 'Nc2ToNc3.Controller');
  */
 class Nc2ToNc3Shell extends AppShell {
 
-	//public $uses = array('Nc2ToNc3.Config');
+	public $uses = array('Nc2ToNc3.Nc2ToNc3');
 
 /**
  * Main
@@ -34,7 +33,7 @@ class Nc2ToNc3Shell extends AppShell {
 
 		$Nc2ToNc3Controller->migration();
 
-		$message = CakeSession::read('Message.' . Nc2ModelManager::MESSAGE_KEY);
+		$message = CakeSession::read('Message.' . Nc2ToNc3::MESSAGE_KEY);
 		if ($message) {
 			return $this->error($message);
 		}

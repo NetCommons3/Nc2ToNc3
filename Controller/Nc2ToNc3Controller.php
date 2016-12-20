@@ -9,11 +9,11 @@
  */
 
 App::uses('Nc2ToNc3AppController', 'Nc2ToNc3.Controller');
-App::uses('Nc2ModelManager', 'Nc2ToNc3.Utility');
 
 /**
  * Nc2ToNc3Controller
  *
+* @property Nc2ToNc3 $Nc2ToNc3
  */
 class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 
@@ -22,7 +22,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
  *
  * @var array
  */
-	public $uses = [];
+	public $uses = ['Nc2ToNc3.Nc2ToNc3'];
 
 /**
  * Components
@@ -44,7 +44,8 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 	public function migration() {
 		if ($this->request->is('post')) {
 			$config = $this->request->data['Nc2ToNc3'];
-			if (!Nc2ModelManager::migration($this, $config)) {
+			if (!$this->Nc2ToNc3->setupNc2DataSource($config)) {
+				$this->__setMessage($this->Nc2ToNc3->errors);
 				return;
 			}
 
@@ -56,5 +57,26 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 			$this->request->data['Nc2ToNc3'] = $nc3config;
 
 		}
+	}
+
+/**
+ * Set message with FlashComponent
+ *
+ * @param string $message Message.
+ * @return bool True on it access to config table of nc2.
+ */
+	private function __setMessage($message) {
+		if (empty($message)) {
+			return;
+		}
+
+		// 画面上部にalertをfadeさせる？
+		//$this->NetCommons->setFlashNotification($message, ['interval' => NetCommonsComponent::ALERT_VALIDATE_ERROR_INTERVAL]);
+
+		$options = [
+			'key' => Nc2ToNc3::MESSAGE_KEY,
+			'params' => ['class' => 'alert alert-danger']
+		];
+		$this->Flash->set($message, $options);
 	}
 }

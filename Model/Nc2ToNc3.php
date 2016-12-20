@@ -1,6 +1,6 @@
 <?php
 /**
- * Nc2ModelManager
+ * Nc2ToNc3
  *
  * @copyright Copyright 2014, NetCommons Project
  * @author Kohei Teraguchi <kteraguchi@commonsnet.org>
@@ -8,13 +8,13 @@
  * @license http://www.netcommons.org/license.txt NetCommons License
  */
 
-App::uses('ConnectionManager', 'Model');
+App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 
 /**
- * Nc2ModelManager
+ * Nc2ToNc3
  *
  */
-class Nc2ModelManager {
+class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 /**
  * The DataSource name for nc2
@@ -38,27 +38,66 @@ class Nc2ModelManager {
 	const MESSAGE_KEY = 'Nc2ToNc3Error';
 
 /**
- * Controller with Flash component for error message
+ * Custom database table name, or null/false if no table association is desired.
  *
  * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
  */
-	private static $__controller = null;
+	public $useTable = false;
 
 /**
- * Setup migration from NetCommons2
+ * List of errors.
  *
- * @param Controller $controller Controller with Flash component for error message
+ * @var mix
+ */
+	public $errors = null;
+
+/**
+ * Called during validation operations, before validation. Please note that custom
+ * validation rules can be defined in $validate.
+ *
+ * @param array $options Options passed from Model::save().
+ * @return bool True if validate operation should continue, false to abort
+ * @link http://book.cakephp.org/2.0/en/models/callback-methods.html#beforevalidate
+ * @see Model::save()
+ */
+	public function beforeValidate($options = array()) {
+		$this->validate = Hash::merge(
+			$this->validate,
+			[
+				'database' => [
+					'notBlank' => [
+						'rule' => ['notBlank'],
+						'message' => sprintf(
+							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Database')
+						),
+						'allowEmpty' => false,
+						'required' => true,
+					],
+				],
+			]
+		);
+
+		return parent::beforeValidate($options);
+	}
+
+/**
+ * Setup NetCommons2 DataSource
+ *
  * @param array $config The DataSource configuration settings
  * @return void
  */
-	public static function migration(Controller $controller, $config) {
-		static::$__controller = $controller;
-
-		if (!static::__createNc2Connection($config)) {
+	public function setupNc2DataSource($config) {
+		$this->set($config);
+		if (!$this->validates()) {
 			return false;
 		}
 
-		if (!static::__validateNc2Connection()) {
+		if (!$this->__createNc2Connection($config)) {
+			return false;
+		}
+
+		if (!$this->__validateNc2Connection()) {
 			return false;
 		}
 
@@ -71,7 +110,7 @@ class Nc2ModelManager {
  * @param array $config The DataSource configuration settings
  * @return bool True on it access to nc2 database
  */
-	private static function __createNc2Connection($config) {
+	private function __createNc2Connection($config) {
 		$connectionObjects = ConnectionManager::enumConnectionObjects();
 		$nc3config = $connectionObjects['master'];
 		$config += $nc3config;
@@ -81,7 +120,7 @@ class Nc2ModelManager {
 		try {
 			ConnectionManager::create(static::CONNECTION_NAME, $config);
 		} catch (Exception $ex) {
-			static::__setMessage($ex->getMessage());
+			$this->__setMessage($ex->getMessage());
 			CakeLog::error($ex);
 			return false;
 		}
@@ -94,7 +133,7 @@ class Nc2ModelManager {
  *
  * @return bool True on it access to config table of nc2.
  */
-	private static function __validateNc2Connection() {
+	private function __validateNc2Connection() {
 		$Nc2Config = static::getModel('config');
 
 		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
@@ -103,7 +142,7 @@ class Nc2ModelManager {
 			// 対象バージョンチェック
 			$configData = $Nc2Config->findByConfName('version');
 			if ($configData['Config']['conf_value'] != static::VALID_VERSION) {
-				static::__setMessage(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
+				$this->__setMessage(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
 				ConnectionManager::drop(static::CONNECTION_NAME);
 				return false;
 			}
@@ -113,12 +152,12 @@ class Nc2ModelManager {
 			//$configData = $Nc2Config->findByConfName('closesite');
 
 		} catch (Exception $ex) {
-			static::__setMessage(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
+			$this->__setMessage(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
 			CakeLog::error($ex);
 			return false;
-		}
+			}
 
-		return true;
+			return true;
 	}
 
 /**
@@ -127,15 +166,8 @@ class Nc2ModelManager {
  * @param string $message Message.
  * @return bool True on it access to config table of nc2.
  */
-	private static function __setMessage($message) {
-		// 画面上部にalertをfadeさせる？
-		//static::$__controller->NetCommons->setFlashNotification($message, ['interval' => NetCommonsComponent::ALERT_VALIDATE_ERROR_INTERVAL]);
-
-		$options = [
-			'key' => static::MESSAGE_KEY,
-			'params' => ['class' => 'alert alert-danger']
-		];
-		static::$__controller->Flash->set($message, $options);
+	private function __setMessage($message) {
+		$this->errors = $message;
 	}
 
 /**
@@ -160,4 +192,5 @@ class Nc2ModelManager {
 
 		return $Molde;
 	}
+
 }
