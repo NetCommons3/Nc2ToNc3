@@ -76,8 +76,7 @@ class Nc2ModelManager {
 		$nc3config = $connectionObjects['master'];
 		$config += $nc3config;
 
-		// DataSource情報が間違っている場合、
-		// Exception が発生するのでハンドリングできない
+		// DataSource情報が間違っている場合、Exception が発生するのでハンドリングできない
 		// Try{}catch{}やってみた。
 		try {
 			ConnectionManager::create(static::CONNECTION_NAME, $config);
@@ -96,14 +95,9 @@ class Nc2ModelManager {
  * @return bool True on it access to config table of nc2.
  */
 	private static function __validateNc2Connection() {
-		$Nc2Config = ClassRegistry::init([
-			'class' => 'Nc2Config',
-			'table' => 'config',
-			'ds' => static::CONNECTION_NAME
-		]);
+		$Nc2Config = static::getModel('config');
 
-		// DataSource情報(prefix)が間違っている場合、
-		// Exception が発生するのでハンドリングできない
+		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
 		// Try{}catch{}やってみた。
 		try {
 			// 対象バージョンチェック
@@ -117,6 +111,7 @@ class Nc2ModelManager {
 			// サイト閉鎖チェックはダンプデータをインポートしたDBを考慮するとしない方が良いのでは？
 			// 運用中のDBを対象にしないことを推奨する
 			//$configData = $Nc2Config->findByConfName('closesite');
+
 		} catch (Exception $ex) {
 			static::__setMessage(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
 			CakeLog::error($ex);
@@ -136,22 +131,33 @@ class Nc2ModelManager {
 		// 画面上部にalertをfadeさせる？
 		//static::$__controller->NetCommons->setFlashNotification($message, ['interval' => NetCommonsComponent::ALERT_VALIDATE_ERROR_INTERVAL]);
 
-		static::$__controller->Flash->set(
-			$message,
-			[
-				'key' => static::MESSAGE_KEY,
-				'params' => ['class' => 'alert alert-danger']
-			]
-		);
+		$options = [
+			'key' => static::MESSAGE_KEY,
+			'params' => ['class' => 'alert alert-danger']
+		];
+		static::$__controller->Flash->set($message, $options);
 	}
 
 /**
  * Get Nc2 Model
  *
- * @param string $name Nc2 model name. It must add Nc2 prefix.
- * @return void
+ * @param string $tableName Nc2 table name.
+ * @return Model Nc2 model
  */
-	public static function getModel($name) {
-		ClassRegistry::getObject();
+	public static function getModel($tableName) {
+		$class = 'Nc2' . $tableName;
+		$Molde = ClassRegistry::getObject($class);
+		if ($Molde) {
+			return $Molde;
+		}
+
+		$Molde = ClassRegistry::init([
+			'class' => 'Nc2Config',
+			'table' => $tableName,
+			'alias' => Inflector::classify($tableName),
+			'ds' => static::CONNECTION_NAME
+		]);
+
+		return $Molde;
 	}
 }
