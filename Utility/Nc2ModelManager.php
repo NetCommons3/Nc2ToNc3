@@ -102,7 +102,7 @@ class Nc2ModelManager {
 		try {
 			// 対象バージョンチェック
 			$configData = $Nc2Config->findByConfName('version');
-			if ($configData['Nc2Config']['conf_value'] != static::VALID_VERSION) {
+			if ($configData['Config']['conf_value'] != static::VALID_VERSION) {
 				static::__setMessage(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
 				ConnectionManager::drop(static::CONNECTION_NAME);
 				return false;

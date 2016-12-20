@@ -25,14 +25,18 @@ class Nc2ToNc3Shell extends AppShell {
  * @return void
  */
 	public function main() {
-		// Flashメッセージを利用するためコントローラーを使用→不要かも
-		$Nc2ToNc3Controller = new Nc2ToNc3Controller();
-		$Nc2ToNc3Controller->constructClasses();
+		$request = new CakeRequest();
+		$request->data['Nc2ToNc3'] = $this->params;
+		$Nc2ToNc3Controller = new Nc2ToNc3Controller($request);
 
-		$config['database'] = $this->params['database'];
-		$config['prefix'] = $this->params['prefix'];
-		if (!Nc2ModelManager::migration($Nc2ToNc3Controller, $config)) {
-			return $this->error(CakeSession::read('Message.' . Nc2ModelManager::MESSAGE_KEY));
+		$Nc2ToNc3Controller->constructClasses();
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+
+		$Nc2ToNc3Controller->migration();
+
+		$message = CakeSession::read('Message.' . Nc2ModelManager::MESSAGE_KEY);
+		if ($message) {
+			return $this->error($message);
 		}
 
 		$this->out('Success!!');
