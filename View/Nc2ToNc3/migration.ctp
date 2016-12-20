@@ -17,7 +17,7 @@
 
 		<div class="panel-body">
 			<?php
-				echo $this->Session->flash('Nc2ToNc3ConnectionError');
+				echo $this->Flash->render(Nc2ModelManager::MESSAGE_KEY);
 				echo $this->NetCommonsForm->input('database', ['label' => __d('nc2_to_nc3', 'Database')]);
 				echo $this->NetCommonsForm->input('prefix', ['label' => __d('nc2_to_nc3', 'Prefix')]);
 			?>

@@ -48,16 +48,6 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 				return;
 			}
 
-			/*
-			$Nc2Item = ClassRegistry::init([
-				'class' => 'Nc2Item',
-				'table' => 'items',
-				'ds' => Nc2ModelManager::CONNECTION_NAME
-			]);
-
-			var_dump($Nc2Item->find('first'));
-			*/
-
 		} else {
 			$connectionObjects = ConnectionManager::enumConnectionObjects();
 			$nc3config = $connectionObjects['master'];
