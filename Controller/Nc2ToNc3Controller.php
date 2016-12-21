@@ -45,12 +45,12 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 		if ($this->request->is('post')) {
 			$config = $this->request->data['Nc2ToNc3'];
 			if (!$this->Nc2ToNc3->setupNc2DataSource($config)) {
-				$this->__setMessage($this->Nc2ToNc3->errors);
+				$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
 				return;
 			}
 
 			if (!$this->Nc2ToNc3->migration()) {
-				$this->__setMessage($this->Nc2ToNc3->errors);
+				$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
 				return;
 			}
 

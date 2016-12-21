@@ -32,6 +32,15 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 	public $alias = 'UserAttribute';
 
 /**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Message'];
+
+/**
  * Migration
  *
  * @return bool True on success
@@ -72,6 +81,8 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @return bool True on success
  */
 	public function validateNc3() {
+		// cakeのvalidation使った方が良いか？
+
 		$keyList = $this->__findDefaultKeyList();
 		$defaultSystemKeys = [
 			'avatar',
@@ -94,6 +105,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 
 		$diff = array_diff($defaultSystemKeys, $keyList);
 		if (!empty($diff)) {
+			$this->setMigrationMessages(__d('nc2_to_nc3', 'Existing user attribute data is invalid.'));
 			return false;
 		}
 

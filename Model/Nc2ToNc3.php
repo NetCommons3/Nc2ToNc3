@@ -46,11 +46,13 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 	public $useTable = false;
 
 /**
- * List of errors.
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
  *
- * @var mix
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $errors = null;
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Message'];
 
 /**
  * Called during validation operations, before validation. Please note that custom
@@ -82,11 +84,16 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Initializes the NetCommons2 DataSource.Not call parent::create()
+ * Initializes the NetCommons2 DataSource.
+ * Not call parent::create, so the parameter is unnecessary.
  *
+ * @param bool|array $data Optional data array to assign to the model after it is created. If null or false,
+ *   schema data defaults are not merged.
+ * @param bool $filterKey If true, overwrites any primary key input with an empty value
  * @return array The current Model::data; defaults from NetCommons3 DataSource
+ * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
  */
-	public function create() {
+	public function create($data = array(), $filterKey = false) {
 		$connectionObjects = ConnectionManager::enumConnectionObjects();
 		$nc3config = $connectionObjects['master'];
 		unset($nc3config['database'], $nc3config['prefix']);
@@ -137,7 +144,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		try {
 			ConnectionManager::create(static::CONNECTION_NAME, $config);
 		} catch (Exception $ex) {
-			$this->__setMessage($ex->getMessage());
+			$this->setMigrationMessages($ex->getMessage());
 			CakeLog::error($ex);
 			return false;
 		}
@@ -159,7 +166,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			// 対象バージョンチェック
 			$configData = $Nc2Config->findByConfName('version');
 			if ($configData['Config']['conf_value'] != static::VALID_VERSION) {
-				$this->__setMessage(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
+				$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
 				ConnectionManager::drop(static::CONNECTION_NAME);
 				return false;
 			}
@@ -169,7 +176,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			//$configData = $Nc2Config->findByConfName('closesite');
 
 		} catch (Exception $ex) {
-			$this->__setMessage(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
+			$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
 			CakeLog::error($ex);
 			return false;
 		}
@@ -178,32 +185,23 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Set message with FlashComponent
- *
- * @param string $message Message.
- * @return bool True on it access to config table of nc2.
- */
-	private function __setMessage($message) {
-		$this->errors = $message;
-	}
-
-/**
  * Get Nc2 Model
  *
- * @param string $tableName Nc2 table name.
+ * @param string $tableName Nc2 table name
  * @return Model Nc2 model
  */
 	public static function getNc2Model($tableName) {
-		$class = 'Nc2' . $tableName;
-		$Molde = ClassRegistry::getObject($class);
+		$alias = Inflector::classify($tableName);
+		$Molde = ClassRegistry::getObject($alias);
 		if ($Molde) {
 			return $Molde;
 		}
 
+		$class = 'Nc2' . $tableName;
 		$Molde = ClassRegistry::init([
-			'class' => 'Nc2Config',
+			'class' => $class,
 			'table' => $tableName,
-			'alias' => Inflector::classify($tableName),
+			'alias' => $alias,
 			'ds' => static::CONNECTION_NAME
 		]);
 
@@ -219,7 +217,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		/* @var $UserAttribute Nc2ToNc3UserAttribute */
 		$UserAttribute = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		if (!$UserAttribute->migrate()) {
-			$this->__setMessage(__d('nc2_to_nc3', 'UserAttribute error.'));
+			$this->setMigrationMessages($UserAttribute->getMigrationMessages());
 			return false;
 		}
 
