@@ -82,6 +82,23 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 	}
 
 /**
+ * Initializes the NetCommons2 DataSource.Not call parent::create()
+ *
+ * @return array The current Model::data; defaults from NetCommons3 DataSource
+ */
+	public function create() {
+		$connectionObjects = ConnectionManager::enumConnectionObjects();
+		$nc3config = $connectionObjects['master'];
+		unset($nc3config['database'], $nc3config['prefix']);
+
+		// TODOー開発用データ
+		$nc3config['database'] = 'nc2421';
+		$nc3config['prefix'] = 'nc_';
+
+		return $nc3config;
+	}
+
+/**
  * Setup NetCommons2 DataSource
  *
  * @param array $config The DataSource configuration settings

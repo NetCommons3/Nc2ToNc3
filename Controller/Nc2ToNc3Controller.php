@@ -54,18 +54,11 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 				return;
 			}
 
-		} else {
-			$connectionObjects = ConnectionManager::enumConnectionObjects();
-			$nc3config = $connectionObjects['master'];
-			unset($nc3config['database'], $nc3config['prefix']);
-
-			// TODO開発用データ
-			//$nc3config['database'] = 'nc2421';
-			//$nc3config['prefix'] = 'nc_';
-
-			$this->request->data['Nc2ToNc3'] = $nc3config;
-
+			// TODOーsuccess画面へredirect
+			return;
 		}
+
+		$this->request->data['Nc2ToNc3'] = $this->Nc2ToNc3->create();
 	}
 
 /**
