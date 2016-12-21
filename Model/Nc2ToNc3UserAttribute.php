@@ -38,7 +38,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Message'];
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Migration'];
 
 /**
  * Migration
@@ -95,12 +95,11 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			'handlename',
 			'password_modified',
 			'last_login',
-			'previous_login_time',
+			'previous_login',
 			'created',
 			'created_user',
 			'modified',
-			'modified_user',
-				'test'
+			'modified_user'
 		];
 
 		$diff = array_diff($defaultSystemKeys, $keyList);
@@ -117,11 +116,12 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  *
  * @return bool True on success
  */
-	public function saveUserAttribueFromNc2() {
-		/*
+	public function saveUserAttributeFromNc2() {
 		$keyList = $this->__findDefaultKeyList();
 
-		$Nc2Item = Nc2ModelManager::getModel('items');
+		$Nc2Item = $this->getNc2Model('items');
+		var_dump($Nc2Item->find('first'));
+		/*
 		$query = [
 			'conditions' => [
 				'NOT' => ['Item.tag_name' => []
@@ -204,7 +204,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			'name',
 			'password_modified',
 			'last_login',
-			'previous_login_time',
+			'previous_login',
 			'created',
 			'created_user',
 			'modified',

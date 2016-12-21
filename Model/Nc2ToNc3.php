@@ -52,7 +52,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Message'];
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Migration'];
 
 /**
  * Called during validation operations, before validation. Please note that custom
@@ -158,7 +158,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @return bool True on it access to config table of nc2.
  */
 	private function __validateNc2Connection() {
-		$Nc2Config = static::getNc2Model('config');
+		$Nc2Config = $this->getNc2Model('config');
 
 		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
 		// Try{}catch{}やってみた。
@@ -182,30 +182,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		}
 
 		return true;
-	}
-
-/**
- * Get Nc2 Model
- *
- * @param string $tableName Nc2 table name
- * @return Model Nc2 model
- */
-	public static function getNc2Model($tableName) {
-		$alias = Inflector::classify($tableName);
-		$Molde = ClassRegistry::getObject($alias);
-		if ($Molde) {
-			return $Molde;
-		}
-
-		$class = 'Nc2' . $tableName;
-		$Molde = ClassRegistry::init([
-			'class' => $class,
-			'table' => $tableName,
-			'alias' => $alias,
-			'ds' => static::CONNECTION_NAME
-		]);
-
-		return $Molde;
 	}
 
 /**
