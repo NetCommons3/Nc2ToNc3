@@ -13,7 +13,7 @@ App::uses('Nc2ToNc3AppController', 'Nc2ToNc3.Controller');
 /**
  * Nc2ToNc3Controller
  *
-* @property Nc2ToNc3 $Nc2ToNc3
+ * @property Nc2ToNc3 $Nc2ToNc3
  */
 class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 
@@ -49,10 +49,19 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 				return;
 			}
 
+			if (!$this->Nc2ToNc3->migration()) {
+				$this->__setMessage($this->Nc2ToNc3->errors);
+				return;
+			}
+
 		} else {
 			$connectionObjects = ConnectionManager::enumConnectionObjects();
 			$nc3config = $connectionObjects['master'];
 			unset($nc3config['database'], $nc3config['prefix']);
+
+			// TODO開発用データ
+			//$nc3config['database'] = 'nc2421';
+			//$nc3config['prefix'] = 'nc_';
 
 			$this->request->data['Nc2ToNc3'] = $nc3config;
 

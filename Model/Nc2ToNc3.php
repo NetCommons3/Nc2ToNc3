@@ -28,7 +28,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  *
  * @var string
  */
-	const VALID_VERSION = '2.4.2.11';
+	const VALID_VERSION = '2.4.2.1';
 
 /**
  * The DataSource name for nc2
@@ -85,7 +85,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * Setup NetCommons2 DataSource
  *
  * @param array $config The DataSource configuration settings
- * @return void
+ * @return bool True on it is correct nc2 version
  */
 	public function setupNc2DataSource($config) {
 		$this->set($config);
@@ -134,7 +134,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @return bool True on it access to config table of nc2.
  */
 	private function __validateNc2Connection() {
-		$Nc2Config = static::getModel('config');
+		$Nc2Config = static::getNc2Model('config');
 
 		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
 		// Try{}catch{}やってみた。
@@ -155,9 +155,9 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			$this->__setMessage(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
 			CakeLog::error($ex);
 			return false;
-			}
+		}
 
-			return true;
+		return true;
 	}
 
 /**
@@ -176,7 +176,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @param string $tableName Nc2 table name.
  * @return Model Nc2 model
  */
-	public static function getModel($tableName) {
+	public static function getNc2Model($tableName) {
 		$class = 'Nc2' . $tableName;
 		$Molde = ClassRegistry::getObject($class);
 		if ($Molde) {
@@ -193,4 +193,19 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		return $Molde;
 	}
 
+/**
+ * Migration
+ *
+ * @return bool True on success
+ */
+	public function migration() {
+		/* @var $UserAttribute Nc2ToNc3UserAttribute */
+		$UserAttribute = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
+		if (!$UserAttribute->migrate()) {
+			$this->__setMessage(__d('nc2_to_nc3', 'UserAttribute error.'));
+			return false;
+		}
+
+		return true;
+	}
 }
