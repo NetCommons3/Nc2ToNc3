@@ -164,7 +164,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		// Try{}catch{}やってみた。
 		try {
 			// 対象バージョンチェック
-			$configData = $Nc2Config->findByConfName('version');
+			$configData = $Nc2Config->findByConfName('version', 'conf_value', null, -1);
 			if ($configData['Config']['conf_value'] != static::VALID_VERSION) {
 				$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
 				ConnectionManager::drop(static::CONNECTION_NAME);
@@ -173,7 +173,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 			// サイト閉鎖チェックはダンプデータをインポートしたDBを考慮するとしない方が良いのでは？
 			// 運用中のDBを対象にしないことを推奨する
-			//$configData = $Nc2Config->findByConfName('closesite');
+			//$configData = $Nc2Config->findByConfName('closesite', 'conf_value', null, -1);
 
 		} catch (Exception $ex) {
 			$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
