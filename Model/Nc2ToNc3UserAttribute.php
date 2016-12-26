@@ -41,31 +41,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Migration'];
 
 /**
- * Mapping nc2 tag to nc3 key
- *
- * @var array
- */
-	private static $__mappingTagToKey = [
-		'email' => 'email',
-		'lang_dirname_lang' => 'language',
-		'timezone_offset_lang' => 'timezone',
-		'role_authority_name' => 'role_key',
-		'active_flag_lang' => 'status',
-		'login_id' => 'username',
-		'password' => 'password',
-		'handle' => 'handlename',
-		'user_name' => 'name',
-		'password_regist_time' => 'password_modified',
-		'last_login_time' => 'last_login',
-		'previous_login_time' => 'previous_login',
-		'insert_time' => 'created',
-		'insert_user_name' => 'created_user',
-		'update_time' => 'modified',
-		'update_user_name' => 'modified_user',
-	];
-
-/**
- * Mapping nc2 id to nc3 id
+ * Mapping nc2 id to nc3 id.
  * ユーザー情報で使う予定なのでpublic
  *
  * @var array
@@ -73,17 +49,16 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 	public $mappingId = [];
 
 /**
- * Language id from Nc2
+ * Language id from Nc2.
  *
  * @var array
  */
 	private $__languageIdFromNc2 = null;
 
 /**
- * Migration
+ * Migration method.
  *
  * @return bool True on success
- * @throws InternalErrorException
  */
 	public function migrate() {
 		if (!$this->validateNc2()) {
@@ -106,55 +81,29 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 	}
 
 /**
- * Validate Nc2_items data
+ * Validate nc2 items data.
  *
- * @return bool True on success
+ * @return bool True if nc2 data is valid.
+ * @see Nc2ToNc3UserAttribute::__isMigrationRow()
  */
 	public function validateNc2() {
+		// 不正データは移行処理をしないようにした
 		return true;
 	}
 
 /**
- * Validate UserAttribue data
+ * Validate Nc3 UserAttribue data
  *
- * @return bool True on success
+ * @return bool bool True if nc3 data is valid.
+ * @see Nc2ToNc3UserAttribute::__isMigrationRow()
  */
 	public function validateNc3() {
-		// cakeのvalidation使った方が良いか？
-
-		/*
-		// 無ければ移行するようにしたので不要
-		$keyList = $this->__getDefaultKeyList();
-		$defaultSystemKeys = [
-			'avatar',
-			'language',
-			'timezone',
-			'role_key',
-			'status',
-			'username',
-			'password',
-			'handlename',
-			'password_modified',
-			'last_login',
-			'previous_login',
-			'created',
-			'created_user',
-			'modified',
-			'modified_user'
-		];
-
-		$diff = array_diff($defaultSystemKeys, $keyList);
-		if (!empty($diff)) {
-			$this->setMigrationMessages(__d('nc2_to_nc3', 'Existing user attribute data is invalid.'));
-			return false;
-		}
-		*/
-
+		// Nc3に存在しなれば移行するようにした
 		return true;
 	}
 
 /**
- * Save UserAttribue from Nc2
+ * Save UserAttribue from Nc2.
  *
  * @return bool True on success
  */
@@ -169,34 +118,335 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			]
 		];
 		$nc2Items = $Nc2Item->find('all', $query);
+		$migratedNc2Ids = [];
 
+		// NC3に存在しない会員項目の作成ループ
 		foreach ($nc2Items as $nc2Item) {
 			if (!$this->__isMigrationRow($nc2Item)) {
 				//var_dump($nc2Item['Item']);
 				continue;
 			}
 			//var_dump(99, $nc2Item['Item']);
+			continue;
+			$data = $this->__generateNc3Data($nc2Item);
+
+			if (!$this->saveUserAttribute($data)) {
+				// error
+			}
+
+			$migratedNc2Ids[] = $nc2Item['Item']['item_id'];
+		}
+		//var_dump($this->mappingId);
+		// 選択肢項目のマージループ
+		/*
+			$choice'radio'
+				'checkbox'
+				'select'
+		foreach ($nc2Items as $nc2Item) {
+			if (in_array($nc2Item['Item']['item_id'], $migratedNc2Ids)) {
+				continue;
+			}
+
+			if ($nc2Item['Item']['item_id']) {
+				continue;
+			}
+
+			$data = $this->__generateNc3Data($nc2Item);
+
+			//var_dump(99, $nc2Item['Item']);
+
+			$this->saveUserAttribute($data);
+		}
+		*/
+
+		return true;
+	}
+
+/**
+ * Set mapping data
+ *
+ * @return bool True on success
+ */
+	public function setMappingDataNc2ToNc3() {
+		return true;
+	}
+
+/**
+ * Check migration target
+ *
+ * @param array $nc2Item nc2 item data
+ * @return bool True if data is migration target
+ */
+	private function __isMigrationRow($nc2Item) {
+		$tagName = $nc2Item['Item']['tag_name'];
+		$notMigrationTagNames = [
+			'mobile_texthtml_mode',
+			'mobile_imgdsp_size',
+			'userinf_view_main_room',
+			'userinf_view_main_monthly',
+			'userinf_view_main_modulesinfo'
+		];
+		if (in_array($tagName, $notMigrationTagNames)) {
+			// TODOー対象外のLogを出力
+			return false;
 		}
 
-		/*
-		$query = [
-			'conditions' => [
-				'NOT' => ['Item.tag_name' => []
-					'mobile_texthtml_mode',
-					'mobile_imgdsp_size',
-					'userinf_view_main_room',
-					'userinf_view_main_monthly',
-					'userinf_view_main_modulesinfo',
-				],
-			'recursive' => -1
+		$dataTypeKey = $this->__convertNc2Type($nc2Item);
+		if (!$dataTypeKey) {
+			// TODOー$nc2Item['Item']['type']が不正なLogを出力
+			return false;
+		}
+
+		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
+		if ($nc3Id) {
+			$nc2Id = $nc2Item['Item']['item_id'];
+			$this->mappingId[$nc2Id] = $nc3Id;
+
+			return false;
+		}
+
+		$nc3Id = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
+		if ($nc3Id) {
+			$nc2Id = $nc2Item['Item']['item_id'];
+			$this->mappingId[$nc2Id] = $nc3Id;
+
+			return false;
+		}
+
+		$nc3Id = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
+		if ($nc3Id) {
+			$nc2Id = $nc2Item['Item']['item_id'];
+			$this->mappingId[$nc2Id] = $nc3Id;
+
+			return false;
+		}
+
+		return true;
+	}
+
+/**
+ * Convert Nc2 type
+ * If invalid type, return ''
+ *
+ * @param array $nc2Item nc2 item data
+ * @return string Converted Nc2 type
+ */
+	private function __convertNc2Type($nc2Item) {
+		if ($nc2Item['Item']['type'] == 'mobile_email') {
+			return 'email';
+		}
+
+		if ($nc2Item['Item']['type'] == 'file' &&
+			$nc2Item['Item']['item_name'] == 'USER_ITEM_AVATAR'
+		) {
+			return 'img';
+		}
+
+		if ($nc2Item['Item']['type'] == 'select' &&
+			$nc2Item['Item']['tag_name'] == 'timezone_offset_lang'
+		) {
+			return 'timezone';
+		}
+
+		if ($nc2Item['Item']['type'] == 'password' &&
+			$nc2Item['Item']['tag_name'] == 'password'
+		) {
+			return $nc2Item['Item']['type'];
+		}
+
+		$validTypes = [
+			'text',
+			'radio',
+			'checkbox',
+			'select',
+			'textarea',
+			'email',
+			'label'
 		];
-		$block = $Block->find('first', $query);
+		if (!in_array($nc2Item['Item']['type'], $validTypes)) {
+			return '';
+		}
 
+		return $nc2Item['Item']['type'];
+	}
 
-		// NC3に既存の項目は移行しない
-		$this->
+/**
+ * Get nc3 UserAttribute id by nc2 tag_name and nc3 data_type_key
+ *
+ * @param array $nc2Item nc2 item data
+ * @param string $dataTypeKey nc3 data_type_key
+ * @return string Converted Nc2 type
+ */
+	private function __getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey) {
+		$defaultTagNames = [
+			'email',
+			'lang_dirname_lang',
+			'timezone_offset_lang',
+			'role_authority_name',
+			'active_flag_lang',
+			'login_id',
+			'password',
+			'handle',
+			'user_name',
+			'password_regist_time',
+			'last_login_time',
+			'previous_login_time',
+			'insert_time',
+			'insert_user_name',
+			'update_time',
+			'update_user_name',
+		];
 
-		var_dump($Nc2Item->find('first'));
+		$userAttributeId = null;
+		$tagName = $nc2Item['Item']['tag_name'];
+		if (!in_array($tagName, $defaultTagNames)) {
+			return $userAttributeId;
+		}
+
+		$mappingTagToKey = [
+			'email' => 'email',
+			'lang_dirname_lang' => 'language',
+			'timezone_offset_lang' => 'timezone',
+			'role_authority_name' => 'role_key',
+			'active_flag_lang' => 'status',
+			'login_id' => 'username',
+			'password' => 'password',
+			'handle' => 'handlename',
+			'user_name' => 'name',
+			'password_regist_time' => 'password_modified',
+			'last_login_time' => 'last_login',
+			'previous_login_time' => 'previous_login',
+			'insert_time' => 'created',
+			'insert_user_name' => 'created_user',
+			'update_time' => 'modified',
+			'update_user_name' => 'modified_user',
+		];
+
+		$query = array(
+			'fields' => 'UserAttribute.id',
+			'conditions' => [
+				'UserAttribute.key' => $mappingTagToKey[$tagName],
+				'UserAttributeSetting.data_type_key' => $dataTypeKey
+			],
+			'recursive' => 0
+		);
+		$userAttribute = $this->find('first', $query);
+		if (!$userAttribute) {
+			return $userAttributeId;
+		}
+		$userAttributeId = $userAttribute['UserAttribute']['id'];
+
+		return $userAttributeId;
+	}
+
+/**
+ * Get nc3 UserAttribute id by nc2 defaultvitem_name and nc3 data_type_key
+ *
+ * @param array $nc2Item nc2 item data
+ * @param string $dataTypeKey nc3 data_type_key
+ * @return string Converted Nc2 type
+ */
+	private function __getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
+		$userAttributeId = null;
+		switch ($nc2Item['Item']['item_name']) {
+			case 'USER_ITEM_AVATAR':
+				$nc3UserAttributeKey = 'avatar';
+				break;
+
+			case 'USER_ITEM_MOBILE_EMAIL':
+				$nc3UserAttributeKey = 'moblie_mail';
+				break;
+
+			case 'USER_ITEM_GENDER':
+				$nc3UserAttributeKey = 'sex';
+				break;
+
+			case 'USER_ITEM_PROFILE':
+				$nc3UserAttributeKey = 'profile';
+				break;
+
+			default:
+				return $userAttributeId;
+
+		}
+
+		$query = array(
+			'fields' => 'UserAttribute.id',
+			'conditions' => [
+				'UserAttribute.key' => $nc3UserAttributeKey,
+				'UserAttributeSetting.data_type_key' => $dataTypeKey
+			],
+			'recursive' => 0
+		);
+		$userAttribute = $this->find('first', $query);
+		if (!$userAttribute) {
+			return $userAttributeId;
+		}
+		$userAttributeId = $userAttribute['UserAttribute']['id'];
+
+		return $userAttributeId;
+	}
+
+/**
+ * Get nc3 UserAttribute id by nc2 tag_name and nc3 data_type_key
+ *
+ * @param array $nc2Item nc2 item data
+ * @param string $dataTypeKey nc3 data_type_key
+ * @return string Converted Nc2 type
+ */
+	private function __getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
+		$userAttributeId = null;
+		$query = array(
+			'fields' => 'UserAttribute.id',
+			'conditions' => [
+				'UserAttribute.key' => $nc2Item['Item']['item_name'],
+				'UserAttribute.language_id' => $this->__languageIdFromNc2,
+				'UserAttributeSetting.data_type_key' => $dataTypeKey
+			],
+			'recursive' => 0
+		);
+		$userAttribute = $this->find('first', $query);
+		if (!$userAttribute) {
+			return $userAttributeId;
+		}
+		$userAttributeId = $userAttribute['UserAttribute']['id'];
+
+		return $userAttributeId;
+	}
+
+/**
+ * Set language id from Nc2
+ *
+ * @return void
+ */
+	private function __setLanguageIdFromNc2() {
+		$Nc2Config = $this->getNc2Model('config');
+		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
+
+		$language = $configData['Config']['conf_value'];
+		switch ($language) {
+			case 'english':
+				$code = 'en';
+				break;
+
+			default:
+				$code = 'ja';
+
+		}
+
+		$Language = ClassRegistry::init('M17n.Language');
+		$language = $Language->findByCode($code, 'id', null, -1);
+		$this->__languageIdFromNc2 = $language['Language']['id'];
+	}
+
+/**
+ * Generate nc3 data
+ *
+ * @param array $nc2Item nc2 item data
+ * @return array Nc3 data
+ */
+	private function __generateNc3Data($nc2Item) {
+		/*
 
 		data[UserAttributeSetting][id]:
 		data[UserAttributeSetting][row]:1
@@ -225,172 +475,54 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 		data[UserAttributeSetting][self_email_setting]:0
 		data[UserAttribute][0][description]:
 		data[UserAttribute][1][description]:
-
+		data[UserAttributeChoice][1][1][id]:
+		data[UserAttributeChoice][1][1][language_id]:1
+		data[UserAttributeChoice][1][1][user_attribute_id]:
+		data[UserAttributeChoice][1][1][key]:
+		data[UserAttributeChoice][1][1][code]:
+		data[UserAttributeChoice][1][1][weight]:1
+		data[UserAttributeChoice][1][1][name]:
+		data[UserAttributeChoice][2][1][id]:
+		data[UserAttributeChoice][2][1][language_id]:1
+		data[UserAttributeChoice][2][1][user_attribute_id]:
+		data[UserAttributeChoice][2][1][key]:
+		data[UserAttributeChoice][2][1][code]:
+		data[UserAttributeChoice][2][1][weight]:2
+		data[UserAttributeChoice][2][1][name]:
+		data[UserAttributeChoice][3][1][id]:
+		data[UserAttributeChoice][3][1][language_id]:1
+		data[UserAttributeChoice][3][1][user_attribute_id]:
+		data[UserAttributeChoice][3][1][key]:
+		data[UserAttributeChoice][3][1][code]:
+		data[UserAttributeChoice][3][1][weight]:3
+		data[UserAttributeChoice][3][1][name]:
+		data[UserAttributeChoice][1][2][id]:
+		data[UserAttributeChoice][1][2][language_id]:2
+		data[UserAttributeChoice][1][2][user_attribute_id]:
+		data[UserAttributeChoice][1][2][key]:
+		data[UserAttributeChoice][1][2][code]:
+		data[UserAttributeChoice][1][2][weight]:1
+		data[UserAttributeChoice][1][2][name]:
+		data[UserAttributeChoice][2][2][id]:
+		data[UserAttributeChoice][2][2][language_id]:2
+		data[UserAttributeChoice][2][2][user_attribute_id]:
+		data[UserAttributeChoice][2][2][key]:
+		data[UserAttributeChoice][2][2][code]:
+		data[UserAttributeChoice][2][2][weight]:2
+		data[UserAttributeChoice][2][2][name]:
+		data[UserAttributeChoice][3][2][id]:
+		data[UserAttributeChoice][3][2][language_id]:2
+		data[UserAttributeChoice][3][2][user_attribute_id]:
+		data[UserAttributeChoice][3][2][key]:
+		data[UserAttributeChoice][3][2][code]:
+		data[UserAttributeChoice][3][2][weight]:3
+		data[UserAttributeChoice][3][2][name]:
 		$this->saveUserAttribute($data);
+
+
+		'radio'
+			'checkbox'
+			'select'
 		*/
-		return true;
-	}
-
-/**
- * Set mapping data
- *
- * @return bool True on success
- */
-	public function setMappingDataNc2ToNc3() {
-		return true;
-	}
-
-/**
- * Find default key list
- *
- * @return array Default UserAttribue data
- */
-	private function __getDefaultKeyList() {
-		static $keyList = array();
-		if (!empty($keyList)) {
-			return $keyList;
-		}
-
-		$defaultKeys = [
-			'avatar',
-			'email',
-			'moblie_mail',
-			'sex',
-			'language',
-			'timezone',
-			'role_key',
-			'status',
-			'username',
-			'password',
-			'handlename',
-			'name',
-			'password_modified',
-			'last_login',
-			'previous_login',
-			'created',
-			'created_user',
-			'modified',
-			'modified_user',
-			'profile',
-			'search_keywords'
-		];
-
-		$query = [
-			'fields' => ['UserAttribute.key'],
-			'conditions' => [
-				'UserAttribute.key' => $defaultKeys,
-				'UserAttribute.language_id' => $this->__languageIdFromNc2,
-			],
-			'recursive' => -1
-		];
-		$keyList = $this->find('list', $query);
-
-		return $keyList;
-	}
-
-/**
- * Check migration target
- *
- * @param array $nc2Item nc2 item data
- * @return bool True if data is migration target
- */
-	private function __isMigrationRow($nc2Item) {
-		$tagName = $nc2Item['Item']['tag_name'];
-		$notMigrationTagNames = [
-			'mobile_texthtml_mode',
-			'mobile_imgdsp_size',
-			'userinf_view_main_room',
-			'userinf_view_main_monthly',
-			'userinf_view_main_modulesinfo'
-		];
-		if (in_array($tagName, $notMigrationTagNames)) {
-			return false;
-		}
-
-		$keyList = $this->__getDefaultKeyList();
-		$defaultTagNames = [
-			'email',
-			'lang_dirname_lang',
-			'timezone_offset_lang',
-			'role_authority_name',
-			'active_flag_lang',
-			'login_id',
-			'password',
-			'handle',
-			'user_name',
-			'password_regist_time',
-			'last_login_time',
-			'previous_login_time',
-			'insert_time',
-			'insert_user_name',
-			'update_time',
-			'update_user_name',
-		];
-		$nc3Id = null;
-		if (in_array($tagName, $defaultTagNames)) {
-			$nc3Id = array_search(static::$__mappingTagToKey[$tagName], $keyList);
-		}
-
-		$itemName = $nc2Item['Item']['item_name'];
-		switch ($itemName) {
-			case 'USER_ITEM_AVATAR':
-				$nc3Id = array_search('avatar', $keyList);
-				break;
-
-			case 'USER_ITEM_MOBILE_EMAIL':
-				$nc3Id = array_search('moblie_mail', $keyList);
-				break;
-
-			case 'USER_ITEM_GENDER':
-				$nc3Id = array_search('sex', $keyList);
-				break;
-
-			case 'USER_ITEM_PROFILE':
-				$nc3Id = array_search('profile', $keyList);
-				break;
-
-		}
-
-		if ($nc3Id) {
-			$nc2Id = $nc2Item['Item']['item_id'];
-			$this->mappingId[$nc2Id] = $nc3Id;
-
-			return false;
-		}
-
-		$userAttribute = $this->findByNameAndLanguageId($itemName, $this->__languageIdFromNc2, 'id', null, -1);
-		if ($userAttribute) {
-			$nc2Id = $nc2Item['Item']['item_id'];
-			$this->mappingId[$nc2Id] = $userAttribute['UserAttribute']['id'];
-
-			return false;
-		}
-
-		return true;
-	}
-
-/**
- * Set language id from Nc2
- *
- * @return void
- */
-	private function __setLanguageIdFromNc2() {
-		$Nc2Config = $this->getNc2Model('config');
-		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
-
-		$language = $configData['Config']['conf_value'];
-		switch ($language) {
-			case 'english':
-				$code = 'en';
-				break;
-
-			default:
-				$code = 'ja';
-
-		}
-
-		$Language = ClassRegistry::init('M17n.Language');
-		$language = $Language->findByCode($code, 'id', null, -1);
-		$this->__languageIdFromNc2 = $language['Language']['id'];
 	}
 }
