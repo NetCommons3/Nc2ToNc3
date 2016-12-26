@@ -118,46 +118,39 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			]
 		];
 		$nc2Items = $Nc2Item->find('all', $query);
-		$migratedNc2Ids = [];
+		$choiceTypes = [
+			'radio',
+			'checkbox',
+			'select'
+		];
 
 		// NC3に存在しない会員項目の作成ループ
 		foreach ($nc2Items as $nc2Item) {
 			if (!$this->__isMigrationRow($nc2Item)) {
 				//var_dump($nc2Item['Item']);
-				continue;
+
+				$nc2Id = $nc2Item['Item']['item_id'];
+				if (!isset($this->mappingId[$nc2Id])) {
+					continue;
+				}
+				if (!in_array($nc2Item['Item']['type'], $choiceTypes)) {
+					continue;
+				}
+
+				// Nc3に既存の選択肢データをマージする
+				if (!$this->__saveMergedUserAttributeChoice($nc2Item)) {
+					// error
+				}
 			}
 			//var_dump(99, $nc2Item['Item']);
-			continue;
-			$data = $this->__generateNc3Data($nc2Item);
+			//continue;
 
+			$data = $this->__generateNc3Data($nc2Item);
 			if (!$this->saveUserAttribute($data)) {
 				// error
 			}
-
-			$migratedNc2Ids[] = $nc2Item['Item']['item_id'];
 		}
 		//var_dump($this->mappingId);
-		// 選択肢項目のマージループ
-		/*
-			$choice'radio'
-				'checkbox'
-				'select'
-		foreach ($nc2Items as $nc2Item) {
-			if (in_array($nc2Item['Item']['item_id'], $migratedNc2Ids)) {
-				continue;
-			}
-
-			if ($nc2Item['Item']['item_id']) {
-				continue;
-			}
-
-			$data = $this->__generateNc3Data($nc2Item);
-
-			//var_dump(99, $nc2Item['Item']);
-
-			$this->saveUserAttribute($data);
-		}
-		*/
 
 		return true;
 	}
@@ -437,6 +430,16 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 		$Language = ClassRegistry::init('M17n.Language');
 		$language = $Language->findByCode($code, 'id', null, -1);
 		$this->__languageIdFromNc2 = $language['Language']['id'];
+	}
+
+/**
+ * Save merged nc3 UserAttributeChoice data
+ *
+ * @param array $nc2Item nc2 item data
+ * @return bool True on success
+ */
+	private function __saveMergedUserAttributeChoice($nc2Item) {
+		return true;
 	}
 
 /**
