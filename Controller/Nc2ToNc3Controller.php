@@ -58,6 +58,8 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 			return;
 		}
 
+		// TODOーNC3のバージョン、状態（サイト閉鎖）をチェック
+
 		$this->request->data['Nc2ToNc3'] = $this->Nc2ToNc3->create();
 	}
 

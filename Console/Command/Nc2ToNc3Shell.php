@@ -28,6 +28,8 @@ class Nc2ToNc3Shell extends AppShell {
 		$request->data['Nc2ToNc3'] = $this->params;
 		$Nc2ToNc3Controller = new Nc2ToNc3Controller($request);
 
+		// TODOーログイン処理
+
 		$Nc2ToNc3Controller->constructClasses();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 
