@@ -165,7 +165,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		try {
 			// 対象バージョンチェック
 			$configData = $Nc2Config->findByConfName('version', 'conf_value', null, -1);
-			if ($configData['Config']['conf_value'] != static::VALID_VERSION) {
+			if ($configData['Nc2Config']['conf_value'] != static::VALID_VERSION) {
 				$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
 				ConnectionManager::drop(static::CONNECTION_NAME);
 				return false;
@@ -190,12 +190,15 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @return bool True on success
  */
 	public function migration() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
+
 		/* @var $UserAttribute Nc2ToNc3UserAttribute */
 		$UserAttribute = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		if (!$UserAttribute->migrate()) {
 			$this->setMigrationMessages($UserAttribute->getMigrationMessages());
 			return false;
 		}
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
 
 		return true;
 	}

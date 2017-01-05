@@ -8,13 +8,13 @@
  * @license http://www.netcommons.org/license.txt NetCommons License
  */
 
-App::uses('UserAttribute', 'UserAttributes.Model');
+App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 
 /**
  * Nc2ToNc3UserAttribute
  *
  */
-class Nc2ToNc3UserAttribute extends UserAttribute {
+class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 /**
  * Custom database table name, or null/false if no table association is desired.
@@ -22,14 +22,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @var string
  * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
  */
-	public $useTable = 'user_attributes';
-
-/**
- * Alias name for model.
- *
- * @var string
- */
-	public $alias = 'UserAttribute';
+	public $useTable = false;
 
 /**
  * List of behaviors to load when the model object is initialized. Settings can be
@@ -38,7 +31,10 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Migration'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Migration',
+		'Nc2ToNc3.Nc2ToNc3UserAttribute'
+	];
 
 /**
  * Mapping nc2 id to nc3 id.
@@ -47,6 +43,13 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @var array
  */
 	public $mappingId = [];
+
+/**
+ * Nc2 items_options.options separator.
+ *
+ * @var string
+ */
+	const NC2_ITEM_OPTION_SEPARATOR = '|';
 
 /**
  * Language id from Nc2.
@@ -61,6 +64,8 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @return bool True on success
  */
 	public function migrate() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserAttribute Migration start.'));
+
 		if (!$this->validateNc2()) {
 			return false;
 		}
@@ -77,6 +82,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			return false;
 		}
 
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserAttribute Migration end.'));
 		return true;
 	}
 
@@ -109,31 +115,35 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  */
 	public function saveUserAttributeFromNc2() {
 		$this->__setLanguageIdFromNc2();
-
 		$Nc2Item = $this->getNc2Model('items');
 		$query = [
 			'order' => [
-				'Item.col_num',
-				'Item.row_num'
+				'Nc2Item.col_num',
+				'Nc2Item.row_num'
 			]
 		];
 		$nc2Items = $Nc2Item->find('all', $query);
-		$choiceTypes = [
-			'radio',
-			'checkbox',
-			'select'
-		];
+		$notMigrationItems = [];
+		$UserAttribute = $this->getNc3Model('UserAttributes.UserAttribute');
 
-		// NC3に存在しない会員項目の作成ループ
-		foreach ($nc2Items as $nc2Item) {
-			if (!$this->__isMigrationRow($nc2Item)) {
-				//var_dump($nc2Item['Item']);
-
-				$nc2Id = $nc2Item['Item']['item_id'];
-				if (!isset($this->mappingId[$nc2Id])) {
+		$UserAttribute->begin();
+		try {
+			foreach ($nc2Items as $nc2Item) {
+				if (!$this->__isMigrationRow($nc2Item)) {
+					$notMigrationItems[] = $nc2Item;
 					continue;
 				}
-				if (!in_array($nc2Item['Item']['type'], $choiceTypes)) {
+				//var_dump(99, $nc2Item['Nc2Item']);
+				//continue;
+
+				$data = $this->__generateNc3Data($nc2Item);
+				if (!$UserAttribute->saveUserAttribute($data)) {
+					// error
+				}
+			}
+
+			foreach ($notMigrationItems as $nc2Item) {
+				if (!$this->__isChoiceMergenceRow($nc2Item)) {
 					continue;
 				}
 
@@ -142,15 +152,13 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 					// error
 				}
 			}
-			//var_dump(99, $nc2Item['Item']);
-			//continue;
+			//var_dump($this->mappingId);
+			$UserAttribute->commit();
 
-			$data = $this->__generateNc3Data($nc2Item);
-			if (!$this->saveUserAttribute($data)) {
-				// error
-			}
+		} catch (Exception $ex) {
+			$UserAttribute->rollback($ex);
+			//return false;
 		}
-		//var_dump($this->mappingId);
 
 		return true;
 	}
@@ -171,7 +179,8 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @return bool True if data is migration target
  */
 	private function __isMigrationRow($nc2Item) {
-		$tagName = $nc2Item['Item']['tag_name'];
+		$tagName = $nc2Item['Nc2Item']['tag_name'];
+		$logArgument = 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
 		$notMigrationTagNames = [
 			'mobile_texthtml_mode',
 			'mobile_imgdsp_size',
@@ -180,37 +189,69 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			'userinf_view_main_modulesinfo'
 		];
 		if (in_array($tagName, $notMigrationTagNames)) {
-			// TODOー対象外のLogを出力
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
 			return false;
 		}
 
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
 		if (!$dataTypeKey) {
-			// TODOー$nc2Item['Item']['type']が不正なLogを出力
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
 			return false;
 		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$nc2Id = $nc2Item['Item']['item_id'];
+			$nc2Id = $nc2Item['Nc2Item']['item_id'];
 			$this->mappingId[$nc2Id] = $nc3Id;
 
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
 			return false;
 		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$nc2Id = $nc2Item['Item']['item_id'];
+			$nc2Id = $nc2Item['Nc2Item']['item_id'];
 			$this->mappingId[$nc2Id] = $nc3Id;
 
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
 			return false;
 		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$nc2Id = $nc2Item['Item']['item_id'];
+			$nc2Id = $nc2Item['Nc2Item']['item_id'];
 			$this->mappingId[$nc2Id] = $nc3Id;
 
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			return false;
+		}
+
+		return true;
+	}
+
+/**
+ * Check mergence target
+ *
+ * @param array $nc2Item nc2 item data
+ * @return bool True if data is mergence target
+ */
+	private function __isChoiceMergenceRow($nc2Item) {
+		$choiceTypes = [
+			'radio',
+			'checkbox',
+			'select'
+		];
+		if (!in_array($nc2Item['Nc2Item']['type'], $choiceTypes)) {
+			return false;
+		}
+
+		$notMergenceTagNames = [
+			'lang_dirname_lang',
+			'timezone_offset_lang',
+			'role_authority_name',
+			'active_flag_lang',
+		];
+		if (in_array($nc2Item['Nc2Item']['tag_name'], $notMergenceTagNames)) {
 			return false;
 		}
 
@@ -225,26 +266,26 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @return string Converted Nc2 type
  */
 	private function __convertNc2Type($nc2Item) {
-		if ($nc2Item['Item']['type'] == 'mobile_email') {
+		if ($nc2Item['Nc2Item']['type'] == 'mobile_email') {
 			return 'email';
 		}
 
-		if ($nc2Item['Item']['type'] == 'file' &&
-			$nc2Item['Item']['item_name'] == 'USER_ITEM_AVATAR'
+		if ($nc2Item['Nc2Item']['type'] == 'file' &&
+			$nc2Item['Nc2Item']['item_name'] == 'USER_ITEM_AVATAR'
 		) {
 			return 'img';
 		}
 
-		if ($nc2Item['Item']['type'] == 'select' &&
-			$nc2Item['Item']['tag_name'] == 'timezone_offset_lang'
+		if ($nc2Item['Nc2Item']['type'] == 'select' &&
+			$nc2Item['Nc2Item']['tag_name'] == 'timezone_offset_lang'
 		) {
 			return 'timezone';
 		}
 
-		if ($nc2Item['Item']['type'] == 'password' &&
-			$nc2Item['Item']['tag_name'] == 'password'
+		if ($nc2Item['Nc2Item']['type'] == 'password' &&
+			$nc2Item['Nc2Item']['tag_name'] == 'password'
 		) {
-			return $nc2Item['Item']['type'];
+			return $nc2Item['Nc2Item']['type'];
 		}
 
 		$validTypes = [
@@ -256,11 +297,11 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			'email',
 			'label'
 		];
-		if (!in_array($nc2Item['Item']['type'], $validTypes)) {
+		if (!in_array($nc2Item['Nc2Item']['type'], $validTypes)) {
 			return '';
 		}
 
-		return $nc2Item['Item']['type'];
+		return $nc2Item['Nc2Item']['type'];
 	}
 
 /**
@@ -291,7 +332,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 		];
 
 		$userAttributeId = null;
-		$tagName = $nc2Item['Item']['tag_name'];
+		$tagName = $nc2Item['Nc2Item']['tag_name'];
 		if (!in_array($tagName, $defaultTagNames)) {
 			return $userAttributeId;
 		}
@@ -315,15 +356,16 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 			'update_user_name' => 'modified_user',
 		];
 
-		$query = array(
+		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.key' => $mappingTagToKey[$tagName],
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
 			'recursive' => 0
-		);
-		$userAttribute = $this->find('first', $query);
+		];
+		$userAttribute = $UserAttribute->find('first', $query);
 		if (!$userAttribute) {
 			return $userAttributeId;
 		}
@@ -340,38 +382,29 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @return string Converted Nc2 type
  */
 	private function __getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
+		$mappingItemNameToKey = [
+			'USER_ITEM_AVATAR' => 'avatar',
+			'USER_ITEM_MOBILE_EMAIL' => 'moblie_mail',
+			'USER_ITEM_GENDER' => 'sex',
+			'USER_ITEM_PROFILE' => 'profile',
+		];
 		$userAttributeId = null;
-		switch ($nc2Item['Item']['item_name']) {
-			case 'USER_ITEM_AVATAR':
-				$nc3UserAttributeKey = 'avatar';
-				break;
-
-			case 'USER_ITEM_MOBILE_EMAIL':
-				$nc3UserAttributeKey = 'moblie_mail';
-				break;
-
-			case 'USER_ITEM_GENDER':
-				$nc3UserAttributeKey = 'sex';
-				break;
-
-			case 'USER_ITEM_PROFILE':
-				$nc3UserAttributeKey = 'profile';
-				break;
-
-			default:
-				return $userAttributeId;
-
+		$itemName = $nc2Item['Nc2Item']['item_name'];
+		if (!isset($mappingItemNameToKey[$itemName])) {
+			return $userAttributeId;
 		}
 
-		$query = array(
+		$nc3UserAttributeKey = $mappingItemNameToKey[$itemName];
+		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.key' => $nc3UserAttributeKey,
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
 			'recursive' => 0
-		);
-		$userAttribute = $this->find('first', $query);
+		];
+		$userAttribute = $UserAttribute->find('first', $query);
 		if (!$userAttribute) {
 			return $userAttributeId;
 		}
@@ -389,16 +422,17 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  */
 	private function __getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$userAttributeId = null;
-		$query = array(
+		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
-				'UserAttribute.key' => $nc2Item['Item']['item_name'],
+				'UserAttribute.name' => $nc2Item['Nc2Item']['item_name'],
 				'UserAttribute.language_id' => $this->__languageIdFromNc2,
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
 			'recursive' => 0
-		);
-		$userAttribute = $this->find('first', $query);
+		];
+		$userAttribute = $UserAttribute->find('first', $query);
 		if (!$userAttribute) {
 			return $userAttributeId;
 		}
@@ -416,7 +450,7 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
 		$Nc2Config = $this->getNc2Model('config');
 		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
 
-		$language = $configData['Config']['conf_value'];
+		$language = $configData['Nc2Config']['conf_value'];
 		switch ($language) {
 			case 'english':
 				$code = 'en';
@@ -439,6 +473,48 @@ class Nc2ToNc3UserAttribute extends UserAttribute {
  * @return bool True on success
  */
 	private function __saveMergedUserAttributeChoice($nc2Item) {
+		$Nc2ItemOption = $this->getNc2Model('items_options');
+		$nc2ItemOptions = $Nc2ItemOption->findByItemId($nc2Item['Nc2Item']['item_id'], 'options', null, -1);
+		if (!$nc2ItemOptions) {
+			// TODOー選択肢データなしのLogを出力
+			//$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			return false;
+		}
+
+		$nc2ItemOptions = explode(static::NC2_ITEM_OPTION_SEPARATOR, $nc2ItemOptions['Nc2ItemsOption']['options']);
+		foreach ($nc2ItemOptions as $key => $option) {
+			//  TODOー定数変換処理
+			$nc2ItemOptions[$key] = $option;
+		}
+
+		$nc2Id = $nc2Item['Nc2Item']['item_id'];
+		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+		$query = [
+			'fields' => 'UserAttributeChoice.name',
+			'conditions' => [
+				'UserAttributeChoice.user_attribute_id ' => $this->mappingId[$nc2Id],
+				'UserAttributeChoice.language_id' => $this->__languageIdFromNc2
+			],
+			'recursive' => -1
+		];
+		$userAttributeChoices = $UserAttribute->UserAttributeChoice->find('list', $query);
+		if (!$userAttributeChoices) {
+			// TODOー選択肢データなしのLogを出力
+			return false;
+		}
+
+		$userAttributeChoices = array_diff($userAttributeChoices, $nc2ItemOptions);
+		if (!$userAttributeChoices) {
+			// 差分選択肢無し
+			return true;
+		}
+
+		//key取得
+		//$data = $UserAttribute->getUserAttribute($key);
+		// 差分を追加
+		//UserAttributesController::editのput処理
+		//$this->UserAttributeChoiceの直呼び出しの方が良い？
+
 		return true;
 	}
 

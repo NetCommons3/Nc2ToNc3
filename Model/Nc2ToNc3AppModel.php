@@ -8,11 +8,12 @@
  * @license http://www.netcommons.org/license.txt NetCommons License
  */
 
-App::uses('AppModel', 'Model');
-
 /**
  * Nc2ToNc3AppModel
+ * トランザクションを開始(NetCommonsAppModel::begin)すると、
+ * 以降のModelがmasterの設定で接続するため、Modelクラスを直接継承する。
+ *
  */
-class Nc2ToNc3AppModel extends AppModel {
+class Nc2ToNc3AppModel extends Model {
 
 }
