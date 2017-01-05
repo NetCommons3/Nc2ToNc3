@@ -31,10 +31,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = [
-		'Nc2ToNc3.Nc2ToNc3Migration',
-		'Nc2ToNc3.Nc2ToNc3UserAttribute'
-	];
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Migration'];
 
 /**
  * Mapping nc2 id to nc3 id.
