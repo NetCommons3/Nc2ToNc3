@@ -127,11 +127,15 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		try {
 			foreach ($nc2Items as $nc2Item) {
 				if (!$this->__isMigrationRow($nc2Item)) {
+					continue;
+				}
+
+				$this->__mapExistingId($nc2Item);
+				$nc2Id = $nc2Item['Nc2Item']['item_id'];
+				if (isset($this->mappingId[$nc2Id])) {
 					$notMigrationItems[] = $nc2Item;
 					continue;
 				}
-				//var_dump(99, $nc2Item['Nc2Item']);
-				//continue;
 
 				$data = $this->__generateNc3Data($nc2Item);
 				if (!$UserAttribute->saveUserAttribute($data)) {
@@ -190,10 +194,21 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		return true;
+	}
+
+/**
+ * Map existing id
+ *
+ * @param array $nc2Item nc2 item data
+ * @return bool True if data is migration target
+ */
+	private function __mapExistingId($nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
+		$logArgument = 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
 		if (!$dataTypeKey) {
 			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
-			return false;
+			return;
 		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
@@ -202,7 +217,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			$this->mappingId[$nc2Id] = $nc3Id;
 
 			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
-			return false;
+			return;
 		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
@@ -211,7 +226,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			$this->mappingId[$nc2Id] = $nc3Id;
 
 			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
-			return false;
+			return;
 		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
@@ -220,10 +235,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			$this->mappingId[$nc2Id] = $nc3Id;
 
 			$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
-			return false;
+			return;
 		}
 
-		return true;
+		return;
 	}
 
 /**
