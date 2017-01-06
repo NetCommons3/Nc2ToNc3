@@ -52,7 +52,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Migration'];
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Base'];
 
 /**
  * Called during validation operations, before validation. Please note that custom

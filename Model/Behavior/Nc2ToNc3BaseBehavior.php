@@ -15,7 +15,7 @@ App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
  * Nc2ToNc3MigrationBehavior
  *
  */
-class Nc2ToNc3MigrationBehavior extends ModelBehavior {
+class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 /**
  * List of migration message.
@@ -47,18 +47,17 @@ class Nc2ToNc3MigrationBehavior extends ModelBehavior {
  * @return void
  */
 	public function setMigrationMessages(Model $model, $message) {
-		// 配列に追加とかも思ったが、とりあえず最後のエラーのみセットしとく
-		$this->migrationMessages = $message;
+		$this->_setMigrationMessages($message);
 	}
 
 /**
  * Get migration message
  *
  * @param Model $model Model using this behavior.
- * @return void
+ * @return string Migration messages
  */
 	public function getMigrationMessages(Model $model) {
-		return $this->migrationMessages;
+		return $this->_getMigrationMessages();
 	}
 
 /**
@@ -69,16 +68,17 @@ class Nc2ToNc3MigrationBehavior extends ModelBehavior {
  * @return void
  */
 	public function writeMigrationLog(Model $model, $message) {
+		$debugString = '';
 		$backtraces = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
 		if (isset($backtraces[4]) &&
 			isset($backtraces[4]['line']) &&
 			isset($backtraces[4]['class']) &&
 			$backtraces[4]['function'] == 'writeMigrationLog'
 		) {
-			$message = $message . ' : ' . $backtraces[4]['class'] . ' on line ' . $backtraces[4]['line'];
+			$debugString = $backtraces[4]['class'] . ' on line ' . $backtraces[4]['line'];
 		}
 
-		CakeLog::write('Nc2ToNc3', $message);
+		$this->_writeMigrationLog($message, $debugString);
 	}
 
 /**
@@ -88,7 +88,73 @@ class Nc2ToNc3MigrationBehavior extends ModelBehavior {
  * @param string $tableName Nc2 table name
  * @return Model Nc2 model
  */
-	public static function getNc2Model(Model $model, $tableName) {
+	public function getNc2Model(Model $model, $tableName) {
+		return $this->_getNc2Model($tableName);
+	}
+
+/**
+ * Get Nc3 Model
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $class Instance will be created,stored in the registry and returned.
+ * @return Model Nc2 model
+ */
+	public function getNc3Model(Model $model, $class) {
+		return $this->_getNc3Model($class);
+	}
+
+/**
+ * Set migration message
+ *
+ * @param string $message Migration message
+ * @return void
+ */
+	protected function _setMigrationMessages($message) {
+		// 配列に追加とかも思ったが、とりあえず最後のエラーのみセットしとく
+		$this->migrationMessages = $message;
+	}
+
+/**
+ * Get migration message
+ *
+ * @return string Migration messages
+ */
+	protected function _getMigrationMessages() {
+		return $this->migrationMessages;
+	}
+
+/**
+ * Write migration log
+ *
+ * @param string $message Migration message
+ * @param string $debugString Debug string
+ * @return void
+ */
+	protected function _writeMigrationLog($message, $debugString = '') {
+		if ($debugString) {
+			CakeLog::write('Nc2ToNc3', $message . ' : ' . $debugString);
+			return;
+		}
+
+		$backtraces = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+		if (isset($backtraces[0]) &&
+			isset($backtraces[0]['line']) &&
+			isset($backtraces[1]['class']) &&
+			$backtraces[0]['function'] == '_writeMigrationLog'
+		) {
+			$message = $message . ' : ' . $backtraces[1]['class'] . ' on line ' . $backtraces[0]['line'];
+		}
+
+		CakeLog::write('Nc2ToNc3', $message);
+	}
+
+/**
+ * Get Nc2 Model
+ *
+ * @param string $tableName Nc2 table name
+ * @return Model Nc2 model
+ */
+	protected function _getNc2Model($tableName) {
 		$alias = 'Nc2' . Inflector::classify($tableName);
 		$Molde = ClassRegistry::getObject($alias);
 		if ($Molde) {
@@ -113,11 +179,10 @@ class Nc2ToNc3MigrationBehavior extends ModelBehavior {
 /**
  * Get Nc3 Model
  *
- * @param Model $model Model using this behavior.
  * @param string $class Instance will be created,stored in the registry and returned.
  * @return Model Nc2 model
  */
-	public static function getNc3Model(Model $model, $class) {
+	protected function _getNc3Model($class) {
 		list(, $alias) = pluginSplit($class);
 		$Molde = ClassRegistry::getObject($alias);
 		if ($Molde) {
