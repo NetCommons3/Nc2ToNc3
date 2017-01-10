@@ -172,17 +172,18 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @return bool True on success
  */
 	private function __saveMergedUserAttributeChoice($nc2Item) {
+		$logArgument = 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
+
 		$Nc2ItemOption = $this->getNc2Model('items_options');
 		$nc2ItemOptions = $Nc2ItemOption->findByItemId($nc2Item['Nc2Item']['item_id'], 'options', null, -1);
 		if (!$nc2ItemOptions) {
-			// TODOー選択肢データなしのLogを出力
-			//$this->writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s does not merge.', $logArgument));
 			return false;
 		}
 
 		$nc2ItemOptions = explode(static::NC2_ITEM_OPTION_SEPARATOR, $nc2ItemOptions['Nc2ItemsOption']['options']);
 		foreach ($nc2ItemOptions as $key => $option) {
-			//  TODOー定数変換処理
+			// TODOー定数変換処理
 			$nc2ItemOptions[$key] = $option;
 		}
 

@@ -57,12 +57,19 @@
 
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<?php echo __d('nc2_to_nc3', 'Input the upload file path of NetCommons2.'); ?>
+			<?php echo __d('nc2_to_nc3', 'Input the file path of NetCommons2.'); ?>
 		</div>
 
 		<div class="panel-body">
 			<?php
-				echo $this->NetCommonsForm->input('path', ['label' => __d('nc2_to_nc3', 'Upload file path')]);
+				echo $this->NetCommonsForm->input('upload_path', ['label' => __d('nc2_to_nc3', 'Upload file path')]);
+				echo $this->NetCommonsForm->input(
+					'items_ini_path',
+					[
+						'label' => __d('nc2_to_nc3', 'items.ini file path'),
+						'help' => __d('nc2_to_nc3', 'If you do not enter it, use the default value.'),
+					]
+				);
 			?>
 		</div>
 	</div>

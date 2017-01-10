@@ -48,6 +48,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 				$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
 				return;
 			}
+			$this->Nc2ToNc3->setPathConfig($config);
 
 			if (!$this->Nc2ToNc3->migration()) {
 				$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
