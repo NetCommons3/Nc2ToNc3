@@ -63,6 +63,10 @@
 		<div class="panel-body">
 			<?php
 				echo $this->NetCommonsForm->input('upload_path', ['label' => __d('nc2_to_nc3', 'Upload file path')]);
+
+				// item.iniファイル定数取得処理未実装
+				echo $this->Form->hidden('items_ini_path');
+				/*
 				echo $this->NetCommonsForm->input(
 					'items_ini_path',
 					[
@@ -70,6 +74,7 @@
 						'help' => __d('nc2_to_nc3', 'If you do not enter it, use the default value.'),
 					]
 				);
+				*/
 			?>
 		</div>
 	</div>

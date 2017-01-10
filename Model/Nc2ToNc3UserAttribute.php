@@ -31,7 +31,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3UserAttribute'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3UserAttribute',
+		'Nc2ToNc3.Nc2ToNc3UserAttributeNc2ItemConstant'
+	];
 
 /**
  * Mapping nc2 id to nc3 id.
@@ -182,9 +185,14 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$nc2ItemOptions = explode(static::NC2_ITEM_OPTION_SEPARATOR, $nc2ItemOptions['Nc2ItemsOption']['options']);
+		$nc2ItemConstants = $this->getNc2ItemConstants();
+		$languageId = $this->getLanguageIdFromNc2();
 		foreach ($nc2ItemOptions as $key => $option) {
-			// TODOー定数変換処理
-			$nc2ItemOptions[$key] = $option;
+			if (!isset($nc2ItemConstants[$option])) {
+				continue;
+			}
+
+			$nc2ItemOptions[$key] = $nc2ItemConstants[$option][$languageId];
 		}
 
 		$nc2Id = $nc2Item['Nc2Item']['item_id'];
@@ -199,7 +207,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		];
 		$userAttributeChoices = $UserAttribute->UserAttributeChoice->find('list', $query);
 		if (!$userAttributeChoices) {
-			// TODOー選択肢データなしのLogを出力
+			$this->writeMigrationLog(__d('nc2_to_nc3', '%s does not merge.', $logArgument));
 			return false;
 		}
 

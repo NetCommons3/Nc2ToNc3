@@ -67,7 +67,7 @@ msgid "Upload file path"
 msgstr "アップロードファイルパス"
 
 msgid "items.ini file path"
-msgstr "items.iniファイル(会員項目名定義ファイル)パス"
+msgstr "items.iniファイル(会員項目名定義ファイル)の言語ディレクトリパス（Ex./var/www/nc2/webapp/language）"
 
 msgid "If you do not enter it, use the default value."
 msgstr "入力しなくてもしなければデフォルト値を使用します。"

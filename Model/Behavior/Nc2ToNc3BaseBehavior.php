@@ -29,7 +29,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  *
  * @var mix
  */
-	public  $pathConfig = null;
+	public $pathConfig = null;
 
 /**
  * Setup this behavior with the specified configuration settings.
@@ -71,7 +71,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * Set path config
  *
  * @param Model $model Model using this behavior.
- * @param string $message Migration message
+ * @param string $config Migration config
  * @return void
  */
 	public function setPathConfig(Model $model, $config) {
