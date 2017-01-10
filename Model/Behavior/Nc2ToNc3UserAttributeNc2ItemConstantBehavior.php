@@ -21,17 +21,22 @@ class Nc2ToNc3UserAttributeNc2ItemConstantBehavior extends Nc2ToNc3BaseBehavior 
  *
  * @var array
  */
-	private $__nc2ItemConstants = null;
+	private $__nc2ItemConstants = [];
 
 /**
- * Setup this behavior with the specified configuration settings.
+ * Get Nc2 item value by constant.
  *
  * @param Model $model Model using this behavior
- * @param array $config Configuration settings for $model
- * @return void
+ * @param string $constant Nc2 item constant
+ * @param string $languageId Nc2 language id
+ * @return string Nc2 item value
  */
-	public function setup(Model $model, $config = array()) {
-		$this->__setNc2ItemConstants();
+	public function getNc2ItemValueByConstant(Model $model, $constant, $languageId) {
+		if (!isset($this->__nc2ItemConstants)) {
+			$this->__setNc2ItemConstants();
+		}
+
+		return Hash::get($this->__nc2ItemConstants, [$constant, $languageId], $constant);
 	}
 
 /**
@@ -121,7 +126,7 @@ class Nc2ToNc3UserAttributeNc2ItemConstantBehavior extends Nc2ToNc3BaseBehavior 
 	}
 
 /**
- * Get Nc2 item constant.
+ * Merge Nc2 item constant.
  *
  * @return void
  */
@@ -134,16 +139,6 @@ class Nc2ToNc3UserAttributeNc2ItemConstantBehavior extends Nc2ToNc3BaseBehavior 
 		// TODOーitems.iniから定数を取得しマージ
 		$nc2ItemConstants = $pathConfig['items_ini_path'];
 		array_merge_recursive($this->__nc2ItemConstants, $nc2ItemConstants);
-	}
-
-/**
- * Get Nc2 item constant.
- *
- * @param Model $model Model using this behavior
- * @return void
- */
-	public function getNc2ItemConstants(Model $model) {
-		return $this->__nc2ItemConstants;
 	}
 
 }

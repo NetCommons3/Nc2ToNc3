@@ -33,7 +33,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  */
 	public $actsAs = [
 		'Nc2ToNc3.Nc2ToNc3UserAttribute',
-		'Nc2ToNc3.Nc2ToNc3UserAttributeNc2ItemConstant'
+		'Nc2ToNc3.Nc2ToNc3UserAttributeNc2ItemConstant',
+		'Nc2ToNc3.Nc2ToNc3UserAttributeNc2ItemDescription'
 	];
 
 /**
@@ -229,12 +230,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 /**
  * Generate nc3 data
  *
- * @param array $nc2Item nc2 item data
- * @return array Nc3 data
- */
-	private function __generateNc3Data($nc2Item) {
-		/*
-
 		data[UserAttributeSetting][id]:
 		data[UserAttributeSetting][row]:1
 		data[UserAttributeSetting][col]:2
@@ -310,6 +305,30 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		'radio'
 			'checkbox'
 			'select'
-		*/
+ * @param array $nc2Item nc2 item data
+ * @return array Nc3 data
+ */
+	private function __generateNc3Data($nc2Item) {
+		$Language = $this->getNc3Model('M17n.Language');
+		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+
+		$languages = $Language->getLanguages();
+		foreach ($languages as $language) {
+			$nc2Name = $nc2Item['Nc2Item']['item_name'];
+			$nc3LanguageId = $language['Language']['id'];
+			$nc2Description = $this->getNc2ItemDescriptionById($nc2Item['Nc2Item']['item_id']);
+
+			$userAttribute = $UserAttribute->create(array(
+				'id' => null,
+				'language_id' => $nc3LanguageId,
+				'name' => $this->getNc2ItemValueByConstant($nc2Name, $nc3LanguageId),
+				'description' => $this->getNc2ItemValueByConstant($nc2Description, $nc3LanguageId),
+
+			));
+
+			$data['UserAttribute'][] = $userAttribute['UserAttribute'];
+		}
+
+		return $data;
 	}
 }
