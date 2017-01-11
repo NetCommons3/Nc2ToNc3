@@ -13,6 +13,24 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 /**
  * Nc2ToNc3UserAttribute
  *
+ * @see Nc2ToNc3BaseBehavior
+ * @method void setMigrationMessages($message)
+ * @method string getMigrationMessages()
+ * @method void writeMigrationLog($message)
+ * @method Model getNc2Model($tableName)
+ * @method Model getNc3Model($class)
+ *
+ * @see Nc2ToNc3UserAttributeBaseBehavior
+ * @method string getLanguageIdFromNc2()
+ * @method string getNc2ItemValueByConstant($constant, $languageId)
+ * @method string getNc2ItemDescriptionById($itemId)
+ * @method string getNc2AutoregistUseItems()
+ *
+ * @see Nc2ToNc3UserAttributeBehavior
+ * @method bool isMigrationRow($nc2Item)
+ * @method void mapExistingId($nc2Item)
+ * @method bool isChoiceMergenceRow($nc2Item)
+ *
  */
 class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
@@ -31,15 +49,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = [
-		'Nc2ToNc3.Nc2ToNc3UserAttribute',
-		'Nc2ToNc3.Nc2ToNc3UserAttributeNc2ItemConstant',
-		'Nc2ToNc3.Nc2ToNc3UserAttributeNc2ItemDescription'
-	];
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3UserAttribute'];
 
 /**
  * Mapping nc2 id to nc3 id.
  * ユーザー情報で使う予定なのでpublic
+ * behaviorにする？？？
  *
  * @var array
  */
@@ -127,9 +142,9 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				$data = $this->__generateNc3Data($nc2Item);
-				if (!$UserAttribute->saveUserAttribute($data)) {
+				//if (!$UserAttribute->saveUserAttribute($data)) {
 					// error
-				}
+				//}
 			}
 
 			foreach ($notMigrationItems as $nc2Item) {
@@ -179,14 +194,9 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$nc2ItemOptions = explode('|', $nc2ItemOptions['Nc2ItemsOption']['options']);
-		$nc2ItemConstants = $this->getNc2ItemConstants();
 		$languageId = $this->getLanguageIdFromNc2();
 		foreach ($nc2ItemOptions as $key => $option) {
-			if (!isset($nc2ItemConstants[$option])) {
-				continue;
-			}
-
-			$nc2ItemOptions[$key] = $nc2ItemConstants[$option][$languageId];
+			$nc2ItemOptions[$key] = $this->getNc2ItemValueByConstant($option, $languageId);
 		}
 
 		$nc2Id = $nc2Item['Nc2Item']['item_id'];
@@ -331,6 +341,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			'display' => $nc2Item['Nc2Item']['display_flag'],
 			'self_public_setting' => $nc2Item['Nc2Item']['allow_public_flag'],
 			'self_email_setting' => $selfEmailSetting,
+			'is_multilingualization' => '0',
+			//'auto_regist_display' => $this->ge
 		];
 		$data['UserAttributeSetting'] = $UserAttributeSetting->create($defaultSetting);
 

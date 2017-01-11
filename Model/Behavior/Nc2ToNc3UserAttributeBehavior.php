@@ -8,13 +8,13 @@
  * @license http://www.netcommons.org/license.txt NetCommons License
  */
 
-App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
+App::uses('Nc2ToNc3UserAttributeBaseBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
  * Nc2ToNc3UserAttributeBehavior
  *
  */
-class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3BaseBehavior {
+class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 
 /**
  * Check migration target
@@ -52,7 +52,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior
  * @param array $nc2Item nc2 item data
- * @return bool True if data is migration target
+ * @return void
  */
 	public function mapExistingId(Model $model, $nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
