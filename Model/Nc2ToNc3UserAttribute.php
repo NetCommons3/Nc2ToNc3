@@ -46,13 +46,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	public $mappingId = [];
 
 /**
- * Nc2 items_options.options separator.
- *
- * @var string
- */
-	const NC2_ITEM_OPTION_SEPARATOR = '|';
-
-/**
  * Migration method.
  *
  * @return bool True on success
@@ -185,7 +178,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		$nc2ItemOptions = explode(static::NC2_ITEM_OPTION_SEPARATOR, $nc2ItemOptions['Nc2ItemsOption']['options']);
+		$nc2ItemOptions = explode('|', $nc2ItemOptions['Nc2ItemsOption']['options']);
 		$nc2ItemConstants = $this->getNc2ItemConstants();
 		$languageId = $this->getLanguageIdFromNc2();
 		foreach ($nc2ItemOptions as $key => $option) {
@@ -230,81 +223,77 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 /**
  * Generate nc3 data
  *
-		data[UserAttributeSetting][id]:
-		data[UserAttributeSetting][row]:1
-		data[UserAttributeSetting][col]:2
-		data[UserAttributeSetting][weight]:
-		data[UserAttributeSetting][display]:1
-		data[UserAttributeSetting][is_system]:0
-		data[UserAttributeSetting][user_attribute_key]:
-		data[UserAttribute][0][id]:
-		data[UserAttribute][0][key]:
-		data[UserAttribute][0][language_id]:1
-		data[UserAttribute][0][name]:
-		data[UserAttribute][1][id]:
-		data[UserAttribute][1][key]:
-		data[UserAttribute][1][language_id]:2
-		data[UserAttribute][1][name]:
-		data[UserAttributeSetting][display_label]:0
-		data[UserAttributeSetting][display_label]:1
-		data[UserAttributeSetting][data_type_key]:text
-		data[UserAttributeSetting][is_multilingualization]:0
-		data[UserAttributeSetting][is_multilingualization]:1
-		data[UserAttributeSetting][required]:0
-		data[UserAttributeSetting][only_administrator_readable]:0
-		data[UserAttributeSetting][only_administrator_editable]:0
-		data[UserAttributeSetting][self_public_setting]:0
-		data[UserAttributeSetting][self_email_setting]:0
-		data[UserAttribute][0][description]:
-		data[UserAttribute][1][description]:
-		data[UserAttributeChoice][1][1][id]:
-		data[UserAttributeChoice][1][1][language_id]:1
-		data[UserAttributeChoice][1][1][user_attribute_id]:
-		data[UserAttributeChoice][1][1][key]:
-		data[UserAttributeChoice][1][1][code]:
-		data[UserAttributeChoice][1][1][weight]:1
-		data[UserAttributeChoice][1][1][name]:
-		data[UserAttributeChoice][2][1][id]:
-		data[UserAttributeChoice][2][1][language_id]:1
-		data[UserAttributeChoice][2][1][user_attribute_id]:
-		data[UserAttributeChoice][2][1][key]:
-		data[UserAttributeChoice][2][1][code]:
-		data[UserAttributeChoice][2][1][weight]:2
-		data[UserAttributeChoice][2][1][name]:
-		data[UserAttributeChoice][3][1][id]:
-		data[UserAttributeChoice][3][1][language_id]:1
-		data[UserAttributeChoice][3][1][user_attribute_id]:
-		data[UserAttributeChoice][3][1][key]:
-		data[UserAttributeChoice][3][1][code]:
-		data[UserAttributeChoice][3][1][weight]:3
-		data[UserAttributeChoice][3][1][name]:
-		data[UserAttributeChoice][1][2][id]:
-		data[UserAttributeChoice][1][2][language_id]:2
-		data[UserAttributeChoice][1][2][user_attribute_id]:
-		data[UserAttributeChoice][1][2][key]:
-		data[UserAttributeChoice][1][2][code]:
-		data[UserAttributeChoice][1][2][weight]:1
-		data[UserAttributeChoice][1][2][name]:
-		data[UserAttributeChoice][2][2][id]:
-		data[UserAttributeChoice][2][2][language_id]:2
-		data[UserAttributeChoice][2][2][user_attribute_id]:
-		data[UserAttributeChoice][2][2][key]:
-		data[UserAttributeChoice][2][2][code]:
-		data[UserAttributeChoice][2][2][weight]:2
-		data[UserAttributeChoice][2][2][name]:
-		data[UserAttributeChoice][3][2][id]:
-		data[UserAttributeChoice][3][2][language_id]:2
-		data[UserAttributeChoice][3][2][user_attribute_id]:
-		data[UserAttributeChoice][3][2][key]:
-		data[UserAttributeChoice][3][2][code]:
-		data[UserAttributeChoice][3][2][weight]:3
-		data[UserAttributeChoice][3][2][name]:
-		$this->saveUserAttribute($data);
-
-
-		'radio'
-			'checkbox'
-			'select'
+ * data sample
+ * data[UserAttributeSetting][id]:
+ * data[UserAttributeSetting][row]:1
+ * data[UserAttributeSetting][col]:2
+ * data[UserAttributeSetting][weight]:
+ * data[UserAttributeSetting][display]:1
+ * data[UserAttributeSetting][is_system]:0
+ * data[UserAttributeSetting][user_attribute_key]:
+ * data[UserAttribute][0][id]:
+ * data[UserAttribute][0][key]:
+ * data[UserAttribute][0][language_id]:1
+ * data[UserAttribute][0][name]:
+ * data[UserAttribute][1][id]:
+ * data[UserAttribute][1][key]:
+ * data[UserAttribute][1][language_id]:2
+ * data[UserAttribute][1][name]:
+ * data[UserAttributeSetting][display_label]:0
+ * data[UserAttributeSetting][display_label]:1
+ * data[UserAttributeSetting][data_type_key]:text
+ * data[UserAttributeSetting][is_multilingualization]:0
+ * data[UserAttributeSetting][is_multilingualization]:1
+ * data[UserAttributeSetting][required]:0
+ * data[UserAttributeSetting][only_administrator_readable]:0
+ * data[UserAttributeSetting][only_administrator_editable]:0
+ * data[UserAttributeSetting][self_public_setting]:0
+ * data[UserAttributeSetting][self_email_setting]:0
+ * data[UserAttribute][0][description]:
+ * data[UserAttribute][1][description]:
+ * data[UserAttributeChoice][1][1][id]:
+ * data[UserAttributeChoice][1][1][language_id]:1
+ * data[UserAttributeChoice][1][1][user_attribute_id]:
+ * data[UserAttributeChoice][1][1][key]:
+ * data[UserAttributeChoice][1][1][code]:
+ * data[UserAttributeChoice][1][1][weight]:1
+ * data[UserAttributeChoice][1][1][name]:
+ * data[UserAttributeChoice][2][1][id]:
+ * data[UserAttributeChoice][2][1][language_id]:1
+ * data[UserAttributeChoice][2][1][user_attribute_id]:
+ * data[UserAttributeChoice][2][1][key]:
+ * data[UserAttributeChoice][2][1][code]:
+ * data[UserAttributeChoice][2][1][weight]:2
+ * data[UserAttributeChoice][2][1][name]:
+ * data[UserAttributeChoice][3][1][id]:
+ * data[UserAttributeChoice][3][1][language_id]:1
+ * data[UserAttributeChoice][3][1][user_attribute_id]:
+ * data[UserAttributeChoice][3][1][key]:
+ * data[UserAttributeChoice][3][1][code]:
+ * data[UserAttributeChoice][3][1][weight]:3
+ * data[UserAttributeChoice][3][1][name]:
+ * data[UserAttributeChoice][1][2][id]:
+ * data[UserAttributeChoice][1][2][language_id]:2
+ * data[UserAttributeChoice][1][2][user_attribute_id]:
+ * data[UserAttributeChoice][1][2][key]:
+ * data[UserAttributeChoice][1][2][code]:
+ * data[UserAttributeChoice][1][2][weight]:1
+ * data[UserAttributeChoice][1][2][name]:
+ * data[UserAttributeChoice][2][2][id]:
+ * data[UserAttributeChoice][2][2][language_id]:2
+ * data[UserAttributeChoice][2][2][user_attribute_id]:
+ * data[UserAttributeChoice][2][2][key]:
+ * data[UserAttributeChoice][2][2][code]:
+ * data[UserAttributeChoice][2][2][weight]:2
+ * data[UserAttributeChoice][2][2][name]:
+ * data[UserAttributeChoice][3][2][id]:
+ * data[UserAttributeChoice][3][2][language_id]:2
+ * data[UserAttributeChoice][3][2][user_attribute_id]:
+ * data[UserAttributeChoice][3][2][key]:
+ * data[UserAttributeChoice][3][2][code]:
+ * data[UserAttributeChoice][3][2][weight]:3
+ * data[UserAttributeChoice][3][2][name]:
+ *
  * @param array $nc2Item nc2 item data
  * @return array Nc3 data
  */
@@ -328,6 +317,22 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 			$data['UserAttribute'][] = $userAttribute['UserAttribute'];
 		}
+
+		$UserAttributeSetting = $this->getNc3Model('UserAttribute.UserAttributeSetting');
+		$dataTypeKey = $nc2Item['Nc2Item']['type'];
+		$selfEmailSetting = $nc2Item['Nc2Item']['allow_email_reception_flag'];
+		if (!in_array($dataTypeKey, ['email', 'mobile_email'])) {
+			$selfEmailSetting = '0';
+		}
+		$defaultSetting = [
+			'data_type_key' => $dataTypeKey,
+			'row' => '1',
+			'col' => '2',
+			'display' => $nc2Item['Nc2Item']['display_flag'],
+			'self_public_setting' => $nc2Item['Nc2Item']['allow_public_flag'],
+			'self_email_setting' => $selfEmailSetting,
+		];
+		$data['UserAttributeSetting'] = $UserAttributeSetting->create($defaultSetting);
 
 		return $data;
 	}

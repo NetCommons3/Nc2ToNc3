@@ -17,50 +17,6 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
- * Language id from Nc2.
- *
- * @var array
- */
-	private $__languageIdFromNc2 = null;
-
-/**
- * Setup this behavior with the specified configuration settings.
- *
- * @param Model $model Model using this behavior
- * @param array $config Configuration settings for $model
- * @return void
- */
-	public function setup(Model $model, $config = array()) {
-		$Nc2Config = $this->_getNc2Model('config');
-		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
-
-		$language = $configData['Nc2Config']['conf_value'];
-		switch ($language) {
-			case 'english':
-				$code = 'en';
-				break;
-
-			default:
-				$code = 'ja';
-
-		}
-
-		$Language = $this->_getNc3Model('M17n.Language');
-		$language = $Language->findByCode($code, 'id', null, -1);
-		$this->__languageIdFromNc2 = $language['Language']['id'];
-	}
-
-/**
- * Get languageId from Nc2
- *
- * @param Model $model Model using this behavior
- * @return string LanguageId from Nc2
- */
-	public function getLanguageIdFromNc2(Model $model) {
-		return $this->__languageIdFromNc2;
-	}
-
-/**
  * Check migration target
  *
  * @param Model $model Model using this behavior
@@ -82,6 +38,12 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3BaseBehavior {
 			return false;
 		}
 
+		$dataTypeKey = $this->__convertNc2Type($nc2Item);
+		if (!$dataTypeKey) {
+			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			return;
+		}
+
 		return true;
 	}
 
@@ -95,11 +57,6 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3BaseBehavior {
 	public function mapExistingId(Model $model, $nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
 		$logArgument = 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
-
-		if (!$dataTypeKey) {
-			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
-			return;
-		}
 
 		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
