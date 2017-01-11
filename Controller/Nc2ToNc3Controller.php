@@ -30,6 +30,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
  * @var array
  */
 	public $components = [
+		'Security',
 		'ControlPanel.ControlPanelLayout',
 		'NetCommons.Permission' => [
 			'type' => PermissionComponent::CHECK_TYEP_SYSTEM_PLUGIN
