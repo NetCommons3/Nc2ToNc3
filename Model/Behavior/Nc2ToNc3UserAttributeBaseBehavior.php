@@ -78,13 +78,25 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc2 autoregist_use_items from config
+ * Check Nc2 autoregist_use_items from config
  *
  * @param Model $model Model using this behavior
- * @return string Nc2 autoregist_use_items
+ * @param string $itemId Nc2 item id
+ * @return bool True if data is nc2 autoregist_use_items
  */
-	public function getNc2AutoregistUseItems(Model $model) {
-		$this->_getNc2AutoregistUseItems();
+	public function isNc2AutoregistUseItem(Model $model, $itemId) {
+		return $this->_isNc2AutoregistUseItem($itemId);
+	}
+
+/**
+ * Check require Nc2 autoregist_use_items from config
+ *
+ * @param Model $model Model using this behavior
+ * @param string $itemId Nc2 item id
+ * @return bool True if data require as nc2 autoregist_use_items
+ */
+	public function isNc2AutoregistUseItemRequire(Model $model, $itemId) {
+		return $this->_isNc2AutoregistUseItemRequire($itemId);
 	}
 
 /**
@@ -156,26 +168,36 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc2 autoregist_use_items from config
+ * Check Nc2 autoregist_use_items from config
  *
- * @return string Nc2 autoregist_use_items
+ * @param string $itemId Nc2 item id
+ * @return bool True if data is nc2 autoregist_use_items
  */
-	protected function _getNc2AutoregistUseItems() {
+	protected function _isNc2AutoregistUseItem($itemId) {
 		if (!isset($this->__nc2AutoregistUseItems)) {
-			$Nc2Config = $this->getNc2Model('config');
-			$autoregistUseItems = $Nc2Config->findByConfName('utoregist_use_items', 'conf_value', null, -1);
-			$autoregistUseItems = explode('|', $autoregistUseItems);
-			if (!end($autoregistUseItems)) {
-				array_pop($autoregistUseItems);
-			}
-			$this->__nc2AutoregistUseItems = [];
-			foreach ($autoregistUseItems as $autoregistUseItem) {
-				list($itemId, $isRequired) = explode(':', $autoregistUseItem);
-				$this->__nc2AutoregistUseItems[$itemId] = $isRequired;
-			}
+			$this->__setNc2AutoregistUseItems();
 		}
 
-		return $this->__nc2AutoregistUseItems;
+		return isset($this->_isNc2AutoregistUseItems[$itemId]);
+	}
+
+/**
+ * Check require Nc2 autoregist_use_items from config
+ *
+ * @param string $itemId Nc2 item id
+ * @return bool True if data require as nc2 autoregist_use_items
+ */
+	protected function _isNc2AutoregistUseItemRequire($itemId) {
+		if (!isset($this->__nc2AutoregistUseItems)) {
+			$this->__setNc2AutoregistUseItems();
+		}
+
+		$isRequire = (
+			isset($this->_isNc2AutoregistUseItems[$itemId]) &&
+			$this->_isNc2AutoregistUseItems[$itemId] == '1'
+		);
+
+		return $isRequire;
 	}
 
 /**
@@ -279,4 +301,24 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$nc2ItemConstants = $pathConfig['items_ini_path'];
 		array_merge_recursive($this->__nc2ItemConstants, $nc2ItemConstants);
 	}
+
+/**
+ * Set Nc2 autoregist_use_items from config
+ *
+ * @return void
+ */
+	private function __setNc2AutoregistUseItems() {
+		$Nc2Config = $this->getNc2Model('config');
+		$autoregistUseItems = $Nc2Config->findByConfName('utoregist_use_items', 'conf_value', null, -1);
+		$autoregistUseItems = explode('|', $autoregistUseItems);
+		if (!end($autoregistUseItems)) {
+			array_pop($autoregistUseItems);
+		}
+		$this->__nc2AutoregistUseItems = [];
+		foreach ($autoregistUseItems as $autoregistUseItem) {
+			list($itemId, $isRequired) = explode(':', $autoregistUseItem);
+			$this->__nc2AutoregistUseItems[$itemId] = $isRequired;
+		}
+	}
+
 }

@@ -24,7 +24,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLanguageIdFromNc2()
  * @method string getNc2ItemValueByConstant($constant, $languageId)
  * @method string getNc2ItemDescriptionById($itemId)
- * @method string getNc2AutoregistUseItems()
+ * @method bool isNc2AutoregistUseItem($itemId)
+ * @method bool isNc2AutoregistUseItemRequire($itemId)
  *
  * @see Nc2ToNc3UserAttributeBehavior
  * @method bool isMigrationRow($nc2Item)
@@ -308,6 +309,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @return array Nc3 data
  */
 	private function __generateNc3Data($nc2Item) {
+		$itemId = $nc2Item['Nc2Item']['item_id'];
 		$Language = $this->getNc3Model('M17n.Language');
 		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
 
@@ -315,7 +317,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		foreach ($languages as $language) {
 			$nc2Name = $nc2Item['Nc2Item']['item_name'];
 			$nc3LanguageId = $language['Language']['id'];
-			$nc2Description = $this->getNc2ItemDescriptionById($nc2Item['Nc2Item']['item_id']);
+			$nc2Description = $this->getNc2ItemDescriptionById($itemId);
 
 			$userAttribute = $UserAttribute->create(array(
 				'id' => null,
@@ -334,15 +336,22 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		if (!in_array($dataTypeKey, ['email', 'mobile_email'])) {
 			$selfEmailSetting = '0';
 		}
+		$required = $nc2Item['Nc2Item']['require_flag'];
+		if ($this->isNc2AutoregistUseItemRequire($itemId)) {
+			$required = '1';
+		}
 		$defaultSetting = [
 			'data_type_key' => $dataTypeKey,
 			'row' => '1',
 			'col' => '2',
+			'required' => $required,
 			'display' => $nc2Item['Nc2Item']['display_flag'],
+			'only_administrator_readable' => '1',	// 移行後手動で設定させる
+			'only_administrator_editable' => '1',	// 移行後手動で設定させる
 			'self_public_setting' => $nc2Item['Nc2Item']['allow_public_flag'],
 			'self_email_setting' => $selfEmailSetting,
 			'is_multilingualization' => '0',
-			//'auto_regist_display' => $this->ge
+			'auto_regist_display' => $this->isNc2AutoregistUseItem($itemId)
 		];
 		$data['UserAttributeSetting'] = $UserAttributeSetting->create($defaultSetting);
 
