@@ -16,8 +16,6 @@ App::uses('Nc2ToNc3Controller', 'Nc2ToNc3.Controller');
  */
 class Nc2ToNc3Shell extends AppShell {
 
-	public $uses = array('Nc2ToNc3.Nc2ToNc3');
-
 /**
  * Main
  *
