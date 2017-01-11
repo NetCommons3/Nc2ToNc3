@@ -18,7 +18,13 @@
 		<div class="panel-body">
 			<?php
 				echo $this->Flash->render(Nc2ToNc3::MESSAGE_KEY);
-				echo $this->NetCommonsForm->input('database', ['label' => __d('nc2_to_nc3', 'Database')]);
+				echo $this->NetCommonsForm->input(
+					'database',
+					[
+						'label' => __d('nc2_to_nc3', 'Database'),
+						'required' => true,
+					]
+				);
 				echo $this->NetCommonsForm->input('prefix', ['label' => __d('nc2_to_nc3', 'Prefix')]);
 			?>
 

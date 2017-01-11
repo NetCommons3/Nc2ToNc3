@@ -285,7 +285,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.name' => $nc2Item['Nc2Item']['item_name'],
-				'UserAttribute.language_id' => $this->__languageIdFromNc2,
+				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
 			'recursive' => 0

@@ -13,6 +13,26 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 /**
  * Nc2ToNc3
  *
+ * Data array sample
+ * $data['database'] => 'nc2421'
+ * $data['prefix'] => 'nc_'
+ * $data['datasource'] => 'Database/Mysql'
+ * $data['host'] => 'localhost'
+ * $data['port'] => '3306'
+ * $data['login'] => ''
+ * $data['password'] => ''
+ * $data['persistent'] => ''
+ * $data['encoding'] => 'utf8'
+ * $data['schema'] => 'public'
+ * $data['upload_path'] => ''
+ * $data['items_ini_path'] => ''
+ *
+ * @see Nc2ToNc3BaseBehavior
+ * @method void setMigrationMessages($message)
+ * @method string getMigrationMessages()
+ * @method void writeMigrationLog($message)
+ * @method Model getNc2Model($tableName)
+ * @method Model getNc3Model($class)
  */
 class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
@@ -84,7 +104,9 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Initializes the NetCommons2 DataSource.
+ * Initializes the model for writing a new record, loading the default values
+ * for those fields that are not defined in $data, and clearing previous validation errors.
+ * Especially helpful for saving data in loops.
  * Not call parent::create, so the parameter is unnecessary.
  *
  * @param bool|array $data Optional data array to assign to the model after it is created. If null or false,
@@ -106,17 +128,41 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 	}
 
 /**
+ * Migration
+ *
+ * @param array $data received post data
+ * @return bool True on success
+ */
+	public function migration($data) {
+		$this->set($data);
+		if (!$this->validates()) {
+			return false;
+		}
+
+		if (!$this->__setupNc2DataSource($data['Nc2ToNc3'])) {
+			return false;
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
+
+		/* @var $UserAttribute Nc2ToNc3UserAttribute */
+		$UserAttribute = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
+		if (!$UserAttribute->migrate()) {
+			$this->setMigrationMessages($UserAttribute->getMigrationMessages());
+			return false;
+		}
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
+
+		return true;
+	}
+
+/**
  * Setup NetCommons2 DataSource
  *
  * @param array $config The DataSource configuration settings
  * @return bool True on it is correct nc2 version
  */
-	public function setupNc2DataSource($config) {
-		$this->set($config);
-		if (!$this->validates()) {
-			return false;
-		}
-
+	private function __setupNc2DataSource($config) {
 		if (!$this->__createNc2Connection($config)) {
 			return false;
 		}
@@ -184,22 +230,4 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		return true;
 	}
 
-/**
- * Migration
- *
- * @return bool True on success
- */
-	public function migration() {
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
-
-		/* @var $UserAttribute Nc2ToNc3UserAttribute */
-		$UserAttribute = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
-		if (!$UserAttribute->migrate()) {
-			$this->setMigrationMessages($UserAttribute->getMigrationMessages());
-			return false;
-		}
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
-
-		return true;
-	}
 }
