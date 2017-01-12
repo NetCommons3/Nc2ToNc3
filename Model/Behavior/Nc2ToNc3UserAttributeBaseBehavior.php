@@ -123,7 +123,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		}
 
-		$Language = $this->_getNc3Model('M17n.Language');
+		$Language = ClassRegistry::init('M17n.Language');
 		$language = $Language->findByCode($code, 'id', null, -1);
 		$this->__languageIdFromNc2 = $language['Language']['id'];
 
@@ -206,7 +206,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __setNc2ItemConstants() {
-		$Language = $this->_getNc3Model('M17n.Language');
+		$Language = ClassRegistry::init('M17n.Language');
 		$query = [
 			'fields' => [
 				'Language.code',

@@ -121,17 +121,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get Nc3 Model
- *
- * @param Model $model Model using this behavior.
- * @param string $class Instance will be created,stored in the registry and returned.
- * @return Model Nc2 model
- */
-	public function getNc3Model(Model $model, $class) {
-		return $this->_getNc3Model($class);
-	}
-
-/**
  * Set migration message
  *
  * @param string $message Migration message
@@ -203,40 +192,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return Model Nc2 model
  */
 	protected function _getNc2Model($tableName) {
-		$alias = 'Nc2' . Inflector::classify($tableName);
-		$Molde = ClassRegistry::getObject($alias);
-		if ($Molde) {
-			$Molde->useDbConfig = Nc2ToNc3::CONNECTION_NAME;
-			return $Molde;
-		}
-
 		// クラス自体は存在しない。
 		// Nc2ToNc3AppModelのインスタンスを作成し返す。
 		// Nc2ToNc3AppModelはNetCommonsAppModelを継承しない。
-		$class = 'Nc2ToNc3.Nc2' . $tableName;
 		$Molde = ClassRegistry::init([
-			'class' => $class,
+			'class' => 'Nc2ToNc3.Nc2' . $tableName,
 			'table' => $tableName,
-			'alias' => $alias,
+			'alias' => 'Nc2' . Inflector::classify($tableName),
 			'ds' => Nc2ToNc3::CONNECTION_NAME
 		]);
 
 		return $Molde;
 	}
 
-/**
- * Get Nc3 Model
- *
- * @param string $class Instance will be created,stored in the registry and returned.
- * @return Model Nc2 model
- */
-	protected function _getNc3Model($class) {
-		list(, $alias) = pluginSplit($class);
-		$Molde = ClassRegistry::getObject($alias);
-		if ($Molde) {
-			return $Molde;
-		}
-
-		return ClassRegistry::init($class);
-	}
 }

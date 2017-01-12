@@ -32,7 +32,6 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getMigrationMessages()
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
- * @method Model getNc3Model($class)
  */
 class Nc2ToNc3 extends Nc2ToNc3AppModel {
 

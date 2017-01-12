@@ -18,7 +18,6 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getMigrationMessages()
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
- * @method Model getNc3Model($class)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
  * @method string getLanguageIdFromNc2()
@@ -127,7 +126,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		];
 		$nc2Items = $Nc2Item->find('all', $query);
 		$notMigrationItems = [];
-		$UserAttribute = $this->getNc3Model('UserAttributes.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		$UserAttribute->begin();
 		try {
@@ -203,7 +202,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$nc2Id = $nc2Item['Nc2Item']['item_id'];
-		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
 		$query = [
 			'fields' => 'UserAttributeChoice.name',
 			'conditions' => [
@@ -312,8 +311,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  */
 	private function __generateNc3Data($nc2Item) {
 		$itemId = $nc2Item['Nc2Item']['item_id'];
-		$Language = $this->getNc3Model('M17n.Language');
-		$UserAttribute = $this->getNc3Model('UserAttribute.UserAttribute');
+		$Language = ClassRegistry::init('M17n.Language');
+		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
 
 		$languages = $Language->getLanguages();
 		foreach ($languages as $language) {
@@ -360,7 +359,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			return $data;
 		}
 
-		//$UserAttributeSetting = $this->getNc3Model('UserAttribute.UserAttributeSetting');
+		//$userAttributeChoices = $UserAttribute->UserAttributeChoice->find('list', $query);
 
 
 		return $data;
