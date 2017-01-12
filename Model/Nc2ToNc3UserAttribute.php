@@ -30,6 +30,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3UserAttributeBehavior
  * @method bool isMigrationRow($nc2Item)
  * @method void mapExistingId($nc2Item)
+ * @method bool isChoiceRow($nc2Item)
  * @method bool isChoiceMergenceRow($nc2Item)
  *
  */
@@ -143,6 +144,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				$data = $this->__generateNc3Data($nc2Item);
+				var_Dump($data);
 				//if (!$UserAttribute->saveUserAttribute($data)) {
 					// error
 				//}
@@ -330,7 +332,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			$data['UserAttribute'][] = $userAttribute['UserAttribute'];
 		}
 
-		$UserAttributeSetting = $this->getNc3Model('UserAttribute.UserAttributeSetting');
 		$dataTypeKey = $nc2Item['Nc2Item']['type'];
 		$selfEmailSetting = $nc2Item['Nc2Item']['allow_email_reception_flag'];
 		if (!in_array($dataTypeKey, ['email', 'mobile_email'])) {
@@ -353,7 +354,14 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			'is_multilingualization' => '0',
 			'auto_regist_display' => $this->isNc2AutoregistUseItem($itemId)
 		];
-		$data['UserAttributeSetting'] = $UserAttributeSetting->create($defaultSetting);
+		$data['UserAttributeSetting'] = $UserAttribute->UserAttributeSetting->create($defaultSetting);
+
+		if (!$this->isChoiceRow($nc2Item)) {
+			return $data;
+		}
+
+		//$UserAttributeSetting = $this->getNc3Model('UserAttribute.UserAttributeSetting');
+
 
 		return $data;
 	}

@@ -87,19 +87,34 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Check mergence target
+ * Check choice target
  *
  * @param Model $model Model using this behavior
  * @param array $nc2Item nc2 item data
  * @return bool True if data is mergence target
  */
-	public function isChoiceMergenceRow(Model $model, $nc2Item) {
+	public function isChoiceRow(Model $model, $nc2Item) {
 		$choiceTypes = [
 			'radio',
 			'checkbox',
 			'select'
 		];
 		if (!in_array($nc2Item['Nc2Item']['type'], $choiceTypes)) {
+			return false;
+		}
+
+		return true;
+	}
+
+/**
+ * Check choice mergence target
+ *
+ * @param Model $model Model using this behavior
+ * @param array $nc2Item nc2 item data
+ * @return bool True if data is mergence target
+ */
+	public function isChoiceMergenceRow(Model $model, $nc2Item) {
+		if (!$this->isChoiceRow($model, $nc2Item)) {
 			return false;
 		}
 
