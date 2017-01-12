@@ -25,13 +25,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	public $migrationMessages = null;
 
 /**
- * List of migration message.
- *
- * @var mix
- */
-	public $pathConfig = null;
-
-/**
  * Setup this behavior with the specified configuration settings.
  *
  * @param Model $model Model using this behavior
@@ -65,27 +58,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function getMigrationMessages(Model $model) {
 		return $this->_getMigrationMessages();
-	}
-
-/**
- * Set path config
- *
- * @param Model $model Model using this behavior.
- * @param string $config Migration config
- * @return void
- */
-	public function setPathConfig(Model $model, $config) {
-		$this->_setPathConfig($config);
-	}
-
-/**
- * Get path config
- *
- * @param Model $model Model using this behavior.
- * @return string Migration messages
- */
-	public function getPathConfig(Model $model) {
-		return $this->_getPathConfig();
 	}
 
 /**
@@ -138,26 +110,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	protected function _getMigrationMessages() {
 		return $this->migrationMessages;
-	}
-
-/**
- * Set path config
- *
- * @param string $config path config
- * @return void
- */
-	protected function _setPathConfig($config) {
-		$this->pathConfig['upload_path'] = $config['upload_path'];
-		$this->pathConfig['items_ini_path'] = $config['items_ini_path'];
-	}
-
-/**
- * Get path config
- *
- * @return string Migration messages
- */
-	protected function _getPathConfig() {
-		return $this->pathConfig;
 	}
 
 /**

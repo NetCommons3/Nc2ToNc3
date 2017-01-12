@@ -292,13 +292,14 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __mergeNc2ItemConstantsItemFile() {
-		$pathConfig = $this->_getPathConfig();
-		if (!$pathConfig['items_ini_path']) {
+		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
+		$itemsIniPath = Hash::get($$Nc2ToNc3->data, ['Nc2ToNc3', 'items_ini_path']);
+		if (!$itemsIniPath) {
 			return;
 		}
 
 		// TODOーitems.iniから定数を取得しマージ
-		$nc2ItemConstants = $pathConfig['items_ini_path'];
+		$nc2ItemConstants = $itemsIniPath;
 		array_merge_recursive($this->__nc2ItemConstants, $nc2ItemConstants);
 	}
 
