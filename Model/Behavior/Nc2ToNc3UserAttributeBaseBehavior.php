@@ -293,7 +293,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	private function __mergeNc2ItemConstantsItemFile() {
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
-		$itemsIniPath = Hash::get($$Nc2ToNc3->data, ['Nc2ToNc3', 'items_ini_path']);
+		$itemsIniPath = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'items_ini_path']);
 		if (!$itemsIniPath) {
 			return;
 		}

@@ -17,6 +17,17 @@ App::uses('Nc2ToNc3UserAttributeBaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 
 /**
+ * Get Log argument.
+ *
+ * @param Model $model Model using this behavior
+ * @param array $nc2Item nc2 item data
+ * @return string Log argument
+ */
+	public function getLogArgument(Model $model, $nc2Item) {
+		return $this->__getLogArgument($nc2Item);
+	}
+
+/**
  * Check migration target
  *
  * @param Model $model Model using this behavior
@@ -25,7 +36,6 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  */
 	public function isMigrationRow(Model $model, $nc2Item) {
 		$tagName = $nc2Item['Nc2Item']['tag_name'];
-		$logArgument = 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
 		$notMigrationTagNames = [
 			'mobile_texthtml_mode',
 			'mobile_imgdsp_size',
@@ -34,13 +44,15 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			'userinf_view_main_modulesinfo'
 		];
 		if (in_array($tagName, $notMigrationTagNames)) {
-			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+			$this->_writeMigrationLog($message);
 			return false;
 		}
 
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
 		if (!$dataTypeKey) {
-			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+			$this->_writeMigrationLog($message);
 			return;
 		}
 
@@ -56,14 +68,14 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  */
 	public function mapExistingId(Model $model, $nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
-		$logArgument = 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
 
 		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
 			$nc2Id = $nc2Item['Nc2Item']['item_id'];
 			$model->mappingId[$nc2Id] = $nc3Id;
 
-			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+			$this->_writeMigrationLog($message);
 			return;
 		}
 
@@ -72,7 +84,8 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			$nc2Id = $nc2Item['Nc2Item']['item_id'];
 			$model->mappingId[$nc2Id] = $nc3Id;
 
-			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+			$this->_writeMigrationLog($message);
 			return;
 		}
 
@@ -81,7 +94,8 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			$nc2Id = $nc2Item['Nc2Item']['item_id'];
 			$model->mappingId[$nc2Id] = $nc3Id;
 
-			$this->_writeMigrationLog(__d('nc2_to_nc3', '%s is not migration.', $logArgument));
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+			$this->_writeMigrationLog($message);
 			return;
 		}
 	}
@@ -129,6 +143,16 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		}
 
 		return true;
+	}
+
+/**
+ * Get Log argument.
+ *
+ * @param array $nc2Item nc2 item data
+ * @return string Log argument
+ */
+	private function __getLogArgument($nc2Item) {
+		return 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
 	}
 
 /**
