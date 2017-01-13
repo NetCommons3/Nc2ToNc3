@@ -25,6 +25,10 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getNc2ItemDescriptionById($itemId)
  * @method bool isNc2AutoregistUseItem($itemId)
  * @method bool isNc2AutoregistUseItemRequire($itemId)
+ * @method string getUserAttributeSettingRow()
+ * @method string getUserAttributeSettingCol()
+ * @method integer getUserAttributeSettingWeight()
+ * @method void incrementUserAttributeSettingWeight()
  *
  * @see Nc2ToNc3UserAttributeBehavior
  * @method string getLogArgument($nc2Item)
@@ -129,7 +133,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$notMigrationItems = [];
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
-		$UserAttribute->begin();
+		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
+		// 'UserAttribute.id'を取得する際、TrackableBehaviorでUsersテーブルを参照する
+		// $UserAttribute::begin()してしまうと、Usersテーブルがロックされ、
+		// UserAttributeBehavior::UserAttributeBehavior()のALTER TABLEで待ち状態になる
+		// (Waiting for table metadata lock)
+		//$UserAttribute->begin();
 		try {
 			foreach ($nc2Items as $nc2Item) {
 				if (!$this->isMigrationRow($nc2Item)) {
@@ -147,10 +156,17 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				if (!$data) {
 					continue;
 				}
-				//var_Dump($data['UserAttributeChoice']);
-				//if (!$UserAttribute->saveUserAttribute($data)) {
-					// error
-				//}
+
+				if (!$UserAttribute->saveUserAttribute($data)) {
+					$message = $this->getLogArgument($nc2Item) . "\n" .
+						print_r($UserAttribute->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					continue;
+				}
+
+				$model->mappingId[$nc2ItemId] = $UserAttribute->id;
+				$this->incrementUserAttributeSettingWeight();
 			}
 
 			foreach ($notMigrationItems as $nc2Item) {
@@ -164,11 +180,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 			}
 			//var_dump($this->mappingId);
-			$UserAttribute->commit();
+			//$UserAttribute->commit();
 
 		} catch (Exception $ex) {
-			$UserAttribute->rollback($ex);
-			//return false;
+			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
+			//$UserAttribute->rollback($ex);
 		}
 
 		return true;
@@ -293,8 +310,9 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 		$defaultSetting = [
 			'data_type_key' => $dataTypeKey,
-			'row' => '1',
-			'col' => '2',
+			'row' => $this->getUserAttributeSettingRow(),
+			'col' => $this->getUserAttributeSettingCol(),
+			'weight' => $this->getUserAttributeSettingWeight(),
 			'required' => $required,
 			'display' => $nc2Item['Nc2Item']['display_flag'],
 			'only_administrator_readable' => '1',	// 移行後手動で設定させる
@@ -307,6 +325,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$data += $UserAttribute->UserAttributeSetting->create($defaultSetting);
 
 		if (!$this->isChoiceRow($nc2Item)) {
+			$data['UserAttributeChoice'] = $UserAttribute->UserAttributeChoice->validateRequestData($data);
 			return $data;
 		}
 
@@ -336,6 +355,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			$weight++;
 		}
 		$data += $userAttributeChoices;
+		$data['UserAttributeChoice'] = $UserAttribute->UserAttributeChoice->validateRequestData($data);
+		if (!$data['UserAttributeChoice']) {
+			$data = [];
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Item));
+			$this->writeMigrationLog($message);
+		}
 
 		return $data;
 	}

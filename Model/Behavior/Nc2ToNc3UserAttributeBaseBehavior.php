@@ -45,6 +45,13 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__nc2AutoregistUseItems = null;
 
 /**
+ * Nc3 UserAttributeSetting weight
+ *
+ * @var integer
+ */
+	private $__userAttributeSettingWeight = null;
+
+/**
  * Get languageId from Nc2
  *
  * @param Model $model Model using this behavior
@@ -97,6 +104,46 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	public function isNc2AutoregistUseItemRequire(Model $model, $itemId) {
 		return $this->_isNc2AutoregistUseItemRequire($itemId);
+	}
+
+/**
+ * Get Nc3 UserAttributeSetting row.
+ *
+ * @param Model $model Model using this behavior
+ * @return string Nc3 UserAttributeSetting row
+ */
+	public function getUserAttributeSettingRow(Model $model) {
+		return $this->_getUserAttributeSettingRow();
+	}
+
+/**
+ * Get Nc3 UserAttributeSetting col.
+ *
+ * @param Model $model Model using this behavior
+ * @return string Nc3 UserAttributeSetting col
+ */
+	public function getUserAttributeSettingCol(Model $model) {
+		return $this->_getUserAttributeSettingCol();
+	}
+
+/**
+ * Get Nc3 UserAttributeSetting weight.
+ *
+ * @param Model $model Model using this behavior
+ * @return integer Nc3 UserAttributeSetting weight
+ */
+	public function getUserAttributeSettingWeight(Model $model) {
+		return $this->_getUserAttributeSettingWeight();
+	}
+
+/**
+ * Increment Nc3 UserAttributeSetting weight.
+ *
+ * @param Model $model Model using this behavior
+ * @return void
+ */
+	public function incrementUserAttributeSettingWeight(Model $model) {
+		return $this->_incrementUserAttributeSettingWeight();
 	}
 
 /**
@@ -198,6 +245,52 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 		);
 
 		return $isRequire;
+	}
+
+/**
+ * Get Nc3 UserAttributeSetting row.
+ *
+ * @return string Nc3 UserAttributeSetting row
+ */
+	protected function _getUserAttributeSettingRow() {
+		// 1行目
+		return '1';
+	}
+
+/**
+ * Get Nc3 UserAttributeSetting col.
+ *
+ * @return string Nc3 UserAttributeSetting col
+ */
+	protected function _getUserAttributeSettingCol() {
+		// 2列目
+		return '2';
+	}
+
+/**
+ * Get Nc3 UserAttributeSetting weight.
+ *
+ * @return integer Nc3 UserAttributeSetting weight
+ */
+	protected function _getUserAttributeSettingWeight() {
+		if (!isset($this->__userAttributeSettingWeight)) {
+			$this->__setUserAttributeSettingWeight();
+		}
+
+		return $this->__userAttributeSettingWeight;
+	}
+
+/**
+ * Increment Nc3 UserAttributeSetting weight.
+ *
+ * @return void
+ */
+	protected function _incrementUserAttributeSettingWeight() {
+		if (!isset($this->__userAttributeSettingWeight)) {
+			$this->__setUserAttributeSettingWeight();
+		}
+
+		$this->__userAttributeSettingWeight++;
 	}
 
 /**
@@ -320,6 +413,20 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 			list($itemId, $isRequired) = explode(':', $autoregistUseItem);
 			$this->__nc2AutoregistUseItems[$itemId] = $isRequired;
 		}
+	}
+
+/**
+ * Set Nc3 UserAttributeSetting weight.
+ *
+ * @return void
+ */
+	private function __setUserAttributeSettingWeight() {
+		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$this->__userAttributeSettingWeight = $UserAttribute->UserAttributeSetting->getMaxWeight(
+			$this->_getUserAttributeSettingRow(),
+			$this->_getUserAttributeSettingCol()
+		);
+		$this->_incrementUserAttributeSettingWeight();
 	}
 
 }
