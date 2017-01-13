@@ -130,7 +130,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			]
 		];
 		$nc2Items = $Nc2Item->find('all', $query);
-		$notMigrationItems = [];
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
@@ -146,46 +145,29 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				$this->mapExistingId($nc2Item);
-				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-				if (isset($this->mappingId[$nc2ItemId])) {
-					$notMigrationItems[] = $nc2Item;
-					continue;
-				}
-
 				$data = $this->__generateNc3Data($nc2Item);
 				if (!$data) {
 					continue;
 				}
 
 				if (!$UserAttribute->saveUserAttribute($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Item) . "\n" .
-						print_r($UserAttribute->validationErrors, true);
+						var_export($UserAttribute->validationErrors, true);
 					$this->writeMigrationLog($message);
 
+					continue;
+				}
+
+				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
+				if (isset($this->mappingId[$nc2ItemId])) {
 					continue;
 				}
 
 				$this->mappingId[$nc2ItemId] = $UserAttribute->id;
 				$this->incrementUserAttributeSettingWeight();
-			}
-
-			foreach ($notMigrationItems as $nc2Item) {
-				if (!$this->isChoiceMergenceRow($nc2Item)) {
-					continue;
-				}
-
-				$data = $this->__generateNc3DataMergedUserAttributeChoice($nc2Item);
-				if (!$data) {
-					continue;
-				}
-
-				if (!$UserAttribute->saveUserAttribute($data)) {
-					$message = $this->getLogArgument($nc2Item) . "\n" .
-						print_r($UserAttribute->validationErrors, true);
-					$this->writeMigrationLog($message);
-
-					continue;
-				}
 			}
 
 			//$UserAttribute->commit();
@@ -210,6 +192,27 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 /**
  * Generate nc3 data
+ *
+ * @param array $nc2Item nc2 item data
+ * @return array Nc3 data
+ */
+	private function __generateNc3Data($nc2Item) {
+		$data = [];
+
+		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
+		if (!isset($this->mappingId[$nc2ItemId])) {
+			return $this->__generateNc3UserAttributeData($nc2Item);
+		}
+
+		if (!$this->isChoiceMergenceRow($nc2Item)) {
+			return $data;
+		}
+
+		return $this->__generateNc3UserAttributeDataMergedUserAttributeChoice($nc2Item);
+	}
+
+/**
+ * Generate nc3 UserAttribute data
  *
  * data sample
  * data[UserAttributeSetting][id]:
@@ -283,9 +286,9 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * data[UserAttributeChoice][3][2][name]:
  *
  * @param array $nc2Item nc2 item data
- * @return array Nc3 data
+ * @return array Nc3 UserAttribute data
  */
-	private function __generateNc3Data($nc2Item) {
+	private function __generateNc3UserAttributeData($nc2Item) {
 		$data = [];
 		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
 		$Language = ClassRegistry::init('M17n.Language');
@@ -375,12 +378,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Generate nc3 data merged UserAttributeChoice
+ * Generate nc3 UserAttribute data merged UserAttributeChoice
  *
  * @param array $nc2Item nc2 item data
- * @return array Nc3 data merged UserAttributeChoice
+ * @return array Nc3 UserAttribute data merged UserAttributeChoice
  */
-	private function __generateNc3DataMergedUserAttributeChoice($nc2Item) {
+	private function __generateNc3UserAttributeDataMergedUserAttributeChoice($nc2Item) {
 		$data = [];
 		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
 
@@ -400,21 +403,21 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		// UserAttributeChoiceMapデータ作成
 		// see https://github.com/NetCommons3/UserAttributes/blob/3.0.1/View/Elements/UserAttributes/choice_edit_form.ctp#L14-L27
 		//     https://github.com/NetCommons3/UserAttributes/blob/3.0.1/Model/UserAttributeChoice.php#L254
-		$userAttributeChoiceMaps = Hash::extract($data['UserAttributeChoice'], '{n}.{n}');
-		foreach ($userAttributeChoiceMaps as $userAttributeChoiceMap) {
-			$choiceId = $userAttributeChoiceMap['id'];
+		$choiceMaps = Hash::extract($data['UserAttributeChoice'], '{n}.{n}');
+		foreach ($choiceMaps as $choiceMap) {
+			$choiceId = $choiceMap['id'];
 			$data['UserAttributeChoiceMap'][$choiceId] = [
-				'language_id' => $userAttributeChoiceMap['language_id'],
-				'user_attribute_id' => $userAttributeChoiceMap['user_attribute_id'],
-				'key' => $userAttributeChoiceMap['key'],
-				'code' => $userAttributeChoiceMap['code'],
+				'language_id' => $choiceMap['language_id'],
+				'user_attribute_id' => $choiceMap['user_attribute_id'],
+				'key' => $choiceMap['key'],
+				'code' => $choiceMap['code'],
 			];
 
-			if ($userAttributeChoiceMap['language_id'] != $this->getLanguageIdFromNc2()) {
+			if ($choiceMap['language_id'] != $this->getLanguageIdFromNc2()) {
 				continue;
 			}
 
-			$key = array_search($userAttributeChoiceMap['name'], $nc2ItemOptions);
+			$key = array_search($choiceMap['name'], $nc2ItemOptions);
 			if ($key !== false) {
 				unset($nc2ItemOptions[$key]);
 			}
