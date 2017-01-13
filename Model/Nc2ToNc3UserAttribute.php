@@ -407,6 +407,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		foreach ($choiceMaps as $choiceMap) {
 			$choiceId = $choiceMap['id'];
 			$data['UserAttributeChoiceMap'][$choiceId] = [
+				'id' => $choiceId,
 				'language_id' => $choiceMap['language_id'],
 				'user_attribute_id' => $choiceMap['user_attribute_id'],
 				'key' => $choiceMap['key'],
