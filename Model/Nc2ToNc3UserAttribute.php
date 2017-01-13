@@ -27,7 +27,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method bool isNc2AutoregistUseItemRequire($itemId)
  * @method string getUserAttributeSettingRow()
  * @method string getUserAttributeSettingCol()
- * @method integer getUserAttributeSettingWeight()
+ * @method int getUserAttributeSettingWeight()
  * @method void incrementUserAttributeSettingWeight()
  *
  * @see Nc2ToNc3UserAttributeBehavior
@@ -165,7 +165,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$model->mappingId[$nc2ItemId] = $UserAttribute->id;
+				$this->mappingId[$nc2ItemId] = $UserAttribute->id;
 				$this->incrementUserAttributeSettingWeight();
 			}
 
@@ -174,12 +174,20 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// Nc3に既存の選択肢データをマージする
-				if (!$this->__saveMergedUserAttributeChoice($nc2Item)) {
-					// error
+				$data = $this->__generateNc3DataMergedUserAttributeChoice($nc2Item);
+				if (!$data) {
+					continue;
+				}
+
+				if (!$UserAttribute->saveUserAttribute($data)) {
+					$message = $this->getLogArgument($nc2Item) . "\n" .
+						print_r($UserAttribute->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					continue;
 				}
 			}
-			//var_dump($this->mappingId);
+
 			//$UserAttribute->commit();
 
 		} catch (Exception $ex) {
@@ -278,6 +286,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @return array Nc3 data
  */
 	private function __generateNc3Data($nc2Item) {
+		$data = [];
 		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
 		$Language = ClassRegistry::init('M17n.Language');
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
@@ -339,20 +348,20 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$userAttributeChoices = [];
-		$weight = 1;
+		$weight = 0;
 		foreach ($nc2ItemOptions as $option) {
-			$userAttributeChoice = [
-				'name' => $option,
-				'weight' => $weight,
-			];
-			$userAttributeChoice = $UserAttribute->UserAttributeChoice->create($userAttributeChoice);
-			$userAttributeChoice = $userAttributeChoice['UserAttributeChoice'];
-
+			$weight++;
 			foreach ($languages as $language) {
 				$nc3LanguageId = $language['Language']['id'];
+				$userAttributeChoice = [
+					'language_id' => $nc3LanguageId,
+					'name' => $option,
+					'weight' => $weight,
+				];
+				$userAttributeChoice = $UserAttribute->UserAttributeChoice->create($userAttributeChoice);
+				$userAttributeChoice = $userAttributeChoice['UserAttributeChoice'];
 				$userAttributeChoices['UserAttributeChoice'][$weight][$nc3LanguageId] = $userAttributeChoice;
 			}
-			$weight++;
 		}
 		$data += $userAttributeChoices;
 		$data['UserAttributeChoice'] = $UserAttribute->UserAttributeChoice->validateRequestData($data);
@@ -366,50 +375,84 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save merged nc3 UserAttributeChoice data
+ * Generate nc3 data merged UserAttributeChoice
  *
  * @param array $nc2Item nc2 item data
- * @return bool True on success
+ * @return array Nc3 data merged UserAttributeChoice
  */
-	private function __saveMergedUserAttributeChoice($nc2Item) {
+	private function __generateNc3DataMergedUserAttributeChoice($nc2Item) {
+		$data = [];
 		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
 
 		$nc2ItemOptions = $this->__getNc2ItemOptionsById($nc2ItemId);
 		if (!$nc2ItemOptions) {
 			$message = __d('nc2_to_nc3', '%s does not merge.', $this->getLogArgument($nc2Item));
 			$this->writeMigrationLog($message);
-			return false;
+			return $data;
 		}
 
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
-		$query = [
-			'fields' => 'UserAttributeChoice.name',
-			'conditions' => [
-				'UserAttributeChoice.user_attribute_id ' => $this->mappingId[$nc2ItemId],
-				'UserAttributeChoice.language_id' => $this->getLanguageIdFromNc2()
-			],
-			'recursive' => -1
-		];
-		$userAttributeChoices = $UserAttribute->UserAttributeChoice->find('list', $query);
-		if (!$userAttributeChoices) {
-			$message = __d('nc2_to_nc3', '%s does not merge.', $this->getLogArgument($nc2Item));
-			$this->writeMigrationLog($message);
-			return false;
+		$userAttribute = $UserAttribute->findById($this->mappingId[$nc2ItemId], 'key', null, -1);
+		$userAttributeKey = $userAttribute['UserAttribute']['key'];
+
+		$data = $UserAttribute->getUserAttribute($userAttributeKey);
+
+		// UserAttributeChoiceMapデータ作成
+		// see https://github.com/NetCommons3/UserAttributes/blob/3.0.1/View/Elements/UserAttributes/choice_edit_form.ctp#L14-L27
+		//     https://github.com/NetCommons3/UserAttributes/blob/3.0.1/Model/UserAttributeChoice.php#L254
+		$userAttributeChoiceMaps = Hash::extract($data['UserAttributeChoice'], '{n}.{n}');
+		foreach ($userAttributeChoiceMaps as $userAttributeChoiceMap) {
+			$choiceId = $userAttributeChoiceMap['id'];
+			$data['UserAttributeChoiceMap'][$choiceId] = [
+				'language_id' => $userAttributeChoiceMap['language_id'],
+				'user_attribute_id' => $userAttributeChoiceMap['user_attribute_id'],
+				'key' => $userAttributeChoiceMap['key'],
+				'code' => $userAttributeChoiceMap['code'],
+			];
+
+			if ($userAttributeChoiceMap['language_id'] != $this->getLanguageIdFromNc2()) {
+				continue;
+			}
+
+			$key = array_search($userAttributeChoiceMap['name'], $nc2ItemOptions);
+			if ($key !== false) {
+				unset($nc2ItemOptions[$key]);
+			}
 		}
 
-		$userAttributeChoices = array_diff($userAttributeChoices, $nc2ItemOptions);
-		if (!$userAttributeChoices) {
+		if (!$nc2ItemOptions) {
 			// 差分選択肢無し
-			return true;
+			$data = [];
+			return $data;
 		}
 
-		//key取得
-		//$data = $UserAttribute->getUserAttribute($key);
-		// 差分を追加
-		//UserAttributesController::editのput処理
-		//$this->UserAttributeChoiceの直呼び出しの方が良い？
+		$userAttributeChoices = [];
+		$weight = count($data['UserAttributeChoice']);
+		$Language = ClassRegistry::init('M17n.Language');
+		$languages = $Language->getLanguages();
+		foreach ($nc2ItemOptions as $option) {
+			$weight++;
+			foreach ($languages as $language) {
+				$nc3LanguageId = $language['Language']['id'];
+				$userAttributeChoice = [
+					'language_id' => $nc3LanguageId,
+					'name' => $option,
+					'weight' => $weight,
+				];
+				$userAttributeChoice = $UserAttribute->UserAttributeChoice->create($userAttributeChoice);
+				$userAttributeChoice = $userAttributeChoice['UserAttributeChoice'];
+				$userAttributeChoices['UserAttributeChoice'][$weight][$nc3LanguageId] = $userAttributeChoice;
+			}
+		}
+		$data['UserAttributeChoice'] += $userAttributeChoices['UserAttributeChoice'];
+		$data['UserAttributeChoice'] = $UserAttribute->UserAttributeChoice->validateRequestData($data);
+		if (!$data['UserAttributeChoice']) {
+			$data = [];
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Item));
+			$this->writeMigrationLog($message);
+		}
 
-		return true;
+		return $data;
 	}
 
 /**
