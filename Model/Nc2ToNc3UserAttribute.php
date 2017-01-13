@@ -193,28 +193,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 /**
  * Generate nc3 data
  *
- * @param array $nc2Item nc2 item data
- * @return array Nc3 data
- */
-	private function __generateNc3Data($nc2Item) {
-		$data = [];
-
-		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-		if (!isset($this->mappingId[$nc2ItemId])) {
-			return $this->__generateNc3UserAttributeData($nc2Item);
-		}
-
-		if (!$this->isChoiceMergenceRow($nc2Item)) {
-			return $data;
-		}
-
-		return $this->__generateNc3UserAttributeDataMergedUserAttributeChoice($nc2Item);
-	}
-
-/**
- * Generate nc3 UserAttribute data
- *
- * data sample
+ * Data sample
  * data[UserAttributeSetting][id]:
  * data[UserAttributeSetting][row]:1
  * data[UserAttributeSetting][col]:2
@@ -284,6 +263,27 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * data[UserAttributeChoice][3][2][code]:
  * data[UserAttributeChoice][3][2][[UserAttributeChoice]weight]:3
  * data[UserAttributeChoice][3][2][name]:
+ *
+ * @param array $nc2Item nc2 item data
+ * @return array Nc3 data
+ */
+	private function __generateNc3Data($nc2Item) {
+		$data = [];
+
+		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
+		if (!isset($this->mappingId[$nc2ItemId])) {
+			return $this->__generateNc3UserAttributeData($nc2Item);
+		}
+
+		if (!$this->isChoiceMergenceRow($nc2Item)) {
+			return $data;
+		}
+
+		return $this->__generateNc3UserAttributeDataMergedUserAttributeChoice($nc2Item);
+	}
+
+/**
+ * Generate nc3 UserAttribute data
  *
  * @param array $nc2Item nc2 item data
  * @return array Nc3 UserAttribute data
