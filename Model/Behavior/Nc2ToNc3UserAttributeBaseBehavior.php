@@ -47,7 +47,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Nc3 UserAttributeSetting weight
  *
- * @var integer
+ * @var int
  */
 	private $__userAttributeSettingWeight = null;
 
@@ -130,7 +130,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Get Nc3 UserAttributeSetting weight.
  *
  * @param Model $model Model using this behavior
- * @return integer Nc3 UserAttributeSetting weight
+ * @return int Nc3 UserAttributeSetting weight
  */
 	public function getUserAttributeSettingWeight(Model $model) {
 		return $this->_getUserAttributeSettingWeight();
@@ -270,7 +270,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get Nc3 UserAttributeSetting weight.
  *
- * @return integer Nc3 UserAttributeSetting weight
+ * @return int Nc3 UserAttributeSetting weight
  */
 	protected function _getUserAttributeSettingWeight() {
 		if (!isset($this->__userAttributeSettingWeight)) {
