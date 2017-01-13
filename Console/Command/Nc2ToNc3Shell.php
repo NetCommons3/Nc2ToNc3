@@ -17,25 +17,25 @@ App::uses('Nc2ToNc3Controller', 'Nc2ToNc3.Controller');
 class Nc2ToNc3Shell extends AppShell {
 
 /**
+ * use model
+ *
+ * @var array
+ */
+	public $uses = ['Nc2ToNc3.Nc2ToNc3'];
+
+/**
  * Main
  *
  * @return void
  */
 	public function main() {
-		$request = new CakeRequest();
-		$request->data['Nc2ToNc3'] = $this->params;
-		$Nc2ToNc3Controller = new Nc2ToNc3Controller($request);
-
 		// TODOーログイン処理
 
-		$Nc2ToNc3Controller->constructClasses();
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-
-		$Nc2ToNc3Controller->migration();
-
-		$message = CakeSession::read('Message.' . Nc2ToNc3::MESSAGE_KEY);
-		if ($message) {
-			return $this->error($message);
+		$data['Nc2ToNc3'] = $this->params;
+		if (!$this->Nc2ToNc3->migration($data)) {
+			$this->error($this->Nc2ToNc3->getMigrationMessages());
+			$this->out('Error!!');
+			return;
 		}
 
 		$this->out('Success!!');
