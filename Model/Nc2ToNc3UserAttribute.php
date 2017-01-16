@@ -18,6 +18,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getMigrationMessages()
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
+ * @method string getConvertDate($date)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
  * @method string getLanguageIdFromNc2()
@@ -294,6 +295,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$Language = ClassRegistry::init('M17n.Language');
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
 
+		// 作成日時（created）は移行する？
+		$created = $this->getConvertDate($nc2Item['Nc2Item']['insert_time']);
 		$languages = $Language->getLanguages();
 		foreach ($languages as $language) {
 			$nc2Name = $nc2Item['Nc2Item']['item_name'];
@@ -305,6 +308,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				'language_id' => $nc3LanguageId,
 				'name' => $this->getNc2ItemValueByConstant($nc2Name, $nc3LanguageId),
 				'description' => $this->getNc2ItemValueByConstant($nc2Description, $nc3LanguageId),
+				'created' => $created
 
 			));
 
@@ -332,7 +336,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			'self_public_setting' => $nc2Item['Nc2Item']['allow_public_flag'],
 			'self_email_setting' => $selfEmailSetting,
 			'is_multilingualization' => '0',
-			'auto_regist_display' => $this->isNc2AutoregistUseItem($nc2ItemId)
+			'auto_regist_display' => $this->isNc2AutoregistUseItem($nc2ItemId),
+			'created' => $created
 		];
 		$data += $UserAttribute->UserAttributeSetting->create($defaultSetting);
 
@@ -360,6 +365,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					'language_id' => $nc3LanguageId,
 					'name' => $option,
 					'weight' => $weight,
+					'created' => $created
 				];
 				$userAttributeChoice = $UserAttribute->UserAttributeChoice->create($userAttributeChoice);
 				$userAttributeChoice = $userAttributeChoice['UserAttributeChoice'];
@@ -442,6 +448,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					'language_id' => $nc3LanguageId,
 					'name' => $option,
 					'weight' => $weight,
+					// 作成日時（created）は移行する？
+					'created' => $this->getConvertDate($nc2Item['Nc2Item']['insert_time'])
 				];
 				$userAttributeChoice = $UserAttribute->UserAttributeChoice->create($userAttributeChoice);
 				$userAttributeChoice = $userAttributeChoice['UserAttributeChoice'];

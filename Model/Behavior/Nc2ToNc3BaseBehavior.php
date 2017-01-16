@@ -93,6 +93,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
+ * Get convert date
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $date Nc2 date
+ * @return Model convert date
+ */
+	public function getConvertDate(Model $model, $date) {
+		return $this->_getConvertDate($date);
+	}
+
+/**
  * Set migration message
  *
  * @param string $message Migration message
@@ -155,6 +166,28 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		]);
 
 		return $Molde;
+	}
+
+/**
+ * Get convert date
+ *
+ * @param string $date Nc2 date
+ * @return Model convert date
+ */
+	protected function _getConvertDate($date) {
+		if (strlen($date) != 14) {
+			return null;
+		}
+
+		// YmdHis → Y-m-d H:i:s　
+		$date = substr($date, 0, 4) . '-' .
+				substr($date, 4, 2) . '-' .
+				substr($date, 6, 2) . ' ' .
+				substr($date, 8, 2) . ':' .
+				substr($date, 10, 2) . ':' .
+				substr($date, 12, 2);
+
+		return $date;
 	}
 
 }
