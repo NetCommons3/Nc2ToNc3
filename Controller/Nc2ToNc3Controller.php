@@ -45,18 +45,19 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 	public function migration() {
 		if ($this->request->is('post')) {
 			$data = $this->request->data;
-			if (!$this->Nc2ToNc3->migration($data)) {
-				$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
+			if ($this->Nc2ToNc3->migration($data)) {
+				// TODOーsuccess画面へredirect
+				$this->redirect($this->referer());
+
+				//var_Dump($this->Nc2ToNc3->validationErrors);
+				//$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
 				return;
 			}
 
-			// TODOーsuccess画面へredirect
-			$this->redirect($this->referer());
+			$this->NetCommons->handleValidationError($this->Nc2ToNc3->validationErrors);
+		} else {
+			$this->request->data['Nc2ToNc3'] = $this->Nc2ToNc3->create();
 		}
-
-		// TODOーNC3のバージョン、状態（サイト閉鎖）をチェック
-
-		$this->request->data['Nc2ToNc3'] = $this->Nc2ToNc3->create();
 	}
 
 /**

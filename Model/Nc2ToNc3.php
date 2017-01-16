@@ -95,11 +95,73 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 						'allowEmpty' => false,
 						'required' => true,
 					],
+					'canConnectNc2' => [
+						'rule' => ['canConnectNc2'],
+						// 'message' => canConnectNc2でException::getMessage()を返す
+					],
+					'isValidNc2Data' => [
+						'rule' => ['isValidNc2Data'],
+						// 'message' => isValidNc2Dataでメッセージを返す
+					],
+					// TODOーNC3のバージョン、状態（サイト閉鎖）をチェック
 				],
 			]
 		);
 
 		return parent::beforeValidate($options);
+	}
+
+/**
+ * Validate to create a DataSource object for nc2
+ *
+ * @return string|bool True on it access to nc2 database
+ */
+	public function canConnectNc2() {
+		$config = $this->data['Nc2ToNc3'];
+		$connectionObjects = ConnectionManager::enumConnectionObjects();
+		$nc3config = $connectionObjects['master'];
+		$config += $nc3config;
+
+		// DataSource情報が間違っている場合、Exception が発生するのでハンドリングできない
+		// Try{}catch{}やってみた。
+		try {
+			ConnectionManager::create(static::CONNECTION_NAME, $config);
+		} catch (Exception $ex) {
+			CakeLog::error($ex);
+			return $ex->getMessage();
+		}
+
+		return true;
+	}
+
+/**
+ * Validate DataSource object for nc2.
+ *
+ * @return string|bool True on it access to config table of nc2.
+ */
+	public function isValidNc2Data($check) {
+		$Nc2Config = $this->getNc2Model('config');
+
+		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
+		// Try{}catch{}やってみた。
+		try {
+			// 対象バージョンチェック
+			$configData = $Nc2Config->findByConfName('version', 'conf_value', null, -1);
+			if ($configData['Nc2Config']['conf_value'] != static::VALID_VERSION) {
+				ConnectionManager::drop(static::CONNECTION_NAME);
+				return __d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION);
+			}
+
+			// サイト閉鎖チェックはダンプデータをインポートしたDBを考慮するとしない方が良いのでは？
+			// 運用中のDBを対象にしないことを推奨する
+			//$configData = $Nc2Config->findByConfName('closesite', 'conf_value', null, -1);
+
+		} catch (Exception $ex) {
+			CakeLog::error($ex);
+			return __d('nc2_to_nc3', 'NetCommons2 table is not found.');
+		}
+
+		return true;
 	}
 
 /**
@@ -138,10 +200,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		if (!$this->__setupNc2DataSource($data['Nc2ToNc3'])) {
-			return false;
-		}
-
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
 		/* @var $UserAttribute Nc2ToNc3UserAttribute */
@@ -151,80 +209,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			return false;
 		}
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
-
-		return true;
-	}
-
-/**
- * Setup NetCommons2 DataSource
- *
- * @param array $config The DataSource configuration settings
- * @return bool True on it is correct nc2 version
- */
-	private function __setupNc2DataSource($config) {
-		if (!$this->__createNc2Connection($config)) {
-			return false;
-		}
-
-		if (!$this->__validateNc2Connection()) {
-			return false;
-		}
-
-		return true;
-	}
-
-/**
- * Creates a DataSource object for nc2
- *
- * @param array $config The DataSource configuration settings
- * @return bool True on it access to nc2 database
- */
-	private function __createNc2Connection($config) {
-		$connectionObjects = ConnectionManager::enumConnectionObjects();
-		$nc3config = $connectionObjects['master'];
-		$config += $nc3config;
-
-		// DataSource情報が間違っている場合、Exception が発生するのでハンドリングできない
-		// Try{}catch{}やってみた。
-		try {
-			ConnectionManager::create(static::CONNECTION_NAME, $config);
-		} catch (Exception $ex) {
-			$this->setMigrationMessages($ex->getMessage());
-			CakeLog::error($ex);
-			return false;
-		}
-
-		return true;
-	}
-
-/**
- * Check DataSource object for nc2.
- *
- * @return bool True on it access to config table of nc2.
- */
-	private function __validateNc2Connection() {
-		$Nc2Config = $this->getNc2Model('config');
-
-		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
-		// Try{}catch{}やってみた。
-		try {
-			// 対象バージョンチェック
-			$configData = $Nc2Config->findByConfName('version', 'conf_value', null, -1);
-			if ($configData['Nc2Config']['conf_value'] != static::VALID_VERSION) {
-				$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 version is not %s', static::VALID_VERSION));
-				ConnectionManager::drop(static::CONNECTION_NAME);
-				return false;
-			}
-
-			// サイト閉鎖チェックはダンプデータをインポートしたDBを考慮するとしない方が良いのでは？
-			// 運用中のDBを対象にしないことを推奨する
-			//$configData = $Nc2Config->findByConfName('closesite', 'conf_value', null, -1);
-
-		} catch (Exception $ex) {
-			$this->setMigrationMessages(__d('nc2_to_nc3', 'NetCommons2 table is not found.'));
-			CakeLog::error($ex);
-			return false;
-		}
 
 		return true;
 	}
