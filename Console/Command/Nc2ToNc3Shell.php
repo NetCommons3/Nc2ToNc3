@@ -31,23 +31,26 @@ class Nc2ToNc3Shell extends AppShell {
  * @return void
  */
 	public function main() {
-		//$request = new CakeRequest();
-		//$request->data['Nc2ToNc3'] = $this->params;
-		//$Nc2ToNc3Controller = new Nc2ToNc3Controller($request);
+		$Nc2ToNc3Controller = new Nc2ToNc3Controller();
+		$Nc2ToNc3Controller->constructClasses();
 
-		$Collection = new ComponentCollection();
-		$Collection->init(new Nc2ToNc3Controller());
-		$Auth = new AuthComponent($Collection);
 		// TODOーログイン処理
 		// とりあえず強制的に管理者
 		$user = $this->User->findById('1', null, null, -1);
-		$Auth->login($user['User']);
+		$Nc2ToNc3Controller->Auth->login($user['User']);
 
-		//$Nc2ToNc3Controller->constructClasses();
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-
-		$request = $this->requestAction('nc2_to_nc3/nc2_to_nc3/migration/', ['data' => ['Nc2ToNc3' => $this->params]]);
-		//$request = $this->requestAction('nc2_to_nc3/nc2_to_nc3/migration/');
+		// CakeObject::requestActionを使用すると、AuthComponent::_isAllowedでredirectされる
+		// $Nc2ToNc3Controller::migrationを呼び出した方が良いのか？
+		// Model呼び出し(Nc2ToNc3::migration)の方が良いのか？
+		$request = $this->requestAction(
+			'nc2_to_nc3/nc2_to_nc3/migration/',
+			[
+				'data' => [
+					'Nc2ToNc3' => $this->params
+				]
+			]
+		);
 
 		$message = CakeSession::read('Message.' . Nc2ToNc3::MESSAGE_KEY);
 		if ($message) {

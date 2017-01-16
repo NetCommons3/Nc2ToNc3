@@ -32,11 +32,24 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return void
  */
 	public function setup(Model $model, $config = array()) {
-		CakeLog::config('Nc2ToNc3', array(
-			'engine' => 'FileLog',
-			'scopes' => ['Nc2ToNc3'],
-			'file' => 'Nc2ToNc3.log',
-		));
+		// Nc2ToNc3BaseBehavior::_writeMigrationLogでログ出力している
+		// CakeLog::writeでファイルとコンソールに出力している
+		// CakeLog::infoをよびだし、debug.logとNc2ToNc3.logの両方出力した方が良いのか？
+		CakeLog::config(
+			'Nc2ToNc3File',
+			[
+				'engine' => 'FileLog',
+				'scopes' => ['Nc2ToNc3'],
+				'file' => 'Nc2ToNc3.log',
+			]
+		);
+		CakeLog::config(
+			'Nc2ToNc3Console',
+			[
+				'engine' => 'Console',
+				'scopes' => ['Nc2ToNc3'],
+			]
+		);
 	}
 
 /**
