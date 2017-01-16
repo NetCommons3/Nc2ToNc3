@@ -28,8 +28,6 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * $data['items_ini_path'] => ''
  *
  * @see Nc2ToNc3BaseBehavior
- * @method void setMigrationMessages($message)
- * @method string getMigrationMessages()
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
  */
@@ -48,13 +46,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @var string
  */
 	const VALID_VERSION = '2.4.2.1';
-
-/**
- * The DataSource name for nc2
- *
- * @var string
- */
-	const MESSAGE_KEY = 'Nc2ToNc3Error';
 
 /**
  * Custom database table name, or null/false if no table association is desired.
@@ -139,7 +130,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  *
  * @return string|bool True on it access to config table of nc2.
  */
-	public function isValidNc2Data($check) {
+	public function isValidNc2Data() {
 		$Nc2Config = $this->getNc2Model('config');
 
 		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
@@ -205,7 +196,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		/* @var $UserAttribute Nc2ToNc3UserAttribute */
 		$UserAttribute = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		if (!$UserAttribute->migrate()) {
-			$this->setMigrationMessages($UserAttribute->getMigrationMessages());
+			// エラー処理（多分$UserAttribute::validationErrorsを使う感じ）
 			return false;
 		}
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));

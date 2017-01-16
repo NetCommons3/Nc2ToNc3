@@ -14,8 +14,6 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * Nc2ToNc3UserAttribute
  *
  * @see Nc2ToNc3BaseBehavior
- * @method void setMigrationMessages($message)
- * @method string getMigrationMessages()
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
  * @method string getConvertDate($date)

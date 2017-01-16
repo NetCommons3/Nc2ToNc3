@@ -48,9 +48,6 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 			if ($this->Nc2ToNc3->migration($data)) {
 				// TODOーsuccess画面へredirect
 				$this->redirect($this->referer());
-
-				//var_Dump($this->Nc2ToNc3->validationErrors);
-				//$this->__setMessage($this->Nc2ToNc3->getMigrationMessages());
 				return;
 			}
 
@@ -60,24 +57,4 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 		}
 	}
 
-/**
- * Set message with FlashComponent
- *
- * @param string $message Message.
- * @return bool True on it access to config table of nc2.
- */
-	private function __setMessage($message) {
-		if (empty($message)) {
-			return;
-		}
-
-		// 画面上部にalertをfadeさせる？
-		//$this->NetCommons->setFlashNotification($message, ['interval' => NetCommonsComponent::ALERT_VALIDATE_ERROR_INTERVAL]);
-
-		$options = [
-			'key' => Nc2ToNc3::MESSAGE_KEY,
-			'params' => ['class' => 'alert alert-danger']
-		];
-		$this->Flash->set($message, $options);
-	}
 }

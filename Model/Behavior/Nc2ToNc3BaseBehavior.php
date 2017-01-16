@@ -18,13 +18,6 @@ App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
 class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 /**
- * List of migration message.
- *
- * @var mix
- */
-	public $migrationMessages = null;
-
-/**
  * Setup this behavior with the specified configuration settings.
  *
  * @param Model $model Model using this behavior
@@ -50,27 +43,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 				'scopes' => ['Nc2ToNc3'],
 			]
 		);
-	}
-
-/**
- * Set migration message
- *
- * @param Model $model Model using this behavior.
- * @param string $message Migration message
- * @return void
- */
-	public function setMigrationMessages(Model $model, $message) {
-		$this->_setMigrationMessages($message);
-	}
-
-/**
- * Get migration message
- *
- * @param Model $model Model using this behavior.
- * @return string Migration messages
- */
-	public function getMigrationMessages(Model $model) {
-		return $this->_getMigrationMessages();
 	}
 
 /**
@@ -114,26 +86,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function getConvertDate(Model $model, $date) {
 		return $this->_getConvertDate($date);
-	}
-
-/**
- * Set migration message
- *
- * @param string $message Migration message
- * @return void
- */
-	protected function _setMigrationMessages($message) {
-		// 配列に追加とかも思ったが、とりあえず最後のエラーのみセットしとく
-		$this->migrationMessages = $message;
-	}
-
-/**
- * Get migration message
- *
- * @return string Migration messages
- */
-	protected function _getMigrationMessages() {
-		return $this->migrationMessages;
 	}
 
 /**

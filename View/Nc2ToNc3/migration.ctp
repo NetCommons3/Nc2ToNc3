@@ -17,7 +17,6 @@
 
 		<div class="panel-body">
 			<?php
-				echo $this->Flash->render(Nc2ToNc3::MESSAGE_KEY);
 				echo $this->NetCommonsForm->input(
 					'database',
 					[

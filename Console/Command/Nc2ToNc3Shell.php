@@ -52,9 +52,9 @@ class Nc2ToNc3Shell extends AppShell {
 			]
 		);
 
-		$message = CakeSession::read('Message.' . Nc2ToNc3::MESSAGE_KEY);
-		if ($message) {
-			return $this->error($message);
+		// Errorの判断が違う気がする
+		if (!$request) {
+			$this->out('Error!!');
 		}
 
 		$this->out('Success!!');
