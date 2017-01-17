@@ -254,6 +254,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
+				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttribute.key' => $assocTagToKey[$tagName],
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
@@ -293,6 +294,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
+				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttribute.key' => $nc3UserAttributeKey,
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
