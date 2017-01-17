@@ -60,19 +60,18 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Map existing id
+ * Set existing id to corresponding id
  *
  * @param Model $model Model using this behavior
  * @param array $nc2Item nc2 item data
  * @return void
  */
-	public function mapExistingId(Model $model, $nc2Item) {
+	public function setExistingIdToCorrespondingId(Model $model, $nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
 
 		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$nc2Id = $nc2Item['Nc2Item']['item_id'];
-			$model->mappingId[$nc2Id] = $nc3Id;
+			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
@@ -81,8 +80,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 
 		$nc3Id = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$nc2Id = $nc2Item['Nc2Item']['item_id'];
-			$model->mappingId[$nc2Id] = $nc3Id;
+			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
@@ -91,8 +89,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 
 		$nc3Id = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$nc2Id = $nc2Item['Nc2Item']['item_id'];
-			$model->mappingId[$nc2Id] = $nc3Id;
+			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
@@ -234,7 +231,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			return $userAttributeId;
 		}
 
-		$mappingTagToKey = [
+		$assocTagToKey = [
 			'email' => 'email',
 			'lang_dirname_lang' => 'language',
 			'timezone_offset_lang' => 'timezone',
@@ -257,7 +254,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
-				'UserAttribute.key' => $mappingTagToKey[$tagName],
+				'UserAttribute.key' => $assocTagToKey[$tagName],
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
 			'recursive' => 0
@@ -279,7 +276,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  * @return string Converted Nc2 type
  */
 	private function __getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
-		$mappingItemNameToKey = [
+		$assocItemNameToKey = [
 			'USER_ITEM_AVATAR' => 'avatar',
 			'USER_ITEM_MOBILE_EMAIL' => 'moblie_mail',
 			'USER_ITEM_GENDER' => 'sex',
@@ -287,11 +284,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		];
 		$userAttributeId = null;
 		$itemName = $nc2Item['Nc2Item']['item_name'];
-		if (!isset($mappingItemNameToKey[$itemName])) {
+		if (!isset($assocItemNameToKey[$itemName])) {
 			return $userAttributeId;
 		}
 
-		$nc3UserAttributeKey = $mappingItemNameToKey[$itemName];
+		$nc3UserAttributeKey = $assocItemNameToKey[$itemName];
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',

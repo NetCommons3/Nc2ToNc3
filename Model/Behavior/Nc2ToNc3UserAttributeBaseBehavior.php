@@ -17,6 +17,13 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
+ * Corresponding id to nc2 and nc3.
+ *
+ * @var array
+ */
+	private $__correspondingIds = null;
+
+/**
  * Language id from Nc2.
  *
  * @var array
@@ -51,6 +58,38 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	private $__userAttributeSettingWeight = null;
 
+/**
+ * Set corresponding id
+ *
+ * @param Model $model Model using this behavior
+ * @param string $nc2ItemId Nc2 item id
+ * @param string $nc3UserAttributeId Nc3 UserAttribute id
+ * @return void
+ */
+	public function setCorrespondingId(Model $model, $nc2ItemId, $nc3UserAttributeId) {
+		$this->_setCorrespondingId($nc2ItemId, $nc3UserAttributeId);
+	}
+
+/**
+ * Get corresponding id
+ *
+ * @param Model $model Model using this behavior
+ * @param string $nc2ItemId Nc2 item id
+ * @return array corresponding id
+ */
+	public function getCorrespondingId(Model $model, $nc2ItemId) {
+		return $this->_getCorrespondingId($nc2ItemId);
+	}
+
+/**
+ * Get corresponding id array
+ *
+ * @param Model $model Model using this behavior
+ * @return array corresponding id array
+ */
+	public function getCorrespondingIds(Model $model) {
+		return $this->_getCorrespondingIds();
+	}
 /**
  * Get languageId from Nc2
  *
@@ -144,6 +183,36 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	public function incrementUserAttributeSettingWeight(Model $model) {
 		return $this->_incrementUserAttributeSettingWeight();
+	}
+
+/**
+ * Set corresponding id
+ *
+ * @param string $nc2ItemId Nc2 item id
+ * @param string $nc3UserAttributeId Nc3 UserAttribute id
+ * @return void
+ */
+	protected function _setCorrespondingId($nc2ItemId, $nc3UserAttributeId) {
+		$this->__correspondingIds[$nc2ItemId] = $nc3UserAttributeId;
+	}
+
+/**
+ * Get corresponding id
+ *
+ * @param string $nc2ItemId Nc2 item id
+ * @return array corresponding id
+ */
+	protected function _getCorrespondingId($nc2ItemId) {
+		return Hash::get($this->__correspondingIds, [$nc2ItemId]);
+	}
+
+/**
+ * Get corresponding id array
+ *
+ * @return array corresponding id array
+ */
+	protected function _getCorrespondingIds() {
+		return $this->__correspondingIds;
 	}
 
 /**

@@ -19,6 +19,9 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getConvertDate($date)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
+ * @method void setCorrespondingId($nc2ItemId, $nc3UserAttributeId)
+ * @method string getCorrespondingId($nc2ItemId)
+ * @method array getCorrespondingIds()
  * @method string getLanguageIdFromNc2()
  * @method string getNc2ItemValueByConstant($constant, $languageId)
  * @method string getNc2ItemDescriptionById($itemId)
@@ -32,7 +35,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3UserAttributeBehavior
  * @method string getLogArgument($nc2Item)
  * @method bool isMigrationRow($nc2Item)
- * @method void mapExistingId($nc2Item)
+ * @method void setExistingIdToCorrespondingId($nc2Item)
  * @method bool isChoiceRow($nc2Item)
  * @method bool isChoiceMergenceRow($nc2Item)
  *
@@ -55,15 +58,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3UserAttribute'];
-
-/**
- * Mapping nc2 id to nc3 id.
- * ユーザー情報で使う予定なのでpublic
- * behaviorにする？？？
- *
- * @var array
- */
-	public $mappingId = [];
 
 /**
  * Migration method.
@@ -123,7 +117,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$this->mapExistingId($nc2Item);
+				$this->setExistingIdToCorrespondingId($nc2Item);
 				$data = $this->__generateNc3Data($nc2Item);
 				if (!$data) {
 					continue;
@@ -141,11 +135,11 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-				if (isset($this->mappingId[$nc2ItemId])) {
+				if ($this->getCorrespondingId($nc2ItemId)) {
 					continue;
 				}
 
-				$this->mappingId[$nc2ItemId] = $UserAttribute->id;
+				$this->setCorrespondingId($nc2ItemId, $UserAttribute->id);
 				$this->incrementUserAttributeSettingWeight();
 			}
 
@@ -240,8 +234,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	private function __generateNc3Data($nc2Item) {
 		$data = [];
 
-		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-		if (!isset($this->mappingId[$nc2ItemId])) {
+		if (!$this->getCorrespondingId($nc2Item['Nc2Item']['item_id'])) {
 			return $this->__generateNc3UserAttributeData($nc2Item);
 		}
 
@@ -370,7 +363,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
-		$userAttribute = $UserAttribute->findById($this->mappingId[$nc2ItemId], 'key', null, -1);
+		$UserAttributeId = $this->getCorrespondingId($nc2ItemId);
+		$userAttribute = $UserAttribute->findById($UserAttributeId, 'key', null, -1);
 		$userAttributeKey = $userAttribute['UserAttribute']['key'];
 
 		$data = $UserAttribute->getUserAttribute($userAttributeKey);
