@@ -26,21 +26,18 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function setup(Model $model, $config = array()) {
 		// Nc2ToNc3BaseBehavior::_writeMigrationLogでログ出力している
-		// CakeLog::writeでファイルとコンソールに出力している
-		// CakeLog::infoをよびだし、debug.logとNc2ToNc3.logの両方出力した方が良いのか？
+		// CakeLog::writeでファイルとコンソールに出力していた。
+		// Consoleに出力すると<tag></tag>で囲われ見辛い。
+		// @see
+		// https://github.com/cakephp/cakephp/blob/2.9.4/lib/Cake/Console/ConsoleOutput.php#L230-L241
+		// CakeLog::infoをよびだし、debug.logとNc2ToNc3.logの両方出力するようにした。
 		CakeLog::config(
 			'Nc2ToNc3File',
 			[
 				'engine' => 'FileLog',
+				'types' => ['info'],
 				'scopes' => ['Nc2ToNc3'],
 				'file' => 'Nc2ToNc3.log',
-			]
-		);
-		CakeLog::config(
-			'Nc2ToNc3Console',
-			[
-				'engine' => 'Console',
-				'scopes' => ['Nc2ToNc3'],
 			]
 		);
 	}
@@ -97,7 +94,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	protected function _writeMigrationLog($message, $debugString = '') {
 		if ($debugString) {
-			CakeLog::write('Nc2ToNc3', $message . ' : ' . $debugString);
+			CakeLog::info($message . ' : ' . $debugString, ['Nc2ToNc3']);
 			return;
 		}
 
@@ -110,7 +107,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			$message = $message . ' : ' . $backtraces[1]['class'] . ' on line ' . $backtraces[0]['line'];
 		}
 
-		CakeLog::write('Nc2ToNc3', $message);
+		CakeLog::info($message, ['Nc2ToNc3']);
 	}
 
 /**
