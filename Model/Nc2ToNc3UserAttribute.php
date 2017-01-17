@@ -73,19 +73,11 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserAttribute Migration start.'));
 
-		if (!$this->__validateNc2()) {
-			return false;
-		}
-
-		if (!$this->__validateNc3()) {
+		if (!$this->__validate()) {
 			return false;
 		}
 
 		if (!$this->__saveUserAttributeFromNc2()) {
-			return false;
-		}
-
-		if (!$this->__setMappingDataNc2ToNc3()) {
 			return false;
 		}
 
@@ -94,24 +86,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Validate nc2 items data.
+ * Validate data.
  *
- * @return bool True if nc2 data is valid.
- * @see Nc2ToNc3UserAttribute::__isMigrationRow()
+ * @return bool True if data is valid.
  */
-	private function __validateNc2() {
+	private function __validate() {
 		// 不正データは移行処理をしないようにした
-		return true;
-	}
-
-/**
- * Validate Nc3 UserAttribue data
- *
- * @return bool bool True if nc3 data is valid.
- * @see Nc2ToNc3UserAttribute::__isMigrationRow()
- */
-	private function __validateNc3() {
-		// Nc3に存在しなれば移行するようにした
 		return true;
 	}
 
@@ -177,15 +157,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			//$UserAttribute->rollback($ex);
 		}
 
-		return true;
-	}
-
-/**
- * Set mapping data
- *
- * @return bool True on success
- */
-	private function __setMappingDataNc2ToNc3() {
 		return true;
 	}
 
