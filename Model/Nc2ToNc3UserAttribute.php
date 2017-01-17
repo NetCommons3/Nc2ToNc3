@@ -67,25 +67,16 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserAttribute Migration start.'));
 
-		if (!$this->__validate()) {
-			return false;
-		}
+		// 不正データは移行処理をしないようにした
+		//if (!$this->validates()) {
+		//	return false;
+		//}
 
 		if (!$this->__saveUserAttributeFromNc2()) {
 			return false;
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserAttribute Migration end.'));
-		return true;
-	}
-
-/**
- * Validate data.
- *
- * @return bool True if data is valid.
- */
-	private function __validate() {
-		// 不正データは移行処理をしないようにした
 		return true;
 	}
 
