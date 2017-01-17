@@ -55,6 +55,7 @@ class Nc2ToNc3Shell extends AppShell {
 		// Errorの判断が違う気がする
 		if (!$request) {
 			$this->out('Error!!');
+			return;
 		}
 
 		$this->out('Success!!');
