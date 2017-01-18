@@ -19,9 +19,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getConvertDate($date)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
- * @method void setCorrespondingId($nc2ItemId, $nc3UserAttributeId)
- * @method string getCorrespondingId($nc2ItemId)
- * @method array getCorrespondingIds()
+ * @method void putIdMap($nc2ItemId, $nc3UserAttributeId)
+ * @method string getIdMap($nc2ItemId)
  * @method string getLanguageIdFromNc2()
  * @method string getNc2ItemValueByConstant($constant, $languageId)
  * @method string getNc2ItemDescriptionById($itemId)
@@ -35,7 +34,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3UserAttributeBehavior
  * @method string getLogArgument($nc2Item)
  * @method bool isMigrationRow($nc2Item)
- * @method void setExistingIdToCorrespondingId($nc2Item)
+ * @method void putExistingIdMap($nc2Item)
  * @method bool isChoiceRow($nc2Item)
  * @method bool isChoiceMergenceRow($nc2Item)
  *
@@ -108,7 +107,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$this->setExistingIdToCorrespondingId($nc2Item);
+				$this->putExistingIdMap($nc2Item);
 				$data = $this->__generateNc3Data($nc2Item);
 				if (!$data) {
 					continue;
@@ -126,11 +125,11 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-				if ($this->getCorrespondingId($nc2ItemId)) {
+				if ($this->getIdMap($nc2ItemId)) {
 					continue;
 				}
 
-				$this->setCorrespondingId($nc2ItemId, $UserAttribute->id);
+				$this->putIdMap($nc2ItemId, $UserAttribute->id);
 				$this->incrementUserAttributeSettingWeight();
 			}
 

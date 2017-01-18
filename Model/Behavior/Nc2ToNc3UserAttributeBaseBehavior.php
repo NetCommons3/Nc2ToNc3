@@ -17,11 +17,11 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
- * Corresponding id to nc2 and nc3.
+ * id map of nc2 and nc3.
  *
  * @var array
  */
-	private $__correspondingIds = null;
+	private $__idMap = null;
 
 /**
  * Language id from Nc2.
@@ -59,37 +59,28 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__userAttributeSettingWeight = null;
 
 /**
- * Set corresponding id
+ * Set id map
  *
  * @param Model $model Model using this behavior
  * @param string $nc2ItemId Nc2 item id
  * @param string $nc3UserAttributeId Nc3 UserAttribute id
  * @return void
  */
-	public function setCorrespondingId(Model $model, $nc2ItemId, $nc3UserAttributeId) {
-		$this->_setCorrespondingId($nc2ItemId, $nc3UserAttributeId);
+	public function putIdMap(Model $model, $nc2ItemId, $nc3UserAttributeId) {
+		$this->_putIdMap($nc2ItemId, $nc3UserAttributeId);
 	}
 
 /**
- * Get corresponding id
+ * Get id map
  *
  * @param Model $model Model using this behavior
  * @param string $nc2ItemId Nc2 item id
- * @return array corresponding id
+ * @return array|string id map
  */
-	public function getCorrespondingId(Model $model, $nc2ItemId) {
-		return $this->_getCorrespondingId($nc2ItemId);
+	public function getIdMap(Model $model, $nc2ItemId = null) {
+		return $this->_getIdMap($nc2ItemId);
 	}
 
-/**
- * Get corresponding id array
- *
- * @param Model $model Model using this behavior
- * @return array corresponding id array
- */
-	public function getCorrespondingIds(Model $model) {
-		return $this->_getCorrespondingIds();
-	}
 /**
  * Get languageId from Nc2
  *
@@ -186,33 +177,28 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Set corresponding id
+ * Put id map
  *
  * @param string $nc2ItemId Nc2 item id
  * @param string $nc3UserAttributeId Nc3 UserAttribute id
  * @return void
  */
-	protected function _setCorrespondingId($nc2ItemId, $nc3UserAttributeId) {
-		$this->__correspondingIds[$nc2ItemId] = $nc3UserAttributeId;
+	protected function _putIdMap($nc2ItemId, $nc3UserAttributeId) {
+		$this->__idMap[$nc2ItemId] = $nc3UserAttributeId;
 	}
 
 /**
- * Get corresponding id
+ * Get id map
  *
  * @param string $nc2ItemId Nc2 item id
- * @return array corresponding id
+ * @return array|string id map
  */
-	protected function _getCorrespondingId($nc2ItemId) {
-		return Hash::get($this->__correspondingIds, [$nc2ItemId]);
-	}
+	protected function _getIdMap($nc2ItemId = null) {
+		if (isset($nc2ItemId)) {
+			return Hash::get($this->__idMap, [$nc2ItemId]);
+		}
 
-/**
- * Get corresponding id array
- *
- * @return array corresponding id array
- */
-	protected function _getCorrespondingIds() {
-		return $this->__correspondingIds;
+		return $this->__idMap;
 	}
 
 /**

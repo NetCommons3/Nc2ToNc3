@@ -60,18 +60,18 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Set existing id to corresponding id
+ * Put existing id map
  *
  * @param Model $model Model using this behavior
  * @param array $nc2Item nc2 item data
  * @return void
  */
-	public function setExistingIdToCorrespondingId(Model $model, $nc2Item) {
+	public function putExistingIdMap(Model $model, $nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
 
 		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
+			$this->_putIdMap($nc2Item['Nc2Item']['item_id'], $nc3Id);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
@@ -80,7 +80,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 
 		$nc3Id = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
+			$this->_putIdMap($nc2Item['Nc2Item']['item_id'], $nc3Id);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
@@ -89,7 +89,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 
 		$nc3Id = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
 		if ($nc3Id) {
-			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
+			$this->_putIdMap($nc2Item['Nc2Item']['item_id'], $nc3Id);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
