@@ -224,7 +224,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	private function __generateNc3Data($nc2Item) {
 		$data = [];
 
-		if (!$this->getCorrespondingId($nc2Item['Nc2Item']['item_id'])) {
+		if (!$this->getIdMap($nc2Item['Nc2Item']['item_id'])) {
 			return $this->__generateNc3UserAttributeData($nc2Item);
 		}
 
@@ -353,7 +353,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
-		$UserAttributeId = $this->getCorrespondingId($nc2ItemId);
+		$UserAttributeId = $this->getIdMap($nc2ItemId);
 		$userAttribute = $UserAttribute->findById($UserAttributeId, 'key', null, -1);
 		$userAttributeKey = $userAttribute['UserAttribute']['key'];
 

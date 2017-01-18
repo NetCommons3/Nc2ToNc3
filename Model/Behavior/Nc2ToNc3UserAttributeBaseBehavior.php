@@ -59,7 +59,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__userAttributeSettingWeight = null;
 
 /**
- * Set id map
+ * Put id map
  *
  * @param Model $model Model using this behavior
  * @param string $nc2ItemId Nc2 item id
