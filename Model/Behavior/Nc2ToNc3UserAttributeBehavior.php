@@ -231,7 +231,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			return $userAttributeId;
 		}
 
-		$assocTagToKey = [
+		$tagToKeyMap = [
 			'email' => 'email',
 			'lang_dirname_lang' => 'language',
 			'timezone_offset_lang' => 'timezone',
@@ -255,7 +255,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
-				'UserAttribute.key' => $assocTagToKey[$tagName],
+				'UserAttribute.key' => $tagToKeyMap[$tagName],
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
 			'recursive' => 0
@@ -277,7 +277,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  * @return string Converted Nc2 type
  */
 	private function __getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
-		$assocItemNameToKey = [
+		$itemNameToKeyMap = [
 			'USER_ITEM_AVATAR' => 'avatar',
 			'USER_ITEM_MOBILE_EMAIL' => 'moblie_mail',
 			'USER_ITEM_GENDER' => 'sex',
@@ -285,11 +285,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		];
 		$userAttributeId = null;
 		$itemName = $nc2Item['Nc2Item']['item_name'];
-		if (!isset($assocItemNameToKey[$itemName])) {
+		if (!isset($itemNameToKeyMap[$itemName])) {
 			return $userAttributeId;
 		}
 
-		$nc3UserAttributeKey = $assocItemNameToKey[$itemName];
+		$nc3UserAttributeKey = $itemNameToKeyMap[$itemName];
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',
