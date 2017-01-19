@@ -17,7 +17,7 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
- * id map of nc2 and nc3.
+ * Id map of nc2 and nc3.
  *
  * @var array
  */
