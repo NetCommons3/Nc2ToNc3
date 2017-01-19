@@ -64,7 +64,7 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return array|string Id map.
  */
 	protected function _getIdMap($nc2UserId = null) {
-		if (isset($nc2ItemId)) {
+		if (isset($nc2UserId)) {
 			return Hash::get($this->__idMap, [$nc2UserId]);
 		}
 

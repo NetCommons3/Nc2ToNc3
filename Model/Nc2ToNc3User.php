@@ -158,6 +158,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				}
 
 				$this->putExistingIdMap($nc2User);
+				/*
 				continue;
 
 				$data = $this->__generateNc3Data($nc2User);
@@ -183,6 +184,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 				$this->mappingId[$nc2ItemId] = $UserAttribute->id;
 				$this->incrementUserAttributeSettingWeight();
+				*/
 			}
 
 			//$UserAttribute->commit();
@@ -192,7 +194,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
 			//$UserAttribute->rollback($ex);
 		}
-var_dump($this->getIdMap());
+
+		//var_dump($this->getIdMap());
 		return true;
 	}
 
