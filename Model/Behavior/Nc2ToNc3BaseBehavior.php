@@ -43,10 +43,10 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Write migration log
+ * Write migration log.
  *
  * @param Model $model Model using this behavior.
- * @param string $message Migration message
+ * @param string $message Migration message.
  * @return void
  */
 	public function writeMigrationLog(Model $model, $message) {
@@ -64,10 +64,10 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get Nc2 Model
+ * Get Nc2 Model.
  *
  * @param Model $model Model using this behavior.
- * @param string $tableName Nc2 table name
+ * @param string $tableName Nc2 table name.
  * @return Model Nc2 model
  */
 	public function getNc2Model(Model $model, $tableName) {
@@ -75,21 +75,21 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get convert date
+ * Get convert date.
  *
  * @param Model $model Model using this behavior.
- * @param string $date Nc2 date
- * @return Model convert date
+ * @param string $date Nc2 date.
+ * @return Model converted date.
  */
 	public function getConvertDate(Model $model, $date) {
 		return $this->_getConvertDate($date);
 	}
 
 /**
- * Write migration log
+ * Write migration log.
  *
- * @param string $message Migration message
- * @param string $debugString Debug string
+ * @param string $message Migration message.
+ * @param string $debugString Debug string.
  * @return void
  */
 	protected function _writeMigrationLog($message, $debugString = '') {
@@ -111,10 +111,10 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get Nc2 Model
+ * Get Nc2 Model.
  *
- * @param string $tableName Nc2 table name
- * @return Model Nc2 model
+ * @param string $tableName Nc2 table name.
+ * @return Model Nc2 model.
  */
 	protected function _getNc2Model($tableName) {
 		// クラス自体は存在しない。
@@ -131,10 +131,10 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get convert date
+ * Get convert date.
  *
- * @param string $date Nc2 date
- * @return Model convert date
+ * @param string $date Nc2 date.
+ * @return Model converted date.
  */
 	protected function _getConvertDate($date) {
 		if (strlen($date) != 14) {

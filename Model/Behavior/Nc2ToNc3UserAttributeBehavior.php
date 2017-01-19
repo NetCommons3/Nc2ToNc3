@@ -19,20 +19,20 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 /**
  * Get Log argument.
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return string Log argument
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Item Nc2Item data.
+ * @return string Log argument.
  */
 	public function getLogArgument(Model $model, $nc2Item) {
 		return $this->__getLogArgument($nc2Item);
 	}
 
 /**
- * Check migration target
+ * Check migration target.
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return bool True if data is migration target
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Item Nc2Item data.
+ * @return bool True if data is migration target.
  */
 	public function isMigrationRow(Model $model, $nc2Item) {
 		$tagName = $nc2Item['Nc2Item']['tag_name'];
@@ -60,10 +60,10 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Put existing id map
+ * Put existing id map.
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Item Nc2Item data.
  * @return void
  */
 	public function putExistingIdMap(Model $model, $nc2Item) {
@@ -98,11 +98,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Check choice target
+ * Check choice target.
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return bool True if data is mergence target
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Item Nc2Item data.
+ * @return bool True if data is mergence target.
  */
 	public function isChoiceRow(Model $model, $nc2Item) {
 		$choiceTypes = [
@@ -118,11 +118,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Check choice mergence target
+ * Check choice mergence target.
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return bool True if data is mergence target
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Item Nc2Item data.
+ * @return bool True if data is mergence target.
  */
 	public function isChoiceMergenceRow(Model $model, $nc2Item) {
 		if (!$this->isChoiceRow($model, $nc2Item)) {
@@ -145,19 +145,19 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 /**
  * Get Log argument.
  *
- * @param array $nc2Item nc2 item data
- * @return string Log argument
+ * @param array $nc2Item Nc2Item data.
+ * @return string Log argument.
  */
 	private function __getLogArgument($nc2Item) {
 		return 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
 	}
 
 /**
- * Convert Nc2 type
- * If invalid type, return ''
+ * Convert Nc2Item type.
+ * If invalid type, return ''.
  *
- * @param array $nc2Item nc2 item data
- * @return string Converted Nc2 type
+ * @param array $nc2Item Nc2Item data.
+ * @return string Converted Nc2Item type.
  */
 	private function __convertNc2Type($nc2Item) {
 		if ($nc2Item['Nc2Item']['type'] == 'mobile_email') {
@@ -199,11 +199,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Get nc3 UserAttribute id by nc2 tag_name and nc3 data_type_key
+ * Get Nc3UserAttribute id by Nc2Item tag_name and Nc3UserAttributeSetting data_type_key.
  *
- * @param array $nc2Item nc2 item data
- * @param string $dataTypeKey nc3 data_type_key
- * @return string Converted Nc2 type
+ * @param array $nc2Item Nc2Item data.
+ * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
+ * @return string Nc3UserAttribute id.
  */
 	private function __getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$defaultTagNames = [
@@ -270,11 +270,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Get nc3 UserAttribute id by nc2 defaultvitem_name and nc3 data_type_key
+ * Get Nc3UserAttribute id by Nc2Item default item_name and Nc3UserAttributeSetting data_type_key.
  *
- * @param array $nc2Item nc2 item data
- * @param string $dataTypeKey nc3 data_type_key
- * @return string Converted Nc2 type
+ * @param array $nc2Item Nc2Item data.
+ * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
+ * @return string Nc3UserAttribute id.
  */
 	private function __getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$itemNameToKeyMap = [
@@ -310,11 +310,11 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Get nc3 UserAttribute id by nc2 tag_name and nc3 data_type_key
+ * Get Nc3UserAttribute id by Nc2Item tag_name and Nc3UserAttributeSetting data_type_key.
  *
- * @param array $nc2Item nc2 item data
- * @param string $dataTypeKey nc3 data_type_key
- * @return string Converted Nc2 type
+ * @param array $nc2Item Nc2Item data.
+ * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
+ * @return string Nc3UserAttribute id.
  */
 	private function __getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$userAttributeId = null;

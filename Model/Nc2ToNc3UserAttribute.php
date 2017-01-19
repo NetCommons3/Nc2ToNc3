@@ -80,7 +80,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save UserAttribue from Nc2.
+ * Save Nc3UserAttribue from Nc2.
  *
  * @return bool True on success
  */
@@ -218,8 +218,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * data[UserAttributeChoice][3][2][[UserAttributeChoice]weight]:3
  * data[UserAttributeChoice][3][2][name]:
  *
- * @param array $nc2Item nc2 item data
- * @return array Nc3 data
+ * @param array $nc2Item Nc2Item data.
+ * @return array Nc3UserAttribute data.
  */
 	private function __generateNc3Data($nc2Item) {
 		$data = [];
@@ -236,10 +236,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Generate nc3 UserAttribute data
+ * Generate Nc3UserAttribute data.
  *
- * @param array $nc2Item nc2 item data
- * @return array Nc3 UserAttribute data
+ * @param array $nc2Item Nc2Item data.
+ * @return array Nc3UserAttribute data.
  */
 	private function __generateNc3UserAttributeData($nc2Item) {
 		$data = [];
@@ -336,10 +336,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Generate nc3 UserAttribute data merged UserAttributeChoice
+ * Generate Nc3UserAttribute data merged Nc3UserAttributeChoice.
  *
- * @param array $nc2Item nc2 item data
- * @return array Nc3 UserAttribute data merged UserAttributeChoice
+ * @param array $nc2Item Nc2Item data.
+ * @return array Nc3UserAttribute data merged Nc3UserAttributeChoice.
  */
 	private function __generateNc3UserAttributeDataMergedUserAttributeChoice($nc2Item) {
 		$data = [];
@@ -421,10 +421,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Get Nc2 item options by id.
+ * Get Nc2ItemsOption options by id.
  *
- * @param string $itemId Nc2 item id
- * @return array Nc2 item options
+ * @param string $itemId Nc2Item id.
+ * @return array Nc2ItemsOption options.
  */
 	private function __getNc2ItemOptionsById($itemId) {
 		$Nc2ItemOption = $this->getNc2Model('items_options');

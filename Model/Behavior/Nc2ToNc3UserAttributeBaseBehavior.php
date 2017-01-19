@@ -31,39 +31,39 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__languageIdFromNc2 = null;
 
 /**
- * Nc2 item constant.
+ * Nc2Item constant.
  *
  * @var array
  */
 	private $__nc2ItemConstants = null;
 
 /**
- * Nc2 item description.
+ * Nc2ItemDesc description.
  *
  * @var array
  */
 	private $__nc2ItemDescriptions = null;
 
 /**
- * Nc2 autoregist_use_items
+ * Nc2Config autoregist_use_items.
  *
  * @var array
  */
 	private $__nc2AutoregistUseItems = null;
 
 /**
- * Nc3 UserAttributeSetting weight
+ * Nc3UserAttributeSetting weight.
  *
  * @var int
  */
 	private $__userAttributeSettingWeight = null;
 
 /**
- * Put id map
+ * Put id map.
  *
- * @param Model $model Model using this behavior
- * @param string $nc2ItemId Nc2 item id
- * @param string $nc3UserAttributeId Nc3 UserAttribute id
+ * @param Model $model Model using this behavior.
+ * @param string $nc2ItemId Nc2Item id.
+ * @param string $nc3UserAttributeId Nc3UserAttribute id.
  * @return void
  */
 	public function putIdMap(Model $model, $nc2ItemId, $nc3UserAttributeId) {
@@ -71,105 +71,105 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get id map
+ * Get id map.
  *
- * @param Model $model Model using this behavior
- * @param string $nc2ItemId Nc2 item id
- * @return array|string id map
+ * @param Model $model Model using this behavior.
+ * @param string $nc2ItemId Nc2Item id.
+ * @return array|string id map.
  */
 	public function getIdMap(Model $model, $nc2ItemId = null) {
 		return $this->_getIdMap($nc2ItemId);
 	}
 
 /**
- * Get languageId from Nc2
+ * Get languageId from Nc2.
  *
- * @param Model $model Model using this behavior
- * @return string LanguageId from Nc2
+ * @param Model $model Model using this behavior.
+ * @return string LanguageId from Nc2.
  */
 	public function getLanguageIdFromNc2(Model $model) {
 		return $this->_getLanguageIdFromNc2();
 	}
 
 /**
- * Get Nc2 item value by constant.
+ * Get Nc2Item value by constant.
  *
- * @param Model $model Model using this behavior
- * @param string $constant Nc2 item constant
- * @param string $languageId Nc2 language id
- * @return string Nc2 item value
+ * @param Model $model Model using this behavior.
+ * @param string $constant Nc2Item item_name.
+ * @param string $languageId Nc2Language id.
+ * @return string Nc2Item value.
  */
 	public function getNc2ItemValueByConstant(Model $model, $constant, $languageId) {
 		return $this->_getNc2ItemValueByConstant($constant, $languageId);
 	}
 
 /**
- * Get Nc2 item description by id.
+ * Get Nc2ItemDesc description by id.
  *
- * @param Model $model Model using this behavior
- * @param string $itemId Nc2 item id
- * @return string Nc2 item description
+ * @param Model $model Model using this behavior.
+ * @param string $itemId Nc2Item id.
+ * @return string Nc2ItemDesc description.
  */
 	public function getNc2ItemDescriptionById(Model $model, $itemId) {
 		return $this->_getNc2ItemDescriptionById($itemId);
 	}
 
 /**
- * Check Nc2 autoregist_use_items from config
+ * Check Nc2Config autoregist_use_items.
  *
- * @param Model $model Model using this behavior
- * @param string $itemId Nc2 item id
- * @return bool True if data is nc2 autoregist_use_items
+ * @param Model $model Model using this behavior.
+ * @param string $itemId Nc2Item id.
+ * @return bool True if data is Nc2Config autoregist_use_items.
  */
 	public function isNc2AutoregistUseItem(Model $model, $itemId) {
 		return $this->_isNc2AutoregistUseItem($itemId);
 	}
 
 /**
- * Check require Nc2 autoregist_use_items from config
+ * Check require Nc2Config autoregist_use_items.
  *
- * @param Model $model Model using this behavior
- * @param string $itemId Nc2 item id
- * @return bool True if data require as nc2 autoregist_use_items
+ * @param Model $model Model using this behavior.
+ * @param string $itemId Nc2Item id.
+ * @return bool True if data require as Nc2Config autoregist_use_items.
  */
 	public function isNc2AutoregistUseItemRequire(Model $model, $itemId) {
 		return $this->_isNc2AutoregistUseItemRequire($itemId);
 	}
 
 /**
- * Get Nc3 UserAttributeSetting row.
+ * Get Nc3UserAttributeSetting row.
  *
- * @param Model $model Model using this behavior
- * @return string Nc3 UserAttributeSetting row
+ * @param Model $model Model using this behavior.
+ * @return string Nc3UserAttributeSetting row.
  */
 	public function getUserAttributeSettingRow(Model $model) {
 		return $this->_getUserAttributeSettingRow();
 	}
 
 /**
- * Get Nc3 UserAttributeSetting col.
+ * Get Nc3UserAttributeSetting col.
  *
- * @param Model $model Model using this behavior
- * @return string Nc3 UserAttributeSetting col
+ * @param Model $model Model using this behavior.
+ * @return string Nc3UserAttributeSetting col.
  */
 	public function getUserAttributeSettingCol(Model $model) {
 		return $this->_getUserAttributeSettingCol();
 	}
 
 /**
- * Get Nc3 UserAttributeSetting weight.
+ * Get Nc3UserAttributeSetting weight.
  *
- * @param Model $model Model using this behavior
- * @return int Nc3 UserAttributeSetting weight
+ * @param Model $model Model using this behavior.
+ * @return int Nc3UserAttributeSetting weight.
  */
 	public function getUserAttributeSettingWeight(Model $model) {
 		return $this->_getUserAttributeSettingWeight();
 	}
 
 /**
- * Increment Nc3 UserAttributeSetting weight.
+ * Increment Nc3UserAttributeSetting weight.
  *
- * @param Model $model Model using this behavior
+ * @param Model $model Model using this behavior.
  * @return void
  */
 	public function incrementUserAttributeSettingWeight(Model $model) {
@@ -179,8 +179,8 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Put id map
  *
- * @param string $nc2ItemId Nc2 item id
- * @param string $nc3UserAttributeId Nc3 UserAttribute id
+ * @param string $nc2ItemId Nc2Item id.
+ * @param string $nc3UserAttributeId Nc3UserAttribute id.
  * @return void
  */
 	protected function _putIdMap($nc2ItemId, $nc3UserAttributeId) {
@@ -190,8 +190,8 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get id map
  *
- * @param string $nc2ItemId Nc2 item id
- * @return array|string id map
+ * @param string $nc2ItemId Nc2Item id.
+ * @return array|string id map.
  */
 	protected function _getIdMap($nc2ItemId = null) {
 		if (isset($nc2ItemId)) {
@@ -202,9 +202,9 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get languageId from Nc2
+ * Get languageId from Nc2.
  *
- * @return string LanguageId from Nc2
+ * @return string LanguageId from Nc2.
  */
 	protected function _getLanguageIdFromNc2() {
 		if (isset($this->__languageIdFromNc2)) {
@@ -233,11 +233,11 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc2 item value by constant.
+ * Get Nc2Item value by constant.
  *
- * @param string $constant Nc2 item constant
- * @param string $languageId Nc2 language id
- * @return string Nc2 item value
+ * @param string $constant Nc2Item item_name.
+ * @param string $languageId Nc2 language id.
+ * @return string Nc2Item value.
  */
 	protected function _getNc2ItemValueByConstant($constant, $languageId) {
 		if (!isset($this->__nc2ItemConstants)) {
@@ -248,10 +248,10 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc2 item description by id.
+ * Get Nc2ItemDesc description by id.
  *
- * @param string $itemId Nc2 item id
- * @return string Nc2 item description
+ * @param string $itemId Nc2Item id.
+ * @return string Nc2ItemDesc description.
  */
 	protected function _getNc2ItemDescriptionById($itemId) {
 		if (!isset($this->__nc2ItemDescriptions)) {
@@ -270,10 +270,10 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Check Nc2 autoregist_use_items from config
+ * Check Nc2Config autoregist_use_items
  *
- * @param string $itemId Nc2 item id
- * @return bool True if data is nc2 autoregist_use_items
+ * @param string $itemId Nc2Item id.
+ * @return bool True if data is Nc2Config autoregist_use_items.
  */
 	protected function _isNc2AutoregistUseItem($itemId) {
 		if (!isset($this->__nc2AutoregistUseItems)) {
@@ -284,10 +284,10 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Check require Nc2 autoregist_use_items from config
+ * Check require Nc2Config autoregist_use_items.
  *
- * @param string $itemId Nc2 item id
- * @return bool True if data require as nc2 autoregist_use_items
+ * @param string $itemId Nc2Item id.
+ * @return bool True if data require as Nc2Config autoregist_use_items.
  */
 	protected function _isNc2AutoregistUseItemRequire($itemId) {
 		if (!isset($this->__nc2AutoregistUseItems)) {
@@ -303,9 +303,9 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc3 UserAttributeSetting row.
+ * Get Nc3UserAttributeSetting row.
  *
- * @return string Nc3 UserAttributeSetting row
+ * @return string Nc3UserAttributeSetting row.
  */
 	protected function _getUserAttributeSettingRow() {
 		// 1行目
@@ -313,9 +313,9 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc3 UserAttributeSetting col.
+ * Get Nc3UserAttributeSetting col.
  *
- * @return string Nc3 UserAttributeSetting col
+ * @return string Nc3UserAttributeSetting col.
  */
 	protected function _getUserAttributeSettingCol() {
 		// 2列目
@@ -323,9 +323,9 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc3 UserAttributeSetting weight.
+ * Get Nc3UserAttributeSetting weight.
  *
- * @return int Nc3 UserAttributeSetting weight
+ * @return int Nc3UserAttributeSetting weight.
  */
 	protected function _getUserAttributeSettingWeight() {
 		if (!isset($this->__userAttributeSettingWeight)) {
@@ -336,7 +336,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Increment Nc3 UserAttributeSetting weight.
+ * Increment Nc3UserAttributeSetting weight.
  *
  * @return void
  */
@@ -349,7 +349,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Set Nc2 item constant.
+ * Set Nc2Item constant.
  *
  * @return void
  */
@@ -435,7 +435,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Merge Nc2 item constant.
+ * Merge Nc2Item constant.
  *
  * @return void
  */
@@ -452,7 +452,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Set Nc2 autoregist_use_items from config
+ * Set Nc2Config autoregist_use_items.
  *
  * @return void
  */
@@ -471,7 +471,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Set Nc3 UserAttributeSetting weight.
+ * Set Nc3UserAttributeSetting weight.
  *
  * @return void
  */
