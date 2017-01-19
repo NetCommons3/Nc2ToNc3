@@ -17,12 +17,12 @@ App::uses('Nc2ToNc3UserBaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 
 /**
- * Check choice mergence target
+ * Check require attribute
  *
- * @return bool True if data is mergence target
+ * @return string|bool True on it exists require attribute
  */
 	public function existsRequireAttribute() {
-		// NC3で必須入力の会員項目がNC2の会員項目にない場合、Userデータが必須エラーになるのチェック
+		// NC3で必須入力の会員項目がNC2の会員項目にない場合、Userデータが必須エラーになるのでチェック
 		// NC2の会員項目を途中から必須項目に変更すると、結局未入力のUserデータは必須エラーになるが、
 		// 可能性は低いと考え、一応チェック
 		// 移行しながら、必須エラーの件数がある程度発生したら止めた方が良い気がする

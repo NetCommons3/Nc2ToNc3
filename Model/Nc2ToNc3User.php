@@ -16,7 +16,19 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
+ * @method string getConvertDate($date)
  *
+ * @see Nc2ToNc3UserBaseBehavior
+ * @method void putIdMap($nc2UserId, $nc3UserAttributeId)
+ * @method string getIdMap($nc2UserId)
+ *
+ * @see Nc2ToNc3UserAttributeBehavior
+ * @method string getLogArgument($nc2User)
+ * @method bool isMigrationRow($nc2User)
+ * @method void putExistingIdMap($nc2User)
+ *
+ * @see Nc2ToNc3UserValidationBehavior
+ * @method string|bool existsRequireAttribute($nc2User)
  */
 class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
@@ -57,15 +69,15 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		$this->validate = Hash::merge(
 			$this->validate,
-			array(
-				'dummy' => array(
-					'existsRequireAttribute' => array(
+			[
+				'dummy' => [
+					'existsRequireAttribute' => [
 						'rule' => array('existsRequireAttribute'),
 						// Nc2ToNc3UserValidationBehavior::existsRequireAttributeでメッセージを返す
 						//'message' => __d('nc2_to_nc3', 'The require attribute of nc3 missing in nc2.'),
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		return parent::beforeValidate($options);
@@ -74,7 +86,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 /**
  * Migration method.
  *
- * @return bool True on success
+ * @return bool True on success.
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'User Migration start.'));
@@ -83,11 +95,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		if (!$this->__saveUserFromNc2()) {
-			return false;
-		}
-
-		if (!$this->__setMappingDataNc2ToNc3()) {
+		if (!$this->__saveUserFromNc2WhileDividing()) {
 			return false;
 		}
 
@@ -96,19 +104,45 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save UserAttribue from Nc2.
+ * Save UserAttribue from Nc2 while dividing.
  *
- * @return bool True on success
+ * @return bool True on success.
  */
-	private function __saveUserFromNc2() {
+	private function __saveUserFromNc2WhileDividing() {
+		$limit = 1000;
+
 		$Nc2User = $this->getNc2Model('users');
 		$query = [
 			'order' => [
-				'Nc2User.insert_time Desc'
-			]
+				'Nc2User.insert_time Desc',
+				'Nc2User.user_id'
+			],
+			'limit' => $limit,
+			'offset' => 0,
 		];
-		$nc2Users = $Nc2User->find('all', $query);
-var_dump($nc2Users);exit;
+
+		$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
+		while ($nc2Users = $Nc2User->find('all', $query)) {
+			$nc2UserIds = Hash::extract($nc2Users, '{n}.Nc2User.user_id');
+			$nc2UsersItemsLinks = $Nc2UsersItemsLink->findAllByUserId($nc2UserIds, null, null, -1);
+
+			if ($this->__saveUserFromNc2($nc2Users, $nc2UsersItemsLinks)) {
+				return false;
+			}
+			$query['offset'] += $limit;
+		}
+
+		return true;
+	}
+
+/**
+ * Save UserAttribue from Nc2.
+ *
+ * @param array $nc2Users Nc2User data.
+ * @param array $nc2UsersItemsLinks Nc2UserItemsLink data
+ * @return bool True on success
+ */
+	private function __saveUserFromNc2($nc2Users, $nc2UsersItemsLinks) {
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
@@ -118,13 +152,15 @@ var_dump($nc2Users);exit;
 		// (Waiting for table metadata lock)
 		//$UserAttribute->begin();
 		try {
-			foreach ($nc2Items as $nc2Item) {
-				if (!$this->isMigrationRow($nc2Item)) {
+			foreach ($nc2Users as $nc2User) {
+				if (!$this->isMigrationRow($nc2User)) {
 					continue;
 				}
 
-				$this->mapExistingId($nc2Item);
-				$data = $this->__generateNc3Data($nc2Item);
+				$this->putExistingIdMap($nc2User);
+				continue;
+
+				$data = $this->__generateNc3Data($nc2User);
 				if (!$data) {
 					continue;
 				}
@@ -156,16 +192,7 @@ var_dump($nc2Users);exit;
 			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
 			//$UserAttribute->rollback($ex);
 		}
-
-		return true;
-	}
-
-/**
- * Set mapping data
- *
- * @return bool True on success
- */
-	private function __setMappingDataNc2ToNc3() {
+var_dump($this->getIdMap());
 		return true;
 	}
 

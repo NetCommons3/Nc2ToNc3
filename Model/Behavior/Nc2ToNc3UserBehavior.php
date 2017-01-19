@@ -19,79 +19,48 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 /**
  * Get Log argument.
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
+ * @param Model $model Model using this behavior.
+ * @param array $nc2User Nc2User data.
  * @return string Log argument
  */
-	public function getLogArgument(Model $model, $nc2Item) {
-		return $this->__getLogArgument($nc2Item);
+	public function getLogArgument(Model $model, $nc2User) {
+		return $this->__getLogArgument($nc2User);
 	}
 
 /**
  * Check migration target
  *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return bool True if data is migration target
+ * @param Model $model Model using this behavior.
+ * @param array $nc2User Nc2User data.
+ * @return bool True if data is migration target.
  */
-	public function isMigrationRow(Model $model, $nc2Item) {
-		$tagName = $nc2Item['Nc2Item']['tag_name'];
-		$notMigrationTagNames = [
-			'mobile_texthtml_mode',
-			'mobile_imgdsp_size',
-			'userinf_view_main_room',
-			'userinf_view_main_monthly',
-			'userinf_view_main_modulesinfo'
-		];
-		if (in_array($tagName, $notMigrationTagNames)) {
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+	public function isMigrationRow(Model $model, $nc2User) {
+		// 承認待ち、本人確認待ちは移行しない（通知した承認用URLが違うため）
+		// 移行して再度通知した方が良い気もする
+		$active = $nc2User['Nc2User']['active_flag'];
+		if (!in_array($active, ['0', '1'])) {
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2User));
 			$this->_writeMigrationLog($message);
 			return false;
-		}
-
-		$dataTypeKey = $this->__convertNc2Type($nc2Item);
-		if (!$dataTypeKey) {
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
-			$this->_writeMigrationLog($message);
-			return;
 		}
 
 		return true;
 	}
 
 /**
- * Set existing id to corresponding id
+ * Put existing id map
  *
  * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
+ * @param array $nc2User Nc2User data
  * @return void
  */
-	public function setExistingIdToCorrespondingId(Model $model, $nc2Item) {
-		$dataTypeKey = $this->__convertNc2Type($nc2Item);
+	public function putExistingIdMap(Model $model, $nc2User) {
+		$User = ClassRegistry::init('Users.User');
+		$user = $User->findByUsername($nc2User['Nc2User']['login_id'], 'User.id', null, -1);
+		if ($user) {
+			$this->_putIdMap($nc2User['Nc2User']['user_id'], $user['User']['id']);
 
-		$nc3Id = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
-		if ($nc3Id) {
-			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
-
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
-			$this->_writeMigrationLog($message);
-			return;
-		}
-
-		$nc3Id = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
-		if ($nc3Id) {
-			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
-
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
-			$this->_writeMigrationLog($message);
-			return;
-		}
-
-		$nc3Id = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
-		if ($nc3Id) {
-			$this->_setCorrespondingId($nc2Item['Nc2Item']['item_id'], $nc3Id);
-
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2User));
 			$this->_writeMigrationLog($message);
 			return;
 		}
@@ -145,11 +114,11 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 /**
  * Get Log argument.
  *
- * @param array $nc2Item nc2 item data
+ * @param array $nc2User Nc2User data
  * @return string Log argument
  */
-	private function __getLogArgument($nc2Item) {
-		return 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
+	private function __getLogArgument($nc2User) {
+		return 'Nc2User.user_id:' . $nc2User['Nc2User']['user_id'];
 	}
 
 /**
