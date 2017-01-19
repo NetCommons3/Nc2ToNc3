@@ -250,7 +250,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			'update_user_name' => 'modified_user',
 		];
 
-		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
