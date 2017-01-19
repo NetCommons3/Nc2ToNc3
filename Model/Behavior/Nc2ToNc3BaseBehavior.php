@@ -18,6 +18,13 @@ App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
 class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 /**
+ * Language id from Nc2.
+ *
+ * @var array
+ */
+	private $__languageIdFromNc2 = null;
+
+/**
  * Setup this behavior with the specified configuration settings.
  *
  * @param Model $model Model using this behavior

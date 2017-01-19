@@ -24,13 +24,6 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__idMap = null;
 
 /**
- * Language id from Nc2.
- *
- * @var array
- */
-	private $__languageIdFromNc2 = null;
-
-/**
  * Nc2Item constant.
  *
  * @var array
