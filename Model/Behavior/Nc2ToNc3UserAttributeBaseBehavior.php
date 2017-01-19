@@ -75,7 +75,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param string $nc2ItemId Nc2Item id.
- * @return array|string id map.
+ * @return array|string Id map.
  */
 	public function getIdMap(Model $model, $nc2ItemId = null) {
 		return $this->_getIdMap($nc2ItemId);
@@ -191,7 +191,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Get id map
  *
  * @param string $nc2ItemId Nc2Item id.
- * @return array|string id map.
+ * @return array|string Id map.
  */
 	protected function _getIdMap($nc2ItemId = null) {
 		if (isset($nc2ItemId)) {
