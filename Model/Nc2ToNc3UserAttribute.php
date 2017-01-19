@@ -362,22 +362,22 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		// UserAttributeChoiceMapデータ作成
 		// see https://github.com/NetCommons3/UserAttributes/blob/3.0.1/View/Elements/UserAttributes/choice_edit_form.ctp#L14-L27
 		//     https://github.com/NetCommons3/UserAttributes/blob/3.0.1/Model/UserAttributeChoice.php#L254
-		$choiceMaps = Hash::extract($data['UserAttributeChoice'], '{n}.{n}');
-		foreach ($choiceMaps as $choiceMap) {
-			$choiceId = $choiceMap['id'];
+		$choiceMap = Hash::extract($data['UserAttributeChoice'], '{n}.{n}');
+		foreach ($choiceMap as $choice) {
+			$choiceId = $choice['id'];
 			$data['UserAttributeChoiceMap'][$choiceId] = [
 				'id' => $choiceId,
-				'language_id' => $choiceMap['language_id'],
-				'user_attribute_id' => $choiceMap['user_attribute_id'],
-				'key' => $choiceMap['key'],
-				'code' => $choiceMap['code'],
+				'language_id' => $choice['language_id'],
+				'user_attribute_id' => $choice['user_attribute_id'],
+				'key' => $choice['key'],
+				'code' => $choice['code'],
 			];
 
-			if ($choiceMap['language_id'] != $this->getLanguageIdFromNc2()) {
+			if ($choice['language_id'] != $this->getLanguageIdFromNc2()) {
 				continue;
 			}
 
-			$key = array_search($choiceMap['name'], $nc2ItemOptions);
+			$key = array_search($choice['name'], $nc2ItemOptions);
 			if ($key !== false) {
 				unset($nc2ItemOptions[$key]);
 			}
