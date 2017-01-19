@@ -82,16 +82,6 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get languageId from Nc2.
- *
- * @param Model $model Model using this behavior.
- * @return string LanguageId from Nc2.
- */
-	public function getLanguageIdFromNc2(Model $model) {
-		return $this->_getLanguageIdFromNc2();
-	}
-
-/**
  * Get Nc2Item value by constant.
  *
  * @param Model $model Model using this behavior.
@@ -199,37 +189,6 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		return $this->__idMap;
-	}
-
-/**
- * Get languageId from Nc2.
- *
- * @return string LanguageId from Nc2.
- */
-	protected function _getLanguageIdFromNc2() {
-		if (isset($this->__languageIdFromNc2)) {
-			return $this->__languageIdFromNc2;
-		}
-
-		$Nc2Config = $this->_getNc2Model('config');
-		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
-
-		$language = $configData['Nc2Config']['conf_value'];
-		switch ($language) {
-			case 'english':
-				$code = 'en';
-				break;
-
-			default:
-				$code = 'ja';
-
-		}
-
-		$Language = ClassRegistry::init('M17n.Language');
-		$language = $Language->findByCode($code, 'id', null, -1);
-		$this->__languageIdFromNc2 = $language['Language']['id'];
-
-		return $this->__languageIdFromNc2;
 	}
 
 /**
