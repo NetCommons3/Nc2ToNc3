@@ -19,7 +19,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getConvertDate($date)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
- * @method void putIdMap($nc2ItemId, $nc3UserAttributeId)
+ * @method void putIdMap($nc2ItemId, $nc3UserAttribute)
  * @method string getIdMap($nc2ItemId)
  * @method string getLanguageIdFromNc2()
  * @method string getNc2ItemValueByConstant($constant, $languageId)
@@ -131,7 +131,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$this->putIdMap($nc2ItemId, $UserAttribute->id);
+				$this->putIdMap($nc2ItemId, $UserAttribute->data);
 				$this->incrementUserAttributeSettingWeight();
 			}
 
@@ -359,11 +359,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
-		$userAttributeId = $this->getIdMap($nc2ItemId);
-		$userAttribute = $UserAttribute->findById($userAttributeId, 'key', null, -1);
-		$userAttributeKey = $userAttribute['UserAttribute']['key'];
-
-		$data = $UserAttribute->getUserAttribute($userAttributeKey);
+		$idMap = $this->getIdMap($nc2ItemId);
+		$data = $UserAttribute->getUserAttribute($idMap['key']);
 
 		// UserAttributeChoiceMapデータ作成
 		// see https://github.com/NetCommons3/UserAttributes/blob/3.0.1/View/Elements/UserAttributes/choice_edit_form.ctp#L14-L27

@@ -56,11 +56,11 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param string $nc2ItemId Nc2Item id.
- * @param string $nc3UserAttributeId Nc3UserAttribute id.
+ * @param array $nc3UserAttribute Nc3UserAttribute data.
  * @return void
  */
-	public function putIdMap(Model $model, $nc2ItemId, $nc3UserAttributeId) {
-		$this->_putIdMap($nc2ItemId, $nc3UserAttributeId);
+	public function putIdMap(Model $model, $nc2ItemId, $nc3UserAttribute) {
+		$this->_putIdMap($nc2ItemId, $nc3UserAttribute);
 	}
 
 /**
@@ -163,11 +163,14 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Put id map
  *
  * @param string $nc2ItemId Nc2Item id.
- * @param string $nc3UserAttributeId Nc3UserAttribute id.
+ * @param string $nc3UserAttribute Nc3UserAttribute data.
  * @return void
  */
-	protected function _putIdMap($nc2ItemId, $nc3UserAttributeId) {
-		$this->__idMap[$nc2ItemId] = $nc3UserAttributeId;
+	protected function _putIdMap($nc2ItemId, $nc3UserAttribute) {
+		$this->__idMap[$nc2ItemId] = [
+			'id' => $nc3UserAttribute['UserAttribute']['id'],
+			'key' => $nc3UserAttribute['UserAttribute']['key'],
+		];
 	}
 
 /**

@@ -30,7 +30,7 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
-			'fields' => 'UserAttribute.name',	// いる？
+			'fields' => 'UserAttribute.name',
 			'conditions' => [
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttributeSetting.required' => '1'
@@ -42,8 +42,9 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		$attributeIdMap = $Nc2ToNc3UserAttr->getIdMap();
+		$existsIds = Hash::extract($attributeIdMap, '{n}.id');
 
-		$notExistsNames = array_diff_key($requiredNames, array_flip($attributeIdMap));
+		$notExistsNames = array_diff_key($requiredNames, array_flip($existsIds));
 		if (!empty($notExistsNames)) {
 			$message = __d('nc2_to_nc3', 'The require attribute of nc3 missing in nc2.') . "\n" .
 				var_export($notExistsNames, true);
