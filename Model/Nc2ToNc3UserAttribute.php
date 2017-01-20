@@ -93,6 +93,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			]
 		];
 		$nc2Items = $Nc2Item->find('all', $query);
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
@@ -244,6 +245,9 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	private function __generateNc3UserAttributeData($nc2Item) {
 		$data = [];
 		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
+
+		/* @var $Language Language */
+		/* @var $UserAttribute UserAttribute */
 		$Language = ClassRegistry::init('M17n.Language');
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
@@ -352,6 +356,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			return $data;
 		}
 
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$userAttributeId = $this->getIdMap($nc2ItemId);
 		$userAttribute = $UserAttribute->findById($userAttributeId, 'key', null, -1);
@@ -391,6 +396,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 		$userAttributeChoices = [];
 		$weight = count($data['UserAttributeChoice']);
+		/* @var $Language Language */
 		$Language = ClassRegistry::init('M17n.Language');
 		$languages = $Language->getLanguages();
 		foreach ($nc2ItemOptions as $option) {

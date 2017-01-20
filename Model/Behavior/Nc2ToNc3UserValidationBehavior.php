@@ -27,6 +27,7 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		// 可能性は低いと考え、一応チェック
 		// 移行しながら、必須エラーの件数がある程度発生したら止めた方が良い気がする
 
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.name',	// いる？

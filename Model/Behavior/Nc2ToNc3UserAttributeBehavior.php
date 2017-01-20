@@ -250,6 +250,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			'update_user_name' => 'modified_user',
 		];
 
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',
@@ -290,6 +291,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		}
 
 		$nc3UserAttributeKey = $itemNameToKeyMap[$itemName];
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',
@@ -318,6 +320,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  */
 	private function __getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$userAttributeId = null;
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',

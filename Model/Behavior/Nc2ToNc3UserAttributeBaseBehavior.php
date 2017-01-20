@@ -306,6 +306,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __setNc2ItemConstants() {
+		/* @var $Language Language */
 		$Language = ClassRegistry::init('M17n.Language');
 		$query = [
 			'fields' => [
@@ -392,6 +393,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __mergeNc2ItemConstantsItemFile() {
+		/* @var $Nc2ToNc3 Nc2ToNc3 */
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$itemsIniPath = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'items_ini_path']);
 		if (!$itemsIniPath) {
@@ -428,6 +430,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __setUserAttributeSettingWeight() {
+		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$this->__userAttributeSettingWeight = $UserAttribute->UserAttributeSetting->getMaxWeight(
 			$this->_getUserAttributeSettingRow(),

@@ -55,6 +55,7 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
  * @return void
  */
 	public function putExistingIdMap(Model $model, $nc2User) {
+		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 		$user = $User->findByUsername($nc2User['Nc2User']['login_id'], 'User.id', null, -1);
 		if ($user) {

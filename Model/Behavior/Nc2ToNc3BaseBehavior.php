@@ -174,6 +174,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 		}
 
+		/* @var $Language Language */
 		$Language = ClassRegistry::init('M17n.Language');
 		$language = $Language->findByCode($code, 'id', null, -1);
 		$this->__languageIdFromNc2 = $language['Language']['id'];
