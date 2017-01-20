@@ -149,7 +149,9 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  * @return string Log argument.
  */
 	private function __getLogArgument($nc2Item) {
-		return 'Nc2Item.id:' . $nc2Item['Nc2Item']['item_id'];
+		return 'Nc2Item ' .
+			'id:' . $nc2Item['Nc2Item']['item_id'] . ',' .
+			'item_name:' . $nc2Item['Nc2Item']['item_name'];
 	}
 
 /**

@@ -51,19 +51,31 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
  * Put existing id map
  *
  * @param Model $model Model using this behavior
- * @param array $nc2User Nc2User data
+ * @param array $nc2Users Nc2User data
  * @return void
  */
-	public function putExistingIdMap(Model $model, $nc2User) {
+	public function putExistingIdMap(Model $model, $nc2Users) {
+		$loginIds = Hash::extract($nc2Users, '{n}.Nc2User.login_id');
+
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
-		$user = $User->findByUsername($nc2User['Nc2User']['login_id'], 'User.id', null, -1);
-		if ($user) {
-			$this->_putIdMap($nc2User['Nc2User']['user_id'], $user['User']['id']);
+		$query = [
+			'fields' => [
+				'User.username',
+				'User.id',
+			],
+			'conditions' => [
+				'User.username' => $loginIds
+			],
+			'recursive' => -1
+		];
+		$nc3Users = $User->find('list', $query);
 
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2User));
-			$this->_writeMigrationLog($message);
-			return;
+		foreach ($nc2Users as $nc2User) {
+			$loginId = $nc2User['Nc2User']['login_id'];
+			if (isset($nc3Users[$loginId])) {
+				$this->_putIdMap($nc2User['Nc2User']['user_id'], $nc3Users[$loginId]);
+			}
 		}
 	}
 
