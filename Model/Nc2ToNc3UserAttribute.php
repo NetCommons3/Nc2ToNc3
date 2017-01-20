@@ -259,15 +259,15 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			$nc3LanguageId = $language['Language']['id'];
 			$nc2Description = $this->getNc2ItemDescriptionById($nc2ItemId);
 
-			$userAttribute = $UserAttribute->create(array(
-				'id' => null,
-				'language_id' => $nc3LanguageId,
-				'name' => $this->getNc2ItemValueByConstant($nc2Name, $nc3LanguageId),
-				'description' => $this->getNc2ItemValueByConstant($nc2Description, $nc3LanguageId),
-				'created' => $created
-
-			));
-
+			$userAttribute = $UserAttribute->create(
+				[
+					'id' => null,
+					'language_id' => $nc3LanguageId,
+					'name' => $this->getNc2ItemValueByConstant($nc2Name, $nc3LanguageId),
+					'description' => $this->getNc2ItemValueByConstant($nc2Description, $nc3LanguageId),
+					'created' => $created
+				]
+			);
 			$data['UserAttribute'][] = $userAttribute['UserAttribute'];
 		}
 
