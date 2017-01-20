@@ -428,7 +428,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __setUserAttributeSettingWeight() {
-		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$this->__userAttributeSettingWeight = $UserAttribute->UserAttributeSetting->getMaxWeight(
 			$this->_getUserAttributeSettingRow(),
 			$this->_getUserAttributeSettingCol()

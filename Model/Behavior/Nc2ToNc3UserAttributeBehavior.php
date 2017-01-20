@@ -290,7 +290,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		}
 
 		$nc3UserAttributeKey = $itemNameToKeyMap[$itemName];
-		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [
@@ -318,7 +318,7 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
  */
 	private function __getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$userAttributeId = null;
-		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
 			'fields' => 'UserAttribute.id',
 			'conditions' => [

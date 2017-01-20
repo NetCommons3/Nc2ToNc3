@@ -245,7 +245,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$data = [];
 		$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
 		$Language = ClassRegistry::init('M17n.Language');
-		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		// 作成日時（created）は移行する？
 		$created = $this->getConvertDate($nc2Item['Nc2Item']['insert_time']);
@@ -352,7 +352,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			return $data;
 		}
 
-		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$userAttributeId = $this->getIdMap($nc2ItemId);
 		$userAttribute = $UserAttribute->findById($userAttributeId, 'key', null, -1);
 		$userAttributeKey = $userAttribute['UserAttribute']['key'];
