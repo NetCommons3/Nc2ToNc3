@@ -85,6 +85,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @return bool True on success
  */
 	private function __saveUserAttributeFromNc2() {
+		/* @var $Nc2Item AppModel */
 		$Nc2Item = $this->getNc2Model('items');
 		$query = [
 			'order' => [
@@ -433,6 +434,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * @return array Nc2ItemsOption options.
  */
 	private function __getNc2ItemOptionsById($itemId) {
+		/* @var $Nc2ItemOption AppModel */
 		$Nc2ItemOption = $this->getNc2Model('items_options');
 		$itemOptions = $Nc2ItemOption->findByItemId($itemId, 'options', null, -1);
 		if (!$itemOptions) {

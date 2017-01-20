@@ -207,6 +207,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	protected function _getNc2ItemDescriptionById($itemId) {
 		if (!isset($this->__nc2ItemDescriptions)) {
+			/* @var $Nc2ItemsDesc AppModel */
 			$Nc2ItemsDesc = $this->_getNc2Model('items_desc');
 			$query = [
 				'fields' => [
@@ -411,6 +412,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	private function __setNc2AutoregistUseItems() {
+		/* @var $Nc2Config AppModel */
 		$Nc2Config = $this->_getNc2Model('config');
 		$autoregistUseItems = $Nc2Config->findByConfName('autoregist_use_items', 'conf_value', null, -1);
 		$autoregistUseItems = explode('|', $autoregistUseItems['Nc2Config']['conf_value']);

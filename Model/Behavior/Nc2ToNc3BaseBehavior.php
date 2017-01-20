@@ -160,6 +160,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			return $this->__languageIdFromNc2;
 		}
 
+		/* @var $Nc2Config AppModel */
 		$Nc2Config = $this->_getNc2Model('config');
 		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
 

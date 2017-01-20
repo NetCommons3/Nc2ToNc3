@@ -131,6 +131,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @return string|bool True on it access to config table of nc2.
  */
 	public function isValidNc2Data() {
+		/* @var $Nc2Config AppModel */
 		$Nc2Config = $this->getNc2Model('config');
 
 		// DataSource情報(prefix)が間違っている場合、Exception が発生するのでハンドリングできない
