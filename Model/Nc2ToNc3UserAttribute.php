@@ -353,8 +353,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		}
 
 		$UserAttribute = ClassRegistry::init('UserAttribute.UserAttribute');
-		$UserAttributeId = $this->getIdMap($nc2ItemId);
-		$userAttribute = $UserAttribute->findById($UserAttributeId, 'key', null, -1);
+		$userAttributeId = $this->getIdMap($nc2ItemId);
+		$userAttribute = $UserAttribute->findById($userAttributeId, 'key', null, -1);
 		$userAttributeKey = $userAttribute['UserAttribute']['key'];
 
 		$data = $UserAttribute->getUserAttribute($userAttributeKey);
