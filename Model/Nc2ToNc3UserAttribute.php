@@ -35,6 +35,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLogArgument($nc2Item)
  * @method bool isMigrationRow($nc2Item)
  * @method void putExistingIdMap($nc2Item)
+ * @method bool isChoice($type)
  * @method bool isChoiceRow($nc2Item)
  * @method bool isChoiceMergenceRow($nc2Item)
  *

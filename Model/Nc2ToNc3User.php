@@ -171,8 +171,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				/*continue;
-
+				/*
+				var_dump($data);
+				continue;
 				if (!$User->saveUser($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
@@ -268,7 +269,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		// User.activate_key,User.activatedは会員項目データ（Nc2Item）に存在しないので固定で設定
 		if ($this->isApprovalWaiting($nc2User)) {
-			$data['User']['activate_key'] = $nc2User['User']['activate_key'];
+			$data['User']['activate_key'] = $nc2User['Nc2User']['activate_key'];
 			$data['User']['activated'] = time();
 		}
 
@@ -286,26 +287,23 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			/*
-			$nc2ItemContent =
-			$path = 'Nc2UsersItemsLink.{n}[item_id=' . $nc2ItemId . '].content';
-			$nc2ItemContent = Hash::extract($nc2User, $path);
-			$nc2ItemContent = $nc2ItemContent[0];
+			$nc2ItemContent = $this->__getNc2ItemContent($nc2ItemId, $nc2User);
+			if ($Nc2ToNc3UserAttr->isChoice($map['UserAttributeSetting']['data_type_key'])) {
+				$nc2ItemContent = $this->__getChoiceCode($nc2ItemContent, $map['UserAttributeChoice']);
+			}
 
-			if ($userAttributeKey == '')
-			if (in_array($userAttributeKey, $userFields)) {
-				$data['Users'][$userAttributeKey] = $nc2ItemContent;
+			if (in_array($userAttributeKey, $nc3UserFields)) {
+				$data['User'][$userAttributeKey] = $nc2ItemContent;
 				continue;
 			}
 
-			if (!in_array($userAttributeKey, $userLanguageFields)) {
+			if (!in_array($userAttributeKey, $nc3LanguageFields)) {
 				continue;
 			}
 
 			foreach ($data['UsersLanguage'] as &$usersLanguage) {
 				$usersLanguage[$userAttributeKey] = $nc2ItemContent;
 			}
-			*/
 		}
 
 		return $data;
@@ -320,11 +318,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @return array Nc3UserAttribute data.
  */
 	private function __generateNc3User($userAttributeKey, $nc3User, $nc2User) {
-		// 既存データは固定項目の内容を更新しない
-		if (isset($nc3User['id'])) {
-			return $nc3User;
-		}
-
 		// 登録者、変更者はまだ存在しない
 		// 変更日時は移行した日時
 		$notMigrationFiels = [
@@ -351,6 +344,12 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		];
 
 		$nc2Field = array_search($userAttributeKey, $nc2UserFieldMap);
+		// 既存データは固定項目の内容を更新しない
+		if (isset($nc3User['id']) &&
+			$nc2Field
+		) {
+			return $nc3User;
+		}
 		if (!$nc2Field) {
 			return [];
 		}
@@ -466,6 +465,56 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		];
 
 		return Hash::get($timezoneMap, [$nc2TimezoneOffset], 'Asia/Tokyo');
+	}
+
+/**
+ * GetNc2ItemContent
+ *
+ * @param string $nc2ItemId Nc2Item item_id.
+ * @param array $nc2User Nc2User data with Nc2UsersItemsLink data.
+ * @return string Nc2UsersItemsLink.content.
+ */
+	private function __getNc2ItemContent($nc2ItemId, $nc2User) {
+		$path = 'Nc2UsersItemsLink.{n}[item_id=' . $nc2ItemId . '].content';
+		$nc2ItemContent = Hash::extract($nc2User, $path);
+		if (!$nc2ItemContent) {
+			return '';
+		}
+
+		return $nc2ItemContent[0];
+	}
+
+/**
+ * GetNc2ItemContent
+ *
+ * @param string $nc2Content Nc2UsersItemsLink.content.
+ * @param array $nc3Choices Nc3UserAttributeChoice data.
+ * @return string Nc3UserAttributeChoice.code.
+ */
+	private function __getChoiceCode($nc2Content, $nc3Choices) {
+		$nc2Contents = explode('|', $nc2Content);
+		$choiceCode = '';
+		foreach ($nc2Contents as $nc2Choice) {
+			if ($nc2Choice === '') {
+				$path = '{n}[code=no_setting]';
+				$nc3Choice = Hash::extract($nc3Choices, $path);
+				if ($nc3Choice) {
+					$choiceCode .= $nc3Choice[0]['code'] . "\n";
+				}
+
+				continue;
+			}
+
+			$path = '{n}[name=' . $nc2Choice . ']';
+			$nc3Choice = Hash::extract($nc3Choices, $path);
+			if ($nc3Choice) {
+				$choiceCode .= $nc3Choice[0]['code'] . "\n";
+				continue;
+			}
+
+		}
+
+		return rtrim($choiceCode);
 	}
 
 }
