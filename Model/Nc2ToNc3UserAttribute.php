@@ -16,7 +16,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
- * @method string getConvertDate($date)
+ * @method string ConvertDate($date)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
  * @method void putIdMap($nc2ItemId, $nc3UserAttribute)
@@ -257,7 +257,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		// 作成日時（created）は移行する？
-		$created = $this->getConvertDate($nc2Item['Nc2Item']['insert_time']);
+		$created = $this->ConvertDate($nc2Item['Nc2Item']['insert_time']);
 		$languages = $Language->getLanguages();
 		foreach ($languages as $language) {
 			$nc2Name = $nc2Item['Nc2Item']['item_name'];
@@ -410,7 +410,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					'name' => $option,
 					'weight' => $weight,
 					// 作成日時（created）は移行する？
-					'created' => $this->getConvertDate($nc2Item['Nc2Item']['insert_time'])
+					'created' => $this->ConvertDate($nc2Item['Nc2Item']['insert_time'])
 				];
 				$userAttributeChoice = $UserAttribute->UserAttributeChoice->create($userAttributeChoice);
 				$userAttributeChoice = $userAttributeChoice['UserAttributeChoice'];

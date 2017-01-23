@@ -92,14 +92,14 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get convert date.
+ * Convert nc2 date.
  *
  * @param Model $model Model using this behavior.
  * @param string $date Nc2 date.
  * @return Model converted date.
  */
-	public function getConvertDate(Model $model, $date) {
-		return $this->_getConvertDate($date);
+	public function ConvertDate(Model $model, $date) {
+		return $this->_ConvertDate($date);
 	}
 
 /**
@@ -184,12 +184,12 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get convert date.
+ * Convert nc3 date.
  *
  * @param string $date Nc2 date.
  * @return Model converted date.
  */
-	protected function _getConvertDate($date) {
+	protected function _ConvertDate($date) {
 		if (strlen($date) != 14) {
 			return null;
 		}
