@@ -16,7 +16,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
- * @method string getConvertDate($date)
+ * @method string convertDate($date)
  *
  * @see Nc2ToNc3UserBaseBehavior
  * @method void putIdMap($nc2UserId, $nc3UserAttributeId)
@@ -24,6 +24,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  *
  * @see Nc2ToNc3UserAttributeBehavior
  * @method string getLogArgument($nc2User)
+ * @method bool isApprovalWaiting($nc2User)
  * @method bool isMigrationRow($nc2User)
  * @method void putExistingIdMap($nc2User)
  *
@@ -62,15 +63,16 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @see Model::save()
  */
 	public function beforeValidate($options = array()) {
-		// Model::dataにfieldがないとvalidationされないためset
+		// Model::dataにfieldがないとvalidationされないためダミーフィールドをset
+		// せっめーじ表示用にdatabeseという名前でset
 		// @see
 		// https://github.com/cakephp/cakephp/blob/2.9.4/lib/Cake/Model/Validator/CakeValidationSet.php#L131
-		$this->set('dummy');
+		$this->set('database');
 
 		$this->validate = Hash::merge(
 			$this->validate,
 			[
-				'dummy' => [
+				'database' => [
 					'existsRequireAttribute' => [
 						'rule' => ['existsRequireAttribute'],
 						// Nc2ToNc3UserValidationBehavior::existsRequireAttributeでメッセージを返す
@@ -143,6 +145,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @param array $nc2Users Nc2User data.
  * @param array $nc2UserItemLinks Nc2UsersItemsLink data
  * @return bool True on success
+ * @throws Exception
  */
 	private function __saveUserFromNc2($nc2Users, $nc2UserItemLinks) {
 		/* @var $User User */
@@ -168,7 +171,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				//continue;
+				/*continue;
 
 				if (!$User->saveUser($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
@@ -180,7 +183,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 					continue;
 				}
-				/*
+
 
 				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
 				if (isset($this->mappingId[$nc2ItemId])) {
@@ -198,6 +201,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
 			//$UserAttribute->rollback($ex);
+			throw $ex;
 		}
 
 		//var_dump($this->getIdMap());
@@ -249,6 +253,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @return array Nc3UserAttribute data.
  */
 	private function __generateNc3Data($nc2User) {
+		// 作成者,更新者はユーザーデータ移行後に更新する？
+
 		$data = [];
 
 		/* @var $User User */
@@ -260,21 +266,33 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			$data = $User->createUser();
 		}
 
-		$userFields = array_keys($data['User']);
-		$userLanguageFields = array_keys($data['UsersLanguage'][0]);
+		// User.activate_key,User.activatedは会員項目データ（Nc2Item）に存在しないので固定で設定
+		if ($this->isApprovalWaiting($nc2User)) {
+			$data['User']['activate_key'] = $nc2User['User']['activate_key'];
+			$data['User']['activated'] = time();
+		}
 
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
-		$attributeIdMap = $Nc2ToNc3UserAttr->getIdMap();
+		$userAttributeMap = $Nc2ToNc3UserAttr->getIdMap();
+		$nc3UserFields = array_keys($data['User']);
+		$nc3LanguageFields = array_keys($data['UsersLanguage'][0]);
+		foreach ($userAttributeMap as $nc2ItemId => $map) {
+			$userAttributeKey = $map['UserAttribute']['key'];
 
-		foreach ($attributeIdMap as $nc2ItemId => $mapValue) {
-			$nc2ItemContent = Hash::extract($nc2User, 'Nc2UsersItemsLink.{n}[item_id=' . $nc2ItemId . '].content');
-			if (!$nc2ItemContent) {
+			$nc3User = $this->__generateNc3User($userAttributeKey, $data['User'], $nc2User);
+			if ($nc3User) {
+				$data['User'] = $nc3User;
 				continue;
 			}
 
+			/*
+			$nc2ItemContent =
+			$path = 'Nc2UsersItemsLink.{n}[item_id=' . $nc2ItemId . '].content';
+			$nc2ItemContent = Hash::extract($nc2User, $path);
 			$nc2ItemContent = $nc2ItemContent[0];
-			$userAttributeKey = $mapValue['key'];
+
+			if ($userAttributeKey == '')
 			if (in_array($userAttributeKey, $userFields)) {
 				$data['Users'][$userAttributeKey] = $nc2ItemContent;
 				continue;
@@ -287,9 +305,167 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			foreach ($data['UsersLanguage'] as &$usersLanguage) {
 				$usersLanguage[$userAttributeKey] = $nc2ItemContent;
 			}
+			*/
 		}
 
 		return $data;
+	}
+
+/**
+ * Generate Nc3Userdata
+ *
+ * @param string $userAttributeKey Nc3UserAttribute.key.
+ * @param array $nc3User Nc3User data.
+ * @param array $nc2User Nc2User data with Nc2UsersItemsLink data.
+ * @return array Nc3UserAttribute data.
+ */
+	private function __generateNc3User($userAttributeKey, $nc3User, $nc2User) {
+		// 既存データは固定項目の内容を更新しない
+		if (isset($nc3User['id'])) {
+			return $nc3User;
+		}
+
+		// 登録者、変更者はまだ存在しない
+		// 変更日時は移行した日時
+		$notMigrationFiels = [
+			'created_user',
+			'modified',
+			'modified_user'
+		];
+		if (in_array($userAttributeKey, $notMigrationFiels)) {
+			return $nc3User;
+		}
+
+		$nc2UserFieldMap = [
+			'login_id' => 'username',
+			'password' => 'password',
+			'handle' => 'handlename',
+			'role_authority_id' => 'role_key',
+			'active_flag' => 'status',
+			'lang_dirname' => 'language',
+			'timezone_offset' => 'timezone',
+			'password_regist_time' => 'password_modified',
+			'last_login_time' => 'last_login',
+			'previous_login_time' => 'previous_login',
+			'insert_time' => 'created',
+		];
+
+		$nc2Field = array_search($userAttributeKey, $nc2UserFieldMap);
+		if (!$nc2Field) {
+			return [];
+		}
+
+		$dateFields = [
+			'password_regist_time',
+			'last_login_time',
+			'previous_login_time',
+			'insert_time',
+			'update_time',
+		];
+		if (in_array($nc2Field, $dateFields)) {
+			$nc3User[$userAttributeKey] = $this->convertDate($nc2User['Nc2User'][$nc2Field]);
+			return $nc3User;
+		}
+
+		if ($nc2Field == 'role_authority_id') {
+			$nc3User[$userAttributeKey] = $this->__convertRole($nc2User['Nc2User'][$nc2Field]);
+			return $nc3User;
+		}
+
+		if ($nc2Field == 'lang_dirname') {
+			$nc3User[$userAttributeKey] = $this->__convertLanguage($nc2User['Nc2User'][$nc2Field]);
+			return $nc3User;
+		}
+
+		if ($nc2Field == 'timezone_offset') {
+			$nc3User[$userAttributeKey] = $this->__convertTimezone($nc2User['Nc2User'][$nc2Field]);
+			return $nc3User;
+		}
+
+		$nc3User[$userAttributeKey] = $nc2User['Nc2User'][$nc2Field];
+
+		return $nc3User;
+	}
+
+/**
+ * Convert role
+ *
+ * @param string $nc2RoleAuthorityId Nc2User.role_authority_id.
+ * @return string Nc3UserRoleSetting.role_key.
+ */
+	private function __convertRole($nc2RoleAuthorityId) {
+		/* @var $Nc2ToNc3UserRole Nc2ToNc3UserRole */
+		$Nc2ToNc3UserRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserRole');
+		$userRole = $Nc2ToNc3UserRole->getIdMap($nc2RoleAuthorityId);
+
+		return $userRole['UserRoleSetting']['role_key'];
+	}
+
+/**
+ * Convert language
+ *
+ * @param string $nc2LangDirname Nc2User.lang_dirname.
+ * @return string Nc3User.language.
+ */
+	private function __convertLanguage($nc2LangDirname) {
+		switch ($nc2LangDirname) {
+			case 'japanese':
+				$code = 'ja';
+				break;
+
+			case 'english':
+				$code = 'en';
+				break;
+
+			default:
+				$code = 'auto';
+
+		}
+
+		return $code;
+	}
+
+/**
+ * Convert timezone
+ *
+ * @param string $nc2TimezoneOffset Nc2User.timezone_offset.
+ * @return string Nc3User.timezone.
+ */
+	private function __convertTimezone($nc2TimezoneOffset) {
+		$timezoneMap = [
+			'-12.0' => 'Pacific/Kwajalein',
+			'-11.0' => 'Pacific/Midway',
+			'-10.0' => 'Pacific/Honolulu',
+			'-9.0' => 'America/Anchorage',
+			'-8.0' => 'America/Los_Angeles',
+			'-7.0' => 'America/Denver',
+			'-6.0' => 'America/Chicago',
+			'-5.0' => 'America/New_York',
+			'-4.0' => 'America/Dominica',
+			'-3.5' => 'America/St_Johns',
+			'-3.0' => 'America/Argentina/Buenos_Aires',
+			'-2.0' => 'Atlantic/South_Georgia',
+			'-1.0' => 'Atlantic/Azores',
+			'0.0' => 'UTC',
+			'1.0' => 'Europe/Brussels',
+			'2.0' => 'Europe/Athens',
+			'3.0' => 'Asia/Baghdad',
+			'3.5' => 'Asia/Tehran',
+			'4.0' => 'Asia/Muscat',
+			'4.5' => 'Asia/Kabul',
+			'5.0' => 'Asia/Karachi',
+			'5.5' => 'Asia/Kolkata',
+			'6.0' => 'Asia/Dhaka',
+			'7.0' => 'Asia/Bangkok',
+			'8.0' => 'Asia/Singapore',
+			'9.0' => 'Asia/Tokyo',
+			'9.5' => 'Australia/Darwin',
+			'10.0' => 'Asia/Vladivostok',
+			'11.0' => 'Australia/Sydney',
+			'12.0' => 'Asia/Kamchatka'
+		];
+
+		return Hash::get($timezoneMap, [$nc2TimezoneOffset], 'Asia/Tokyo');
 	}
 
 }

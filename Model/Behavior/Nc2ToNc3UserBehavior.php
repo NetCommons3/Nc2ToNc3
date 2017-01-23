@@ -28,6 +28,17 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 	}
 
 /**
+ * Return whether it is waiting for approval.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2User Nc2User data.
+ * @return bool True if data is waiting for approval.
+ */
+	public function isApprovalWaiting(Model $model, $nc2User) {
+		return $this->__isApprovalWaiting($nc2User);
+	}
+
+/**
  * Check migration target
  *
  * @param Model $model Model using this behavior.
@@ -37,11 +48,11 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 	public function isMigrationRow(Model $model, $nc2User) {
 		// 承認待ち、本人確認待ちは移行しない（通知した承認用URLが違うため）
 		// 移行して再度通知した方が良い気もする
-		$active = $nc2User['Nc2User']['active_flag'];
-		if (!in_array($active, ['0', '1'])) {
-			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2User));
+		// とりあえず移行しとく
+		if ($this->__isApprovalWaiting($nc2User)) {
+			$message = __d('nc2_to_nc3', '%s is not active.Resend approval mail.', $this->__getLogArgument($nc2User));
 			$this->_writeMigrationLog($message);
-			return false;
+			return true;
 		}
 
 		return true;
@@ -80,58 +91,28 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 	}
 
 /**
- * Check choice target
- *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return bool True if data is mergence target
- */
-	public function isChoiceRow(Model $model, $nc2Item) {
-		$choiceTypes = [
-			'radio',
-			'checkbox',
-			'select'
-		];
-		if (!in_array($nc2Item['Nc2Item']['type'], $choiceTypes)) {
-			return false;
-		}
-
-		return true;
-	}
-
-/**
- * Check choice mergence target
- *
- * @param Model $model Model using this behavior
- * @param array $nc2Item nc2 item data
- * @return bool True if data is mergence target
- */
-	public function isChoiceMergenceRow(Model $model, $nc2Item) {
-		if (!$this->isChoiceRow($model, $nc2Item)) {
-			return false;
-		}
-
-		$notMergenceTagNames = [
-			'lang_dirname_lang',
-			'timezone_offset_lang',
-			'role_authority_name',
-			'active_flag_lang',
-		];
-		if (in_array($nc2Item['Nc2Item']['tag_name'], $notMergenceTagNames)) {
-			return false;
-		}
-
-		return true;
-	}
-
-/**
  * Get Log argument.
  *
  * @param array $nc2User Nc2User data
  * @return string Log argument
  */
 	private function __getLogArgument($nc2User) {
-		return 'Nc2User.user_id:' . $nc2User['Nc2User']['user_id'];
+		return 'Nc2User ' .
+			'user_id:' . $nc2User['Nc2User']['user_id'] .
+			'handle:' . $nc2User['Nc2User']['handle'];
+	}
+
+/**
+ * Return whether it is waiting for approval.
+ *
+ * @param array $nc2User Nc2User data.
+ * @return bool True if data is waiting for approval.
+ */
+	private function __isApprovalWaiting($nc2User) {
+		$active = $nc2User['Nc2User']['active_flag'];
+		$isApprovalWaiting = !in_array($active, ['0', '1']);
+
+		return $isApprovalWaiting;
 	}
 
 }

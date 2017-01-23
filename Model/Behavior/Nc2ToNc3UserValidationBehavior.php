@@ -42,7 +42,7 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		$attributeIdMap = $Nc2ToNc3UserAttr->getIdMap();
-		$existsIds = Hash::extract($attributeIdMap, '{n}.id');
+		$existsIds = Hash::extract($attributeIdMap, '{n}.UserAttribute.id');
 
 		$notExistsNames = array_diff_key($requiredNames, array_flip($existsIds));
 		if (!empty($notExistsNames)) {
