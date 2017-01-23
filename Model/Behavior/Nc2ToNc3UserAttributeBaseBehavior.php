@@ -168,9 +168,33 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	protected function _putIdMap($nc2ItemId, $nc3UserAttribute) {
 		$this->__idMap[$nc2ItemId] = [
-			'id' => $nc3UserAttribute['UserAttribute']['id'],
-			'key' => $nc3UserAttribute['UserAttribute']['key'],
+			'UserAttribute' => [
+				'id' => $nc3UserAttribute['UserAttribute']['id'],
+				'key' => $nc3UserAttribute['UserAttribute']['key'],
+			],
+			'UserAttributeSetting' => [
+				'data_type_key' => $nc3UserAttribute['UserAttributeSetting']['data_type_key'],
+			]
 		];
+
+		// メモリ節約のため、
+		// 'UserAttributeChoice.user_attribute_id'
+		// 'UserAttributeChoice.name'
+		// 'UserAttributeChoice.code'
+		// のみ保持する
+		// いらない？
+		$userAttributeChoice = $nc3UserAttribute['UserAttributeChoice'];
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.id');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.language_id');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.key');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.weight');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.created_user');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.created');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.modified_user');
+		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.modified');
+		if ($userAttributeChoice) {
+			$this->__idMap[$nc2ItemId]['UserAttributeChoice'] = $userAttributeChoice;
+		}
 	}
 
 /**

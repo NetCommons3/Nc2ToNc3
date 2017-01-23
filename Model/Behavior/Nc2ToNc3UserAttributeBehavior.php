@@ -255,16 +255,12 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
-			'fields' => [
-				'UserAttribute.id',
-				'UserAttribute.key',
-			],
 			'conditions' => [
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttribute.key' => $tagToKeyMap[$tagName],
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
-			'recursive' => 0
+			'recursive' => 1
 		];
 		$userAttribute = $UserAttribute->find('first', $query);
 
@@ -295,16 +291,12 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
-			'fields' => [
-				'UserAttribute.id',
-				'UserAttribute.key',
-			],
 			'conditions' => [
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttribute.key' => $nc3UserAttributeKey,
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
-			'recursive' => 0
+			'recursive' => 1
 		];
 		$userAttribute = $UserAttribute->find('first', $query);
 
@@ -323,16 +315,12 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
-			'fields' => [
-				'UserAttribute.id',
-				'UserAttribute.key',
-			],
 			'conditions' => [
 				'UserAttribute.name' => $nc2Item['Nc2Item']['item_name'],
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
-			'recursive' => 0
+			'recursive' => 1
 		];
 		$userAttribute = $UserAttribute->find('first', $query);
 

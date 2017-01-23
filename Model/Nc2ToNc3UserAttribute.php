@@ -83,6 +83,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
  * Save Nc3UserAttribue from Nc2.
  *
  * @return bool True on success
+ * @throws Exception
  */
 	private function __saveUserAttributeFromNc2() {
 		/* @var $Nc2Item AppModel */
@@ -141,6 +142,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
 			//$UserAttribute->rollback($ex);
+			throw $ex;
 		}
 
 		return true;
@@ -360,7 +362,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$idMap = $this->getIdMap($nc2ItemId);
-		$data = $UserAttribute->getUserAttribute($idMap['key']);
+		$data = $UserAttribute->getUserAttribute($idMap['UserAttribute']['key']);
 
 		// UserAttributeChoiceMapデータ作成
 		// see https://github.com/NetCommons3/UserAttributes/blob/3.0.1/View/Elements/UserAttributes/choice_edit_form.ctp#L14-L27
