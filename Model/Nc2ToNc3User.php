@@ -126,6 +126,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2UsersItemsLink AppModel */
 		$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
+
+		$time_start = microtime(true);
+
 		while ($nc2Users = $Nc2User->find('all', $query)) {
 			$nc2UserIds = Hash::extract($nc2Users, '{n}.Nc2User.user_id');
 			$nc2UserItemLinks = $Nc2UsersItemsLink->findAllByUserId($nc2UserIds, null, null, -1);
@@ -135,6 +138,12 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			}
 			$query['offset'] += $limit;
 		}
+
+		$time = microtime(true) - $time_start;
+		$this->validationErrors = [
+			'database' => [$time . '秒']
+		];
+		return false;
 
 		return true;
 	}
@@ -171,6 +180,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				continue;
 				/*
 				var_dump($data);
 				continue;
