@@ -124,21 +124,12 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			'offset' => 0,
 		];
 
-
-		$time_start = microtime(true);
-
 		while ($nc2Users = $Nc2User->find('all', $query)) {
 			if (!$this->__saveUserFromNc2($nc2Users)) {
 				return false;
 			}
 			$query['offset'] += $limit;
 		}
-
-		$time = microtime(true) - $time_start;
-		$this->validationErrors = [
-			'database' => [$time . '秒']
-		];
-		return false;
 
 		return true;
 	}
@@ -147,7 +138,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * Save UserAttribue from Nc2.
  *
  * @param array $nc2Users Nc2User data.
- * @param array $nc2UserItemLinks Nc2UsersItemsLink data
  * @return bool True on success
  * @throws Exception
  */
