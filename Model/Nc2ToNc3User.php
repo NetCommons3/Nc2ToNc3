@@ -125,15 +125,15 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		];
 
 		/* @var $Nc2UsersItemsLink AppModel */
-		$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
+		//$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
 
 		$time_start = microtime(true);
 
 		while ($nc2Users = $Nc2User->find('all', $query)) {
-			$nc2UserIds = Hash::extract($nc2Users, '{n}.Nc2User.user_id');
-			$nc2UserItemLinks = $Nc2UsersItemsLink->findAllByUserId($nc2UserIds, null, null, -1);
+			//$nc2UserIds = Hash::extract($nc2Users, '{n}.Nc2User.user_id');
+			//$nc2UserItemLinks = $Nc2UsersItemsLink->findAllByUserId($nc2UserIds, null, null, -1);
 
-			if (!$this->__saveUserFromNc2($nc2Users, $nc2UserItemLinks)) {
+			if (!$this->__saveUserFromNc2($nc2Users/*, $nc2UserItemLinks*/)) {
 				return false;
 			}
 			$query['offset'] += $limit;
@@ -156,9 +156,10 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveUserFromNc2($nc2Users, $nc2UserItemLinks) {
+	private function __saveUserFromNc2($nc2Users/*, $nc2UserItemLinks*/) {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
+		$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
 
 		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
 		// 'UserAttribute.id'を取得する際、TrackableBehaviorでUsersテーブルを参照する
@@ -173,8 +174,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$path = '{n}.Nc2UsersItemsLink[user_id=' . $nc2User['Nc2User']['user_id'] . ']';
-				$nc2UserItemLink = Hash::extract($nc2UserItemLinks, $path);
+				//$path = '{n}.Nc2UsersItemsLink[user_id=' . $nc2User['Nc2User']['user_id'] . ']';
+				//$nc2UserItemLink = Hash::extract($nc2UserItemLinks, $path);
+				$nc2UserItemLink = $Nc2UsersItemsLink->findAllByUserId($nc2User['Nc2User']['user_id'], null, null, -1);
 				$data = $this->__generateNc3Data($nc2User, $nc2UserItemLink);
 				if (!$data) {
 					continue;
@@ -487,7 +489,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @return string Nc2UsersItemsLink.content.
  */
 	private function __getNc2ItemContent($nc2ItemId, $nc2UserItemLink) {
-		$path = '{n}[item_id=' . $nc2ItemId . '].content';
+		//$path = '{n}[item_id=' . $nc2ItemId . '].content';
+		$path = '{n}.Nc2UsersItemsLink[item_id=' . $nc2ItemId . '].content';
 		$nc2ItemContent = Hash::extract($nc2UserItemLink, $path);
 		if (!$nc2ItemContent) {
 			return '';
