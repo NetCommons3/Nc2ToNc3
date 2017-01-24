@@ -28,11 +28,11 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param string $nc2UserId Nc2User id.
- * @param string $nc3UserId Nc3User id.
+ * @param string $nc3User Nc3User data.
  * @return void
  */
-	public function putIdMap(Model $model, $nc2UserId, $nc3UserId) {
-		$this->_putIdMap($nc2UserId, $nc3UserId);
+	public function putIdMap(Model $model, $nc2UserId, $nc3User) {
+		$this->_putIdMap($nc2UserId, $nc3User);
 	}
 
 /**
@@ -50,11 +50,16 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Put id map.
  *
  * @param string $nc2UserId Nc2User id.
- * @param string $nc3UserId Nc3User id.
+ * @param string $nc3User Nc3User data.
  * @return void
  */
-	protected function _putIdMap($nc2UserId, $nc3UserId) {
-		$this->__idMap[$nc2UserId] = $nc3UserId;
+	protected function _putIdMap($nc2UserId, $nc3User) {
+		$this->__idMap[$nc2UserId] = [
+			'User' => [
+				'id' => $nc3User['User']['id'],
+				'handlename' => $nc3User['User']['handlename']
+			]
+		];
 	}
 
 /**

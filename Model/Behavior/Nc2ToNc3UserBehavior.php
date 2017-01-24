@@ -66,27 +66,27 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
  * @return void
  */
 	public function putExistingIdMap(Model $model, $nc2Users) {
-		$loginIds = Hash::extract($nc2Users, '{n}.Nc2User.login_id');
+		$idList = Hash::combine($nc2Users, '{n}.Nc2User.login_id', '{n}.Nc2User.user_id');
 
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 		$query = [
 			'fields' => [
-				'User.username',
 				'User.id',
+				'User.username',
+				'User.handlename',
 			],
 			'conditions' => [
-				'User.username' => $loginIds
+				'User.username' => array_keys($idList)
 			],
 			'recursive' => -1
 		];
-		$nc3Users = $User->find('list', $query);
+		$nc3Users = $User->find('all', $query);
 
-		foreach ($nc2Users as $nc2User) {
-			$loginId = $nc2User['Nc2User']['login_id'];
-			if (isset($nc3Users[$loginId])) {
-				$this->_putIdMap($nc2User['Nc2User']['user_id'], $nc3Users[$loginId]);
-			}
+		foreach ($nc3Users as $nc3User) {
+			$username = $nc3User['User']['username'];
+			$this->_putIdMap($idList[$username], $nc3User);
+
 		}
 	}
 

@@ -19,7 +19,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string convertDate($date)
  *
  * @see Nc2ToNc3UserBaseBehavior
- * @method void putIdMap($nc2UserId, $nc3UserAttributeId)
+ * @method void putIdMap($nc2UserId, $nc3UserId)
  * @method string getIdMap($nc2UserId)
  *
  * @see Nc2ToNc3UserAttributeBehavior
@@ -163,10 +163,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				//var_dump($data);
-				continue;
-				/*
-				var_dump($data);
+				/*var_dump($data);
 				continue;
 				if (!$User->saveUser($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
@@ -180,13 +177,12 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				}
 
 
-				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-				if (isset($this->mappingId[$nc2ItemId])) {
+				$nc2UserId = $nc2User['Nc2User']['user_id'];
+				if ($this->getIdMap($nc2UserId)) {
 					continue;
 				}
 
-				$this->mappingId[$nc2ItemId] = $UserAttribute->id;
-				$this->incrementUserAttributeSettingWeight();
+				$this->putIdMap($nc2UserId, $User->data);
 				*/
 			}
 
@@ -255,9 +251,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 		$nc2UserId = $nc2User['Nc2User']['user_id'];
-		$nc3UserId = $this->getIdMap($nc2UserId);
-		if ($nc3UserId) {
-			$data = $User->getUser($nc3UserId);
+		$idMap = $this->getIdMap($nc2UserId);
+		if ($idMap) {
+			$data = $User->getUser($idMap['User']['id']);
 		} else {
 			$data = $User->createUser();
 		}
