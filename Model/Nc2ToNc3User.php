@@ -174,12 +174,13 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				}
 
 				$path = '{n}.Nc2UsersItemsLink[user_id=' . $nc2User['Nc2User']['user_id'] . ']';
-				$nc2User['Nc2UsersItemsLink'] = Hash::extract($nc2UserItemLinks, $path);
-				$data = $this->__generateNc3Data($nc2User);
+				$nc2UserItemLink = Hash::extract($nc2UserItemLinks, $path);
+				$data = $this->__generateNc3Data($nc2User, $nc2UserItemLink);
 				if (!$data) {
 					continue;
 				}
 
+				//var_dump($data);
 				continue;
 				/*
 				var_dump($data);
@@ -261,9 +262,10 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * data[UsersLanguage][1][search_keywords]:
  *
  * @param array $nc2User Nc2User data with Nc2UsersItemsLink data.
+ * @param array $nc2UserItemLink Nc2UsersItemsLink data
  * @return array Nc3UserAttribute data.
  */
-	private function __generateNc3Data($nc2User) {
+	private function __generateNc3Data($nc2User, $nc2UserItemLink) {
 		// 作成者,更新者はユーザーデータ移行後に更新する？
 
 		$data = [];
@@ -297,7 +299,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			$nc2ItemContent = $this->__getNc2ItemContent($nc2ItemId, $nc2User);
+			$nc2ItemContent = $this->__getNc2ItemContent($nc2ItemId, $nc2UserItemLink);
 			if ($Nc2ToNc3UserAttr->isChoice($map['UserAttributeSetting']['data_type_key'])) {
 				$nc2ItemContent = $this->__getChoiceCode($nc2ItemContent, $map['UserAttributeChoice']);
 			}
@@ -481,12 +483,12 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * GetNc2ItemContent
  *
  * @param string $nc2ItemId Nc2Item item_id.
- * @param array $nc2User Nc2User data with Nc2UsersItemsLink data.
+ * @param array $nc2UserItemLink Nc2UsersItemsLink data
  * @return string Nc2UsersItemsLink.content.
  */
-	private function __getNc2ItemContent($nc2ItemId, $nc2User) {
-		$path = 'Nc2UsersItemsLink.{n}[item_id=' . $nc2ItemId . '].content';
-		$nc2ItemContent = Hash::extract($nc2User, $path);
+	private function __getNc2ItemContent($nc2ItemId, $nc2UserItemLink) {
+		$path = '{n}[item_id=' . $nc2ItemId . '].content';
+		$nc2ItemContent = Hash::extract($nc2UserItemLink, $path);
 		if (!$nc2ItemContent) {
 			return '';
 		}
