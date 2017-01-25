@@ -54,6 +54,13 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	];
 
 /**
+ * Number of validation error
+ *
+ * @var int
+ */
+	private $__numberOfvalidationError = 0;
+
+/**
  * Called during validation operations, before validation. Please note that custom
  * validation rules can be defined in $validate.
  *
@@ -124,10 +131,24 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			'offset' => 0,
 		];
 
+		$numberOfUsers = 0;
 		while ($nc2Users = $Nc2User->find('all', $query)) {
 			if (!$this->__saveUserFromNc2($nc2Users)) {
 				return false;
 			}
+
+			$numberOfUsers += count($nc2Users);
+			$errorRate = round($this->__numberOfvalidationError / $numberOfUsers);
+			// 5割エラー発生で止める
+			if ($errorRate >= 0.5) {
+				$this->validationErrors = [
+					'database' => [
+						__d('nc2_to_nc3', 'Many error data.Please check the log.')
+					]
+				];
+				return false;
+			}
+
 			$query['offset'] += $limit;
 		}
 
@@ -165,6 +186,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2User) . "\n" .
 						var_export($User->validationErrors, true);
 					$this->writeMigrationLog($message);
+
+					$this->__numberOfvalidationError++;
 
 					continue;
 				}
