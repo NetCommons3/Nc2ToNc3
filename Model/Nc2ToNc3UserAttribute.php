@@ -146,7 +146,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				// CakeMigrationが呼び出され、ClassRegistry::flush済み
 				$calledCakeMigration = true;
 
-				$this->putIdMap($nc2ItemId, $UserAttribute->data);
+				$data = $UserAttribute->findById($UserAttribute->id);
+				$this->putIdMap($nc2ItemId, $data);
 				$this->incrementUserAttributeSettingWeight();
 			}
 
