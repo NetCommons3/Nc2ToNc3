@@ -22,7 +22,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method void putIdMap($nc2UserId, $nc3UserId)
  * @method string getIdMap($nc2UserId)
  *
- * @see Nc2ToNc3UserAttributeBehavior
+ * @see Nc2ToNc3UserBehavior
  * @method string getLogArgument($nc2User)
  * @method bool isApprovalWaiting($nc2User)
  * @method bool isMigrationRow($nc2User)
@@ -166,7 +166,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 
-		$User->begin();
+		//$User->begin();
 		try {
 			$this->putExistingIdMap($nc2Users);
 			foreach ($nc2Users as $nc2User) {
@@ -192,6 +192,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// User::beforeValidateでValidationを設定しているが、残ってしまうので1行ごとにクリア
+				$User->validate = [];
+
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
 				if ($this->getIdMap($nc2UserId)) {
 					continue;
@@ -200,7 +203,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$this->putIdMap($nc2UserId, $User->data);
 			}
 
-			$User->commit();
+			//$User->commit();
 
 		} catch (Exception $ex) {
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
@@ -389,6 +392,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			$nc3User['password_again'] = $nc2User['Nc2User'][$nc2Field];
 		}
 
+		// TODOー一度移行してしまうと削除しても、Nc3User.handlenameが残ってしまうため対策が必要
+		// 未検討
 		$nc3User[$userAttributeKey] = $nc2User['Nc2User'][$nc2Field];
 
 		return $nc3User;
