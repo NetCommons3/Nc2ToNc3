@@ -66,7 +66,6 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		$attributeIdMap = $Nc2ToNc3UserAttr->getIdMap();
-
 		foreach ($attributeIdMap as $nc2ItemId => $mapValue) {
 			$userAttributeId = $mapValue['UserAttribute']['id'];
 			if (isset($nc2NotRequiredNames[$nc2ItemId]) &&
@@ -81,7 +80,6 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		if (!empty($nc3RequiredNames)) {
 			$message = __d('nc2_to_nc3', 'The require attribute of nc3 missing in nc2.') . "\n" .
 				var_export($nc3RequiredNames, true);
-			$this->_writeMigrationLog($message);
 
 			return $message;
 		}

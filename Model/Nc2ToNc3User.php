@@ -64,7 +64,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  */
 	public function beforeValidate($options = array()) {
 		// Model::dataにfieldがないとvalidationされないためダミーフィールドをset
-		// せっめーじ表示用にdatabeseという名前でset
+		// メッセージ表示用にdatabeseという名前でset
 		// @see
 		// https://github.com/cakephp/cakephp/blob/2.9.4/lib/Cake/Model/Validator/CakeValidationSet.php#L131
 		$this->set('database');
@@ -145,12 +145,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 
-		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
-		// 'UserAttribute.id'を取得する際、TrackableBehaviorでUsersテーブルを参照する
-		// $UserAttribute::begin()してしまうと、Usersテーブルがロックされ、
-		// UserAttributeBehavior::UserAttributeBehavior()のALTER TABLEで待ち状態になる
-		// (Waiting for table metadata lock)
-		//$UserAttribute->begin();
+		$User->begin();
 		try {
 			$this->putExistingIdMap($nc2Users);
 			foreach ($nc2Users as $nc2User) {
@@ -163,8 +158,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				/*var_dump($data);
-				continue;
 				if (!$User->saveUser($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
@@ -176,26 +169,23 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
 				if ($this->getIdMap($nc2UserId)) {
 					continue;
 				}
 
 				$this->putIdMap($nc2UserId, $User->data);
-				*/
 			}
 
-			//$UserAttribute->commit();
+			$User->commit();
 
 		} catch (Exception $ex) {
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
-			//$UserAttribute->rollback($ex);
+			// $User::saveUser()でthrowされるとこの処理に入ってこない
+			$User->rollback($ex);
 			throw $ex;
 		}
 
-		//var_dump($this->getIdMap());
 		return true;
 	}
 
@@ -240,7 +230,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * data[UsersLanguage][0][search_keywords]:
  * data[UsersLanguage][1][search_keywords]:
  *
- * @param array $nc2User Nc2User data with Nc2UsersItemsLink data.
+ * @param array $nc2User Nc2User data.
  * @return array Nc3UserAttribute data.
  */
 	private function __generateNc3Data($nc2User) {
@@ -283,8 +273,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			}
 
 			$nc2ItemContent = $this->__getNc2ItemContent($nc2ItemId, $nc2UserItemLink);
-			if ($Nc2ToNc3UserAttr->isChoice($map['UserAttributeSetting']['data_type_key'])) {
-				$nc2ItemContent = $this->__getChoiceCode($nc2ItemContent, $map['UserAttributeChoice']);
+			$dataTypeKey = $map['UserAttributeSetting']['data_type_key'];
+			if ($Nc2ToNc3UserAttr->isChoice($dataTypeKey)) {
+				$nc2ItemContent = $this->__getChoiceCode($dataTypeKey, $nc2ItemContent, $map['UserAttributeChoice']);
 			}
 
 			if (in_array($userAttributeKey, $nc3UserFields)) {
@@ -309,7 +300,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  *
  * @param string $userAttributeKey Nc3UserAttribute.key.
  * @param array $nc3User Nc3User data.
- * @param array $nc2User Nc2User data with Nc2UsersItemsLink data.
+ * @param array $nc2User Nc2User data.
  * @return array Nc3UserAttribute data.
  */
 	private function __generateNc3User($userAttributeKey, $nc3User, $nc2User) {
@@ -361,24 +352,45 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			return $nc3User;
 		}
 
-		if ($nc2Field == 'role_authority_id') {
-			$nc3User[$userAttributeKey] = $this->__convertRole($nc2User['Nc2User'][$nc2Field]);
+		$fixedFields = [
+			'role_authority_id',
+			'lang_dirname',
+			'timezone_offset',
+		];
+		if (in_array($nc2Field, $fixedFields)) {
+			$nc3User[$userAttributeKey] = $this->__convertFixedField($nc2Field, $nc3User, $nc2User);
 			return $nc3User;
 		}
 
-		if ($nc2Field == 'lang_dirname') {
-			$nc3User[$userAttributeKey] = $this->__convertLanguage($nc2User['Nc2User'][$nc2Field]);
-			return $nc3User;
-		}
-
-		if ($nc2Field == 'timezone_offset') {
-			$nc3User[$userAttributeKey] = $this->__convertTimezone($nc2User['Nc2User'][$nc2Field]);
-			return $nc3User;
+		if ($nc2Field == 'password') {
+			$nc3User['password_again'] = $nc2User['Nc2User'][$nc2Field];
 		}
 
 		$nc3User[$userAttributeKey] = $nc2User['Nc2User'][$nc2Field];
 
 		return $nc3User;
+	}
+
+/**
+ * Convert fixed field
+ *
+ * @param string $nc2Field Nc2User field name.
+ * @param array $nc3User Nc3User data.
+ * @param array $nc2User Nc2User data.
+ * @return string convert data.
+ */
+	private function __convertFixedField($nc2Field, $nc3User, $nc2User) {
+		if ($nc2Field == 'role_authority_id') {
+			return $this->__convertRole($nc2User['Nc2User'][$nc2Field]);
+		}
+
+		if ($nc2Field == 'lang_dirname') {
+			return $this->__convertLanguage($nc2User['Nc2User'][$nc2Field]);
+		}
+
+		if ($nc2Field == 'timezone_offset') {
+			return $this->__convertTimezone($nc2User['Nc2User'][$nc2Field]);
+		}
 	}
 
 /**
@@ -482,19 +494,20 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 /**
  * GetNc2ItemContent
  *
+ * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
  * @param string $nc2Content Nc2UsersItemsLink.content.
  * @param array $nc3Choices Nc3UserAttributeChoice data.
  * @return string Nc3UserAttributeChoice.code.
  */
-	private function __getChoiceCode($nc2Content, $nc3Choices) {
+	private function __getChoiceCode($dataTypeKey, $nc2Content, $nc3Choices) {
 		$nc2Contents = explode('|', $nc2Content);
-		$choiceCode = '';
+		$choiceCodes = [];
 		foreach ($nc2Contents as $nc2Choice) {
 			if ($nc2Choice === '') {
 				$path = '{n}[code=no_setting]';
 				$nc3Choice = Hash::extract($nc3Choices, $path);
 				if ($nc3Choice) {
-					$choiceCode .= $nc3Choice[0]['code'] . "\n";
+					$choiceCodes[] = $nc3Choice[0]['code'];
 				}
 
 				continue;
@@ -503,13 +516,18 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			$path = '{n}[name=' . $nc2Choice . ']';
 			$nc3Choice = Hash::extract($nc3Choices, $path);
 			if ($nc3Choice) {
-				$choiceCode .= $nc3Choice[0]['code'] . "\n";
+				$choiceCodes[] = $nc3Choice[0]['code'];
+
 				continue;
 			}
 
 		}
 
-		return rtrim($choiceCode);
+		if ($dataTypeKey != 'checkbox') {
+			return Hash::get($choiceCodes, ['0']);
+		}
+
+		return $choiceCodes;
 	}
 
 }
