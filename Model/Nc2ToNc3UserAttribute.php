@@ -99,6 +99,13 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
+		// CakeMigration::runでClassRegistry::flushが呼ばれ、
+		// セットしたNc2ToNc3UserBaseBehavior::__idMapも初期化されてしまうので、
+		// 一時退避して戻す処理を行う
+		// @see
+		// https://github.com/CakeDC/migrations/blob/2.4.2/Lib/CakeMigration.php#L607
+		$calledCakeMigration = false;
+
 		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
 		// 'UserAttribute.id'を取得する際、TrackableBehaviorでUsersテーブルを参照する
 		// $UserAttribute::begin()してしまうと、Usersテーブルがロックされ、
@@ -133,6 +140,12 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// 追加項目の値を保持しているため初期化
+				unset($UserAttribute->Behaviors->UserAttribute->cakeMigration->migration['up']['create_field']);
+
+				// CakeMigrationが呼び出され、ClassRegistry::flush済み
+				$calledCakeMigration = true;
+
 				$this->putIdMap($nc2ItemId, $UserAttribute->data);
 				$this->incrementUserAttributeSettingWeight();
 			}
@@ -143,7 +156,17 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 			// $UserAttribute::saveUserAttribute()でthrowされるとこの処理に入ってこない
 			//$UserAttribute->rollback($ex);
-			throw $ex;
+			$message = $this->getLogArgument($nc2Item) . "\n" .
+				var_export($UserAttribute->validationErrors, true);
+			$this->writeMigrationLog($message);
+
+			// Shellだとトレースが出力されるが、画面からthrowしないと出力されない。なぜ？
+			return true;
+			// throw $ex;
+		}
+
+		if ($calledCakeMigration) {
+			ClassRegistry::addObject('Nc2ToNc3UserAttribute', $this);
 		}
 
 		return true;
