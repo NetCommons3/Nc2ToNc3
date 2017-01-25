@@ -125,6 +125,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				if (!$UserAttribute->saveUserAttribute($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返っていくるがrollbackしていないので、
+					// ここでrollback
+					$UserAttribute->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// see https://phpmd.org/rules/design.html

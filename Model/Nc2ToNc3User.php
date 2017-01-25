@@ -166,7 +166,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 
-		//$User->begin();
+		$User->begin();
 		try {
 			$this->putExistingIdMap($nc2Users);
 			foreach ($nc2Users as $nc2User) {
@@ -180,6 +180,10 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				}
 
 				if (!$User->saveUser($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返っていくるがrollbackしていないので、
+					// ここでrollback
+					$User->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// see https://phpmd.org/rules/design.html
@@ -203,7 +207,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$this->putIdMap($nc2UserId, $User->data);
 			}
 
-			//$User->commit();
+			$User->commit();
 
 		} catch (Exception $ex) {
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
