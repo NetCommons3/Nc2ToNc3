@@ -184,6 +184,10 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 		// のみ保持する
 		// いらない？
 		$userAttributeChoice = $nc3UserAttribute['UserAttributeChoice'];
+		if (!isset($userAttributeChoice)) {
+			return;
+		}
+
 		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.id');
 		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.language_id');
 		$userAttributeChoice = Hash::remove($userAttributeChoice, '{n}.key');
