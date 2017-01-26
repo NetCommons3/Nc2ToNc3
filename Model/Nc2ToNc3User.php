@@ -165,6 +165,11 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	private function __saveUserFromNc2($nc2Users) {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
+		$passwordSaveOptions = [
+			'validate' => false,
+			'fieldList' => ['password'],
+			'callbacks' => false,
+		];
 
 		$User->begin();
 		try {
@@ -202,6 +207,18 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
 				if ($this->getIdMap($nc2UserId)) {
 					continue;
+				}
+
+				// 新規ユーザーのNc3User.passwordをHashしない値で更新
+				$data = [
+					'User' => [
+						'id' => $User->id,
+						'password' => $nc2User['Nc2User']['password']
+					]
+				];
+				if (!$User->save($data, $passwordSaveOptions)) {
+					$User->rollback();
+					return false;
 				}
 
 				$this->putIdMap($nc2UserId, $User->data);
