@@ -26,7 +26,12 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 		// NC2に存在するが必須でない場合もチェックしとく(多くが未入力データと思われるため)
 		// NC2の会員項目を途中から必須項目に変更すると、結局未入力のUserデータは必須エラーになるが、
 		// 可能性は低いと考え、一応チェック
+		// そもそも、会員項目移行時にNC3UserAttribute.requiredを更新しちゃえば良い気もする。
+
 		// 移行しながら、必須エラーの件数がある程度発生したら止めた方が良い気がする
+		// →対応済み
+		// @see
+		// https://github.com/NetCommons3/Nc2ToNc3/blob/6af9ac04a097738e10ea7efc0987b27e2aea6000/Model/Nc2ToNc3User.php#L140-L150
 
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
