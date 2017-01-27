@@ -165,11 +165,13 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	private function __saveUserFromNc2($nc2Users) {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
+		/*
 		$passwordSaveOptions = [
 			'validate' => false,
 			'fieldList' => ['password'],
 			'callbacks' => false,
 		];
+		*/
 
 		$User->begin();
 		try {
@@ -210,6 +212,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				}
 
 				// 新規ユーザーのNc3User.passwordをHashしない値で更新
+				/*
+				 * 認証時、SimplePasswordHasherでsalt値を使用するため、
+				 * md5値をHashしたままにしとかないと認証できない
 				$data = [
 					'User' => [
 						'id' => $User->id,
@@ -220,6 +225,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					$User->rollback();
 					return false;
 				}
+				*/
 
 				$this->putIdMap($nc2UserId, $User->data);
 			}
