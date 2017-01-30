@@ -35,6 +35,7 @@
 						echo $this->MessageFlash->description(
 							__d('nc2_to_nc3', 'Change that below, if it is different from NetCommons3.')
 						);
+						/* tinyint(1)をbooleanにしないDboSourceを使用するようにしたため不要
 						echo $this->NetCommonsForm->input(
 							'datasource',
 							[
@@ -46,6 +47,7 @@
 								]
 							]
 						);
+						*/
 						echo $this->NetCommonsForm->input('host', ['label' => __d('nc2_to_nc3', 'Host')]);
 						echo $this->NetCommonsForm->input('port', ['label' => __d('nc2_to_nc3', 'Port')]);
 						echo $this->NetCommonsForm->input('login', ['label' => __d('nc2_to_nc3', 'Login')]);
