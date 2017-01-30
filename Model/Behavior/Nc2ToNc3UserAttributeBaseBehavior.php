@@ -55,7 +55,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Put id map.
  *
  * @param Model $model Model using this behavior.
- * @param string $nc2ItemId Nc2Item id.
+ * @param string $nc2ItemId Nc2Item item_id.
  * @param array $nc3UserAttribute Nc3UserAttribute data.
  * @return void
  */
@@ -67,7 +67,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Get id map.
  *
  * @param Model $model Model using this behavior.
- * @param string $nc2ItemId Nc2Item id.
+ * @param string $nc2ItemId Nc2Item item_id.
  * @return array|string Id map.
  */
 	public function getIdMap(Model $model, $nc2ItemId = null) {
@@ -90,7 +90,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Get Nc2ItemDesc description by id.
  *
  * @param Model $model Model using this behavior.
- * @param string $itemId Nc2Item id.
+ * @param string $itemId Nc2Item item_id.
  * @return string Nc2ItemDesc description.
  */
 	public function getNc2ItemDescriptionById(Model $model, $itemId) {
@@ -101,7 +101,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Check Nc2Config autoregist_use_items.
  *
  * @param Model $model Model using this behavior.
- * @param string $itemId Nc2Item id.
+ * @param string $itemId Nc2Item item_id.
  * @return bool True if data is Nc2Config autoregist_use_items.
  */
 	public function isNc2AutoregistUseItem(Model $model, $itemId) {
@@ -112,7 +112,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Check require Nc2Config autoregist_use_items.
  *
  * @param Model $model Model using this behavior.
- * @param string $itemId Nc2Item id.
+ * @param string $itemId Nc2Item item_id.
  * @return bool True if data require as Nc2Config autoregist_use_items.
  */
 	public function isNc2AutoregistUseItemRequire(Model $model, $itemId) {
@@ -162,7 +162,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Put id map
  *
- * @param string $nc2ItemId Nc2Item id.
+ * @param string $nc2ItemId Nc2Item item_id.
  * @param string $nc3UserAttribute Nc3UserAttribute data.
  * @return void
  */
@@ -204,7 +204,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get id map
  *
- * @param string $nc2ItemId Nc2Item id.
+ * @param string $nc2ItemId Nc2Item item_id.
  * @return array|string Id map.
  */
 	protected function _getIdMap($nc2ItemId = null) {
@@ -233,7 +233,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get Nc2ItemDesc description by id.
  *
- * @param string $itemId Nc2Item id.
+ * @param string $itemId Nc2Item item_id.
  * @return string Nc2ItemDesc description.
  */
 	protected function _getNc2ItemDescriptionById($itemId) {
@@ -256,7 +256,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Check Nc2Config autoregist_use_items
  *
- * @param string $itemId Nc2Item id.
+ * @param string $itemId Nc2Item item_id.
  * @return bool True if data is Nc2Config autoregist_use_items.
  */
 	protected function _isNc2AutoregistUseItem($itemId) {
@@ -270,7 +270,7 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Check require Nc2Config autoregist_use_items.
  *
- * @param string $itemId Nc2Item id.
+ * @param string $itemId Nc2Item item_id.
  * @return bool True if data require as Nc2Config autoregist_use_items.
  */
 	protected function _isNc2AutoregistUseItemRequire($itemId) {

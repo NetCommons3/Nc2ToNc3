@@ -27,7 +27,7 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Put id map.
  *
  * @param Model $model Model using this behavior.
- * @param string $nc2UserId Nc2User id.
+ * @param string $nc2UserId Nc2User user_id.
  * @param string $nc3User Nc3User data.
  * @return void
  */
@@ -39,7 +39,7 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Get id map.
  *
  * @param Model $model Model using this behavior.
- * @param string $nc2UserId Nc2User id.
+ * @param string $nc2UserId Nc2User user_id.
  * @return array|string Id map.
  */
 	public function getIdMap(Model $model, $nc2UserId = null) {
@@ -49,7 +49,7 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Put id map.
  *
- * @param string $nc2UserId Nc2User id.
+ * @param string $nc2UserId Nc2User user_id.
  * @param string $nc3User Nc3User data.
  * @return void
  */
@@ -65,7 +65,7 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get id map
  *
- * @param string $nc2UserId Nc2User id.
+ * @param string $nc2UserId Nc2User user_id.
  * @return array|string Id map.
  */
 	protected function _getIdMap($nc2UserId = null) {
