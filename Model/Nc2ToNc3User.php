@@ -17,6 +17,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
  * @method string convertDate($date)
+ * @method string convertLanguage($langDirName)
  *
  * @see Nc2ToNc3UserBaseBehavior
  * @method void putIdMap($nc2UserId, $nc3UserId)

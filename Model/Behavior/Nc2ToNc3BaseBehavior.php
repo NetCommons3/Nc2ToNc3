@@ -230,6 +230,10 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return string converted nc2 lang_dirname.
  */
 	protected function _convertLanguage($langDirName) {
+		if (!$langDirName) {
+			return null;
+		}
+
 		// Model毎にInstanceが作成されるため、Model毎にNc3Languageから読み込まれる
 		// 今のところ、RoomとPageだけなので、Propertyで保持するが、
 		// 増えてきたらstatic等でNc3Languageから読み込まないよう変更する
