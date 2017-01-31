@@ -228,7 +228,11 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				}
 				*/
 
-				$this->putIdMap($nc2UserId, $User->data);
+				// $User->Behaviors->load(''Nc2ToNc3.Nc2ToNc3User'')
+				// で、Nc2ToNc3UserBehavior::afterSaveでmapデータ作成するようにした方が良いかも。
+				// $User::dataが利用できるので。
+				$data = $User->findById($User->id, null, null, -1);
+				$this->putIdMap($nc2UserId, $data);
 			}
 
 			$User->commit();

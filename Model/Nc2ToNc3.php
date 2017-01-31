@@ -195,13 +195,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
-		/* @var $Nc2ToNc3UserRole Nc2ToNc3UserRole */
-		$Nc2ToNc3UserRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserRole');
-		if (!$Nc2ToNc3UserRole->migrate()) {
-			$this->validationErrors = $Nc2ToNc3UserRole->validationErrors;
-			return false;
-		}
-
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		if (!$Nc2ToNc3UserAttr->migrate()) {

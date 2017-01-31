@@ -46,32 +46,6 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 	private $__idMap = null;
 
 /**
- * Migration method.
- *
- * @return bool True on success
- */
-	public function migrate() {
-		// データの移行はしない
-		// Nc2Authority.idとNc3UserRoleSetting.role_keyの対応付けのみ行う
-		// Nc2Authority.idをkeyにUserRoleSetting.role_keyと対応付ける
-		// 直接変更することで、Nc2ToNc3User::__convertRoleより対応付けされるようになる
-		// @see Nc2ToNc3User::__convertRole
-
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserRole Mapping start.'));
-
-		$this->__idMap = [
-			'1' => [
-				'UserRoleSetting' => [
-					'role_key' => 'system_administrator'
-				]
-			]
-		];
-
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'UserRole Mapping end.'));
-		return true;
-	}
-
-/**
  * Get id map
  *
  * @param string $nc2RoleAuthorityId Nc2Authority.id.
@@ -81,6 +55,19 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 		if (!isset($nc2RoleAuthorityId)) {
 			return $this->__idMap;
 		}
+
+		// データの移行はしない
+		// Nc2Authority.idとNc3UserRoleSetting.role_keyの対応付けのみ行う
+		// Nc2Authority.idをkeyにUserRoleSetting.role_keyと対応付ける
+		// 直接変更することで、Nc2ToNc3User::__convertRoleより対応付けされるようになる
+		// @see Nc2ToNc3User::__convertRole
+		$this->__idMap = [
+			'1' => [
+				'UserRoleSetting' => [
+					'role_key' => 'system_administrator'
+				]
+			]
+		];
 
 		// 対応データがなければcommon_userを返す
 		$default = [

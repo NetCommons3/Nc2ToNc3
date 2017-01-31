@@ -151,6 +151,9 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				// CakeMigrationが呼び出され、ClassRegistry::flush済み
 				$calledCakeMigration = true;
 
+				// $UserAttribute->Behaviors->load(''Nc2ToNc3.Nc2ToNc3UserAttribute'')
+				// で、Nc2ToNc3UserAttributeBehavior::afterSaveでmapデータ作成するようにした方が良いかも。
+				// $UserAttribute::dataが利用できるので。
 				$data = $UserAttribute->findById($UserAttribute->id);
 				$this->putIdMap($nc2ItemId, $data);
 				$this->incrementUserAttributeSettingWeight();
