@@ -47,6 +47,17 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Get Nc3 created_uer.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Data Nc2 data having insert_user_id and insert_user_name
+ * @return string Nc3 created_uer.
+ */
+	public function getCreatedUser(Model $model, $nc2Data) {
+		return $this->_getCreatedUser($nc2Data);
+	}
+
+/**
  * Put id map.
  *
  * @param string $nc2UserId Nc2User user_id.
@@ -74,6 +85,41 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		return $this->__idMap;
+	}
+
+/**
+ * Get Nc3 created_uer.
+ *
+ * @param array $nc2Data Nc2 data having insert_user_id and insert_user_name
+ * @return string Nc3 created_uer.
+ */
+	protected function _getCreatedUser($nc2Data) {
+		$nc2UserId = $nc2Data['insert_user_id'];
+		if (!$nc2UserId) {
+			return null;
+		}
+
+		$map = $this->_getIdMap($nc2UserId);
+		if ($map) {
+			return $map['User']['id'];
+		}
+
+		/* @var $User User */
+		$User = ClassRegistry::init('Users.User');
+		$saveOptions = [
+			'validate' => false,
+			'fieldList' => ['handlename'],
+			'callbacks' => false,
+		];
+		$data = [
+			'User' => [
+				'handlename' => $nc2Data['insert_user_name']
+			]
+		];
+		$data = $User->save($data, $saveOptions);
+		$this->_putIdMap($nc2UserId, $data);
+
+		return $User->id;
 	}
 
 }

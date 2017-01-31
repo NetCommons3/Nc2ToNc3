@@ -22,6 +22,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3UserBaseBehavior
  * @method void putIdMap($nc2UserId, $nc3UserId)
  * @method string getIdMap($nc2UserId)
+ * @method string getCreatedUser($nc2Data)
  *
  * @see Nc2ToNc3UserBehavior
  * @method string getLogArgument($nc2User)
@@ -166,13 +167,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	private function __saveUserFromNc2($nc2Users) {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
-		/*
-		$passwordSaveOptions = [
-			'validate' => false,
-			'fieldList' => ['password'],
-			'callbacks' => false,
-		];
-		*/
 
 		$User->begin();
 		try {
@@ -211,22 +205,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				if ($this->getIdMap($nc2UserId)) {
 					continue;
 				}
-
-				// 新規ユーザーのNc3User.passwordをHashしない値で更新
-				/*
-				 * 認証時、SimplePasswordHasherでsalt値を使用するため、
-				 * md5値をHashしたままにしとかないと認証できない
-				$data = [
-					'User' => [
-						'id' => $User->id,
-						'password' => $nc2User['Nc2User']['password']
-					]
-				];
-				if (!$User->save($data, $passwordSaveOptions)) {
-					$User->rollback();
-					return false;
-				}
-				*/
 
 				// $User->Behaviors->load(''Nc2ToNc3.Nc2ToNc3User'')
 				// で、Nc2ToNc3UserBehavior::afterSaveでmapデータ作成するようにした方が良いかも。
