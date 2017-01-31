@@ -25,6 +25,13 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	private $__languageIdFromNc2 = null;
 
 /**
+ * Language list.
+ *
+ * @var array
+ */
+	private $__languageList = null;
+
+/**
  * Setup this behavior with the specified configuration settings.
  *
  * @param Model $model Model using this behavior
@@ -100,6 +107,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function convertDate(Model $model, $date) {
 		return $this->_convertDate($date);
+	}
+
+/**
+ * Convert nc2 lang_dirname.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $langDirName nc2 lang_dirname.
+ * @return string converted nc2 lang_dirname.
+ */
+	public function convertLanguage(Model $model, $langDirName) {
+		return $this->_convertLanguage($langDirName);
 	}
 
 /**
@@ -203,6 +221,46 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 				substr($date, 12, 2);
 
 		return $date;
+	}
+
+/**
+ * Convert nc2 lang_dirname.
+ *
+ * @param string $langDirName nc2 lang_dirname.
+ * @return string converted nc2 lang_dirname.
+ */
+	protected function _convertLanguage($langDirName) {
+		// Model毎にInstanceが作成されるため、Model毎にNc3Languageから読み込まれる
+		// 今のところ、RoomとPageだけなので、Propertyで保持するが、
+		// 増えてきたらstatic等でNc3Languageから読み込まないよう変更する
+		if (!isset($this->__languageList)) {
+			/* @var $Language Language */
+			$Language = ClassRegistry::init('M17n.Language');
+			$query = [
+				'fields' => [
+					'Language.code',
+					'Language.id'
+				],
+				'conditions' => [
+					'is_active' => true
+				],
+				'recursive' => -1
+			];
+			$this->__languageList = $Language->find('list', $query);
+		}
+
+		$map = [
+			'japanese' => 'ja',
+			'english' => 'en',
+			'chinese' => 'zh'
+		];
+		$code = $map[$langDirName];
+
+		if (isset($this->__languageList[$code])) {
+			return $this->__languageList[$code];
+		}
+
+		return null;
 	}
 
 }
