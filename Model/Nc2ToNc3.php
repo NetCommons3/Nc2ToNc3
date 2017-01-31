@@ -195,16 +195,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
-		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
-		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
-		/*
-		if (!$Nc2ToNc3Room->migrate()) {
-			$this->validationErrors = $Nc2ToNc3Room->validationErrors;
-			return false;
-		}
-		exit;
-		*/
-
 		/* @var $Nc2ToNc3UserRole Nc2ToNc3UserRole */
 		$Nc2ToNc3UserRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserRole');
 		if (!$Nc2ToNc3UserRole->migrate()) {
@@ -223,6 +213,13 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		if (!$Nc2ToNc3User->migrate()) {
 			$this->validationErrors = $Nc2ToNc3User->validationErrors;
+			return false;
+		}
+
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		if (!$Nc2ToNc3Room->migrate()) {
+			$this->validationErrors = $Nc2ToNc3Room->validationErrors;
 			return false;
 		}
 
