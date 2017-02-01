@@ -193,6 +193,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  */
 	private function __generateNc3Data($nc2PageLaguages) {
 		$data = [];
+		// 複数言語データがあっても、先頭を優先する。
+		// Nc3Room.activeがちょっと問題かも。（準備中を優先した方が良い？）
 		$nc2Page = $nc2PageLaguages[0];
 
 		/*
@@ -232,6 +234,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			$defaultRoleKey = $this->getDefaultRoleKeyFromNc2($nc2SpaceType);
 		}
 
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
 			'space_id' => Space::PUBLIC_SPACE_ID,
 			'root_id' => $spaces[$spaceId]['Space']['room_id_root'],	// 使ってないっぽい
@@ -240,6 +244,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			'default_role_key' => $defaultRoleKey,
 			'need_approval' => $needApproval,
 			'default_participation' => $nc2Page['Nc2Page']['default_entry_flag'],
+			'created' => $this->convertDate($nc2Page['Nc2Page']['insert_time']),
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page'])
 		];
 		$data = $Space->createRoom($data);
 

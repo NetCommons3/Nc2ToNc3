@@ -106,17 +106,45 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
+
+		// ハンドルが同一のNc3User.idをcreated_uerとする？
+		// 同一人物の保証ができない。
+		// 移行時にmapデータを読み込むようにして、mapデータになければ削除ユーザーとして登録するのが良い気がする
+		// 削除ユーザーとしてmapされているユーザーが移行対象になった場合要注意
+		//   →updaetしても削除扱いなので、新規ユーザーとして登録しないといけない
+		$user = $User->findByHandlenameAndIsDeleted(
+			$nc2Data['insert_user_name'],
+			'1',
+			null,
+			null,
+			-1
+		);
+		if ($user) {
+			$this->_putIdMap($nc2UserId, $user);
+			return $user['User']['id'];
+		}
+
 		$saveOptions = [
 			'validate' => false,
-			'fieldList' => ['handlename'],
+			'fieldList' => [
+				'handlename',
+				'is_deleted',
+				'created_user',
+				'created',
+				'modified_user',
+				'modified',
+			],
 			'callbacks' => false,
 		];
 		$data = [
 			'User' => [
-				'handlename' => $nc2Data['insert_user_name']
+				'handlename' => $nc2Data['insert_user_name'],
+				'is_deleted' => '1',
 			]
 		];
+		$User->create($data);
 		$data = $User->save($data, $saveOptions);
+
 		$this->_putIdMap($nc2UserId, $data);
 
 		return $User->id;
