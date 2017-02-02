@@ -17,13 +17,6 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
- * IdMap of nc2 and nc3.
- *
- * @var array
- */
-	private $__idMap = null;
-
-/**
  * Nc3Room default_role_key list from Nc2Config default_entry_role_auth_group.
  *
  * @var array
@@ -72,11 +65,15 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	protected function _putIdMap($nc2RoomId, $nc3Room) {
-		$this->__idMap[$nc2RoomId] = [
+		$map[$nc2RoomId] = [
 			'Room' => [
 				'id' => $nc3Room['Room']['id']
 			]
 		];
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Nc2ToNc3Map->saveMap('Room', $map);
 	}
 
 /**
@@ -86,11 +83,10 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return array|string Id map.
  */
 	protected function _getIdMap($nc2RoomId = null) {
-		if (isset($nc2RoomId)) {
-			return Hash::get($this->__idMap, [$nc2RoomId]);
-		}
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 
-		return $this->__idMap;
+		return $Nc2ToNc3Map->getMap('Room', $nc2RoomId);
 	}
 
 /**

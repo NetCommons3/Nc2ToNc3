@@ -17,13 +17,6 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
- * IdMap of nc2 and nc3.
- *
- * @var array
- */
-	private $__idMap = null;
-
-/**
  * Put id map.
  *
  * @param Model $model Model using this behavior.
@@ -65,12 +58,16 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return void
  */
 	protected function _putIdMap($nc2UserId, $nc3User) {
-		$this->__idMap[$nc2UserId] = [
+		$map[$nc2UserId] = [
 			'User' => [
 				'id' => $nc3User['User']['id'],
 				'handlename' => $nc3User['User']['handlename']
 			]
 		];
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Nc2ToNc3Map->saveMap('User', $map);
 	}
 
 /**
@@ -80,11 +77,10 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return array|string Id map.
  */
 	protected function _getIdMap($nc2UserId = null) {
-		if (isset($nc2UserId)) {
-			return Hash::get($this->__idMap, [$nc2UserId]);
-		}
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 
-		return $this->__idMap;
+		return $Nc2ToNc3Map->getMap('User', $nc2UserId);
 	}
 
 /**
@@ -106,24 +102,6 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
-
-		// ハンドルが同一のNc3User.idをcreated_uerとする？
-		// 同一人物の保証ができない。
-		// 移行時にmapデータを読み込むようにして、mapデータになければ削除ユーザーとして登録するのが良い気がする
-		// 削除ユーザーとしてmapされているユーザーが移行対象になった場合要注意
-		//   →updaetしても削除扱いなので、新規ユーザーとして登録しないといけない
-		$user = $User->findByHandlenameAndIsDeleted(
-			$nc2Data['insert_user_name'],
-			'1',
-			null,
-			null,
-			-1
-		);
-		if ($user) {
-			$this->_putIdMap($nc2UserId, $user);
-			return $user['User']['id'];
-		}
-
 		$saveOptions = [
 			'validate' => false,
 			'fieldList' => [
