@@ -22,6 +22,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  *
  * @see Nc2ToNc3RoomBaseBehavior
  * @method string getDefaultRoleKeyFromNc2($nc2SpaceType)
+ * @method array getNc3DefaultRolePermission()
  *
  * @see Nc2ToNc3RoomsBehavior
  *
@@ -111,7 +112,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				if (!$data) {
 					continue;
 				}
-				var_dump($data);
+				var_dump($data['RoomRolePermission']);
 				$nc2PageLaguages = [];
 				continue;
 
@@ -269,6 +270,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 			$data['RoomsLanguage'][$key]['name'] = $nc2Page['Nc2Page']['page_name'];
 		}
+
+		$data['RoomRolePermission'] = $this->getNc3DefaultRolePermission();
 
 		return $data;
 	}
