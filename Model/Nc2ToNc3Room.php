@@ -16,6 +16,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
+ * @method string getLanguageIdFromNc2()
  * @method string convertDate($date)
  * @method string convertLanguage($langDirName)
  *
@@ -193,9 +194,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  */
 	private function __generateNc3Data($nc2PageLaguages) {
 		$data = [];
-		// 複数言語データがあっても、先頭を優先する。
-		// Nc3Room.activeがちょっと問題かも。（準備中を優先した方が良い？）
-		$nc2Page = $nc2PageLaguages[0];
+		$nc2Page = $this->__getPreferredNc2Page($nc2PageLaguages);
 
 		/*
 		// 対応するルームが既存の処理
@@ -252,6 +251,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$existsKeys = [];
 		foreach ($nc2PageLaguages as $nc2PageLaguage) {
 			$nc3LaguageId = $this->convertLanguage($nc2PageLaguage['Nc2Page']['lang_dirname']);
+
 			foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
 				if ($nc3RoomLaguage['language_id'] == $nc3LaguageId) {
 					$data['RoomsLanguage'][$key]['name'] = $nc2PageLaguage['Nc2Page']['page_name'];
@@ -261,6 +261,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			}
 		}
 
+		// Nc2に存在しない言語分のデータ設定
 		foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
 			if (in_array($key, $existsKeys)) {
 				continue;
@@ -270,6 +271,30 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		}
 
 		return $data;
+	}
+
+/**
+ * Get preferred Nc2Page data.
+ *
+ * @param array $nc2PageLaguages Nc2Page data.
+ * @return array Nc2Page data.
+ */
+	private function __getPreferredNc2Page($nc2PageLaguages) {
+		$nc2Page = [];
+
+		// Nc2Config.languageを優先する。
+		// Nc2Config.languageのルームがなければ最初のNc2Pageデータを使用する。
+		// Nc3Room.activeがちょっと問題かも。（準備中を優先した方が良い？）
+		foreach ($nc2PageLaguages as $nc2PageLaguage) {
+			$nc3LaguageId = $this->convertLanguage($nc2PageLaguage['Nc2Page']['lang_dirname']);
+			if (!$nc2Page ||
+				$nc3LaguageId == $this->getLanguageIdFromNc2()
+			) {
+				$nc2Page = $nc2PageLaguage;
+			}
+		}
+
+		return $nc2Page;
 	}
 
 }
