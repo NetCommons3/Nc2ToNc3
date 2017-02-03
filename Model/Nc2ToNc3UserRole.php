@@ -54,22 +54,24 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
  * @return array|string Id map.
  */
 	public function getIdMap($nc2RoleAuthorityId = null) {
-		if (!isset($nc2RoleAuthorityId)) {
-			return $this->__idMap;
-		}
-
 		// データの移行はしない
 		// Nc2Authority.idとNc3UserRoleSetting.role_keyの対応付けのみ行う
 		// Nc2Authority.idをkeyにUserRoleSetting.role_keyと対応付ける
 		// 直接変更することで、Nc2ToNc3User::__convertRoleより対応付けされるようになる
 		// @see Nc2ToNc3User::__convertRole
-		$this->__idMap = [
-			'1' => [
-				'UserRoleSetting' => [
-					'role_key' => 'system_administrator'
+		if (!$this->__idMap) {
+			$this->__idMap = [
+				'1' => [
+					'UserRoleSetting' => [
+						'role_key' => 'system_administrator'
+					]
 				]
-			]
-		];
+			];
+		}
+
+		if (!isset($nc2RoleAuthorityId)) {
+			return $this->__idMap;
+		}
 
 		// 対応データがなければcommon_userを返す
 		$default = [
