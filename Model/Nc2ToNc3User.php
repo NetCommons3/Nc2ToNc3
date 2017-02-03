@@ -280,7 +280,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		$nc2UserId = $nc2User['Nc2User']['user_id'];
 		$idMap = $this->getIdMap($nc2UserId);
 		if ($idMap) {
-			$data = $User->getUser($idMap['User']['id']);
+			// とりあえず上書きしない
+			//$data = $User->getUser($idMap['User']['id']);
+			return $data;
 		} else {
 			$data = $User->createUser();
 		}
