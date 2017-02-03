@@ -112,7 +112,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				if (!$data) {
 					continue;
 				}
-				var_dump($data['RoomRolePermission']);
+				var_dump($data);
 				$nc2PageLaguages = [];
 				continue;
 
@@ -272,6 +272,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		}
 
 		$data['RoomRolePermission'] = $this->getNc3DefaultRolePermission();
+		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
 
 		return $data;
 	}
@@ -298,6 +299,43 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		}
 
 		return $nc2Page;
+	}
+
+/**
+ * Generate Nc3PluginsRoom data.
+ *
+ * @param array $nc2Page Nc2Page data.
+ * @return array Nc3PluginsRoom data.
+ */
+	private function __generateNc3PluginsRoom($nc2Page) {
+		/* @var $Nc2PagesModulesLink AppModel */
+		$Nc2PagesModulesLink = $this->getNc2Model('pages_modules_link');
+		$nc2PageModuleLinks = $Nc2PagesModulesLink->findAllByRoomId(
+			$nc2Page['Nc2Page']['room_id'],
+			'module_id',
+			null,
+			-1
+		);
+
+		/* @var $Nc2ToNc3Plugin Nc2ToNc3Plugin */
+		$Nc2ToNc3Plugin = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Plugin');
+		$map = $Nc2ToNc3Plugin->getIdMap();
+		$notExistsKeys = [
+			'auth'
+		];
+		$nc3PluginsRoom['plugin_key'] = [];
+		foreach ($nc2PageModuleLinks as $nc2PageModuleLink) {
+			$nc2ModuleId = $nc2PageModuleLink['Nc2PagesModulesLink']['module_id'];
+			if (!isset($map[$nc2ModuleId]['Plugin']['key']) ||
+				in_array($map[$nc2ModuleId]['Plugin']['key'], $notExistsKeys)
+			) {
+				continue;
+			}
+
+			$nc3PluginsRoom['plugin_key'][] = $map[$nc2ModuleId]['Plugin']['key'];
+		}
+
+		return $nc3PluginsRoom;
 	}
 
 }
