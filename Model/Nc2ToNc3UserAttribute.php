@@ -16,13 +16,13 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
+ * @method string getLanguageIdFromNc2()
  * @method string convertDate($date)
  * @method string convertLanguage($langDirName)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
  * @method void putIdMap($nc2ItemId, $nc3UserAttribute)
  * @method string getIdMap($nc2ItemId)
- * @method string getLanguageIdFromNc2()
  * @method string getNc2ItemValueByConstant($constant, $languageId)
  * @method string getNc2ItemDescriptionById($itemId)
  * @method bool isNc2AutoregistUseItem($itemId)
