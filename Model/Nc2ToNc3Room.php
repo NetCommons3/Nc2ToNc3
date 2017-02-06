@@ -9,6 +9,7 @@
  */
 
 App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
+App::uses('Current', 'NetCommons.Utility');
 
 /**
  * Nc2ToNc3Room
@@ -92,6 +93,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			// 対応させるデータが名前くらいしかない気がする。。。
 			// 名前でマージして良いのか微妙なので保留
 			//$this->putExistingIdMap($nc2Pages);
+
+			$currentLanguage = Current::read('Language');
 			foreach ($nc2Pages as $key => $nc2Page) {
 				/*
 				if (!$this->isMigrationRow($nc2User)) {
@@ -112,11 +115,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				if (!$data) {
 					continue;
 				}
-				var_dump($data);
-				$nc2PageLaguages = [];
-				continue;
 
 				// saveする前に現在の言語を切り替える処理が必要
+				// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
+				$this->__setCurrentLanguageId($data['RoomsLanguage']);
+
+				var_dump($data, Current::read('Language.id'));
+				$nc2PageLaguages = [];
+				continue;
 
 				/*
 				if (!$User->saveUser($data)) {
@@ -149,8 +155,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			}
 
 			$Room->commit();
+			Current::write('Language', $currentLanguage);
 
 		} catch (Exception $ex) {
+			Current::write('Language', $currentLanguage);
+
 			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 			// $User::saveUser()でthrowされるとこの処理に入ってこない
 			$Room->rollback($ex);
@@ -253,23 +262,34 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		foreach ($nc2PageLaguages as $nc2PageLaguage) {
 			$nc3LaguageId = $this->convertLanguage($nc2PageLaguage['Nc2Page']['lang_dirname']);
 
-			foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
-				if ($nc3RoomLaguage['language_id'] == $nc3LaguageId) {
-					$data['RoomsLanguage'][$key]['name'] = $nc2PageLaguage['Nc2Page']['page_name'];
-					$existsKeys[] = $key;
-					continue 2;
+			// 1行文字数が多くなるので参照渡しのループ
+			foreach ($data['RoomsLanguage'] as $key => &$nc3RoomLaguage) {
+				if ($nc3RoomLaguage['language_id'] != $nc3LaguageId) {
+					continue;
 				}
+
+				$nc3RoomLaguage['name'] = $nc2PageLaguage['Nc2Page']['page_name'];
+				$nc3RoomLaguage['created'] = $this->convertDate($nc2PageLaguage['Nc2Page']['insert_time']);
+				$nc3RoomLaguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2PageLaguage['Nc2Page']);
+				$existsKeys[] = $key;
+
+				break;
 			}
+			unset($nc3RoomLaguage);	// 参照渡し解除
 		}
 
 		// Nc2に存在しない言語分のデータ設定
-		foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
+		// 1行文字数が多くなるので参照渡しのループ
+		foreach ($data['RoomsLanguage'] as $key => &$nc3RoomLaguage) {
 			if (in_array($key, $existsKeys)) {
 				continue;
 			}
 
-			$data['RoomsLanguage'][$key]['name'] = $nc2Page['Nc2Page']['page_name'];
+			$nc3RoomLaguage['name'] = $nc2Page['Nc2Page']['page_name'];
+			$nc3RoomLaguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
+			$nc3RoomLaguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']);
 		}
+		unset($nc3RoomLaguage);	// 参照渡し解除
 
 		$data['RoomRolePermission'] = $this->getNc3DefaultRolePermission();
 		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
@@ -336,6 +356,33 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		}
 
 		return $nc3PluginsRoom;
+	}
+
+/**
+ * Set current language id
+ *
+ * @param array $nc3RoomLanguages Nc3RoomsLanguage data.
+ * @return array Nc3PluginsRoom data.
+ */
+	private function __setCurrentLanguageId($nc3RoomLanguages) {
+		$minCreated = '';
+		foreach ($nc3RoomLanguages as $nc3RoomLanguage) {
+			if (!$minCreated ||
+				$nc3RoomLanguage['created'] < $minCreated
+			) {
+				$languageId = $nc3RoomLanguage['language_id'];
+				$minCreated = $nc3RoomLanguage['created'];
+			}
+		}
+
+		if ($languageId == Current::read('Language.id')) {
+			return;
+		}
+
+		/* @var $Language Language */
+		$Language = ClassRegistry::init('M17n.Language');
+		$language = $Language->findById($languageId, null, null, -1);
+		Current::write('Language', $language['Language']);
 	}
 
 }
