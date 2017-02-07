@@ -331,6 +331,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			}
 		}
 
+		// TODOーデフォルトで参加するルームデータRolesRoomsUserの作成処理
+
 		return $data;
 	}
 
