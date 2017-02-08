@@ -299,7 +299,14 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
 
 		$userAttributeMap = $Nc2ToNc3UserAttr->getIdMap();
-		$nc2UserItemLink = $Nc2UsersItemsLink->findAllByUserId($nc2UserId, null, null, -1);
+		$nc2UserItemLink = $Nc2UsersItemsLink->findAllByUserId(
+			$nc2UserId,
+			null,
+			null,
+			null,
+			null,
+			-1
+		);
 		$nc3UserFields = array_keys($data['User']);
 		$nc3LanguageFields = array_keys($data['UsersLanguage'][0]);
 		foreach ($userAttributeMap as $nc2ItemId => $map) {

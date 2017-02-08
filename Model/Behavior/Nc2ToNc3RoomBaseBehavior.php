@@ -127,6 +127,8 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 			],
 			'conf_value',
 			'conf_name',
+			null,
+			null,
 			-1
 		);
 
