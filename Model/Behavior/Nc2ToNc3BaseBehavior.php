@@ -1,6 +1,6 @@
 <?php
 /**
- * Nc2ToNc3MigrationBehavior
+ * Nc2ToNc3BaseBehavior
  *
  * @copyright Copyright 2014, NetCommons Project
  * @author Kohei Teraguchi <kteraguchi@commonsnet.org>
