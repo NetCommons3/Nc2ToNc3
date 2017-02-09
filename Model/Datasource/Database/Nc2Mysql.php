@@ -21,6 +21,7 @@ class Nc2Mysql extends Mysql {
  *
  * Remove $column['native_type'] === 'TINY' check
  *
+ *
  * @param PDOStatement $results The results to format.
  * @return void
  */
@@ -32,7 +33,9 @@ class Nc2Mysql extends Mysql {
 		while ($numFields-- > 0) {
 			$column = $results->getColumnMeta($index);
 			if ($column['len'] === 1 && empty($column['native_type'])) {
-				$type = 'boolean';
+				// CentOS7.3.1611のデフォルト環境PHP5.4.16, MariaDB5.5.52で、$column['native_type']が返ってこないため、intに強制変換
+				//$type = 'boolean';
+				$type = 'int';
 			} else {
 				$type = empty($column['native_type']) ? 'string' : $column['native_type'];
 			}
