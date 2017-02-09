@@ -21,7 +21,6 @@ class Nc2Mysql extends Mysql {
  *
  * Remove $column['native_type'] === 'TINY' check
  *
- *
  * @param PDOStatement $results The results to format.
  * @return void
  */
