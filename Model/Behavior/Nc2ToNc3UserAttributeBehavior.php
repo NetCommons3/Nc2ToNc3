@@ -60,36 +60,45 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Put existing id map.
+ * Save existing map.
  *
  * @param Model $model Model using this behavior.
  * @param array $nc2Item Nc2Item data.
  * @return void
  */
-	public function putExistingIdMap(Model $model, $nc2Item) {
+	public function saveExistingMap(Model $model, $nc2Item) {
 		$dataTypeKey = $this->__convertNc2Type($nc2Item);
 
-		$userAttribute = $this->__getNc3UserAttributeByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
-		if ($userAttribute) {
-			$this->_putIdMap($nc2Item['Nc2Item']['item_id'], $userAttribute);
+		$userAttributeId = $this->__getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey);
+		if ($userAttributeId) {
+			$idMap = [
+				$nc2Item['Nc2Item']['item_id'] => $userAttributeId
+			];
+			$this->_saveMap('UserAttribute', $idMap);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
 			return;
 		}
 
-		$userAttribute = $this->__getNc3UserAttributeByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
-		if ($userAttribute) {
-			$this->_putIdMap($nc2Item['Nc2Item']['item_id'], $userAttribute);
+		$userAttributeId = $this->__getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
+		if ($userAttributeId) {
+			$idMap = [
+				$nc2Item['Nc2Item']['item_id'] => $userAttributeId
+			];
+			$this->_saveMap('UserAttribute', $idMap);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
 			return;
 		}
 
-		$userAttribute = $this->__getNc3UserAttributeByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
-		if ($userAttribute) {
-			$this->_putIdMap($nc2Item['Nc2Item']['item_id'], $userAttribute);
+		$userAttributeId = $this->__getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey);
+		if ($userAttributeId) {
+			$idMap = [
+				$nc2Item['Nc2Item']['item_id'] => $userAttributeId
+			];
+			$this->_saveMap('UserAttribute', $idMap);
 
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->__getLogArgument($nc2Item));
 			$this->_writeMigrationLog($message);
@@ -212,13 +221,13 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 	}
 
 /**
- * Get Nc3UserAttribute by Nc2Item tag_name and Nc3UserAttributeSetting data_type_key.
+ * Get Nc3UserAttribute.id by Nc2Item tag_name and Nc3UserAttributeSetting data_type_key.
  *
  * @param array $nc2Item Nc2Item data.
  * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
  * @return string Nc3UserAttribute id.
  */
-	private function __getNc3UserAttributeByTagNameAndDataTypeKey($nc2Item, $dataTypeKey) {
+	private function __getNc3UserAttributeIdByTagNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$defaultTagNames = [
 			'email',
 			'lang_dirname_lang',
@@ -238,10 +247,9 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 			'update_user_name',
 		];
 
-		$userAttribute = [];
 		$tagName = $nc2Item['Nc2Item']['tag_name'];
 		if (!in_array($tagName, $defaultTagNames)) {
-			return $userAttribute;
+			return null;
 		}
 
 		$tagToKeyMap = [
@@ -266,76 +274,77 @@ class Nc2ToNc3UserAttributeBehavior extends Nc2ToNc3UserAttributeBaseBehavior {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
+			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttribute.key' => $tagToKeyMap[$tagName],
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
-			'recursive' => 1
+			'recursive' => 0
 		];
 		$userAttribute = $UserAttribute->find('first', $query);
 
-		return $userAttribute;
+		return Hash::get($userAttribute, ['UserAttribute', 'id']);
 	}
 
 /**
- * Get Nc3UserAttribute by Nc2Item default item_name and Nc3UserAttributeSetting data_type_key.
+ * Get Nc3UserAttribute,id by Nc2Item default item_name and Nc3UserAttributeSetting data_type_key.
  *
  * @param array $nc2Item Nc2Item data.
  * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
  * @return string Nc3UserAttribute id.
  */
-	private function __getNc3UserAttributeByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
+	private function __getNc3UserAttributeIdByDefaultItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		$itemNameToKeyMap = [
 			'USER_ITEM_AVATAR' => 'avatar',
 			'USER_ITEM_MOBILE_EMAIL' => 'moblie_mail',
 			'USER_ITEM_GENDER' => 'sex',
 			'USER_ITEM_PROFILE' => 'profile',
 		];
-		$userAttribute = [];
 		$itemName = $nc2Item['Nc2Item']['item_name'];
 		if (!isset($itemNameToKeyMap[$itemName])) {
-			return $userAttribute;
+			return null;
 		}
 
 		$nc3UserAttributeKey = $itemNameToKeyMap[$itemName];
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
+			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttribute.key' => $nc3UserAttributeKey,
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
-			'recursive' => 1
+			'recursive' => 0
 		];
 		$userAttribute = $UserAttribute->find('first', $query);
 
-		return $userAttribute;
+		return Hash::get($userAttribute, ['UserAttribute', 'id']);
 	}
 
 /**
- * Get Nc3UserAttribute by Nc2Item tag_name and Nc3UserAttributeSetting data_type_key.
+ * Get Nc3UserAttribute.id by Nc2Item tag_name and Nc3UserAttributeSetting data_type_key.
  *
  * @param array $nc2Item Nc2Item data.
  * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
  * @return string Nc3UserAttribute id.
  */
-	private function __getNc3UserAttributeByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
-		$userAttribute = [];
+	private function __getNc3UserAttributeIdByItemNameAndDataTypeKey($nc2Item, $dataTypeKey) {
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 		$query = [
+			'fields' => 'UserAttribute.id',
 			'conditions' => [
 				'UserAttribute.name' => $nc2Item['Nc2Item']['item_name'],
 				'UserAttribute.language_id' => $this->_getLanguageIdFromNc2(),
 				'UserAttributeSetting.data_type_key' => $dataTypeKey
 			],
-			'recursive' => 1
+			'recursive' => 0
 		];
 		$userAttribute = $UserAttribute->find('first', $query);
 
-		return $userAttribute;
+		return Hash::get($userAttribute, ['UserAttribute', 'id']);
 	}
 
 }

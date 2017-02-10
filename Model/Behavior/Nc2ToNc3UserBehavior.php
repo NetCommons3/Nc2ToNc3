@@ -59,13 +59,13 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 	}
 
 /**
- * Put existing id map
+ * Save existing map
  *
  * @param Model $model Model using this behavior
  * @param array $nc2Users Nc2User data
  * @return void
  */
-	public function putExistingIdMap(Model $model, $nc2Users) {
+	public function saveExistingMap(Model $model, $nc2Users) {
 		$idList = Hash::combine($nc2Users, '{n}.Nc2User.login_id', '{n}.Nc2User.user_id');
 
 		/* @var $User User */
@@ -74,7 +74,6 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 			'fields' => [
 				'User.id',
 				'User.username',
-				'User.handlename',
 			],
 			'conditions' => [
 				'User.username' => array_keys($idList)
@@ -85,8 +84,11 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 
 		foreach ($nc3Users as $nc3User) {
 			$username = $nc3User['User']['username'];
-			$this->_putIdMap($idList[$username], $nc3User);
-
+			$nc2UserId = $idList[$username];
+			$idMap = [
+				$nc2UserId => $nc3User['User']['id']
+			];
+			$this->_saveMap('User', $idMap);
 		}
 	}
 

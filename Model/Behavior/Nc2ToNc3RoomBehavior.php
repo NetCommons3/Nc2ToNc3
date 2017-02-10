@@ -35,8 +35,8 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
  */
 	private function __getLogArgument($nc2Page) {
 		return 'Nc2Page ' .
-			'page_id:' . $nc2Page['Nc2User']['page_id'] .
-			'page_name:' . $nc2Page['Nc2User']['page_name'];
+			'page_id:' . $nc2Page['Nc2Page']['page_id'] .
+			'page_name:' . $nc2Page['Nc2Page']['page_name'];
 	}
 
 }

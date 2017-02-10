@@ -19,6 +19,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLanguageIdFromNc2()
  * @method string convertDate($date)
  * @method string convertLanguage($langDirName)
+ * @method array saveMap($modelName, $idMap)
+ * @method array getMap($nc2Id)
  *
  */
 class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
@@ -41,26 +43,26 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Base'];
 
 /**
- * Id map of nc2 and nc3.
+ * Map data.
  *
  * @var array
  */
-	private $__idMap = null;
+	private $__map = null;
 
 /**
- * Get id map
+ * Get map
  *
  * @param string $nc2RoleAuthorityId Nc2Authority.id.
  * @return array|string Id map.
  */
-	public function getIdMap($nc2RoleAuthorityId = null) {
+	public function getMap($nc2RoleAuthorityId = null) {
 		// データの移行はしない
 		// Nc2Authority.idとNc3UserRoleSetting.role_keyの対応付けのみ行う
 		// Nc2Authority.idをkeyにUserRoleSetting.role_keyと対応付ける
 		// 直接変更することで、Nc2ToNc3User::__convertRoleより対応付けされるようになる
 		// @see Nc2ToNc3User::__convertRole
-		if (!$this->__idMap) {
-			$this->__idMap = [
+		if (!$this->__map) {
+			$this->__map = [
 				'1' => [
 					'UserRoleSetting' => [
 						'role_key' => 'system_administrator'
@@ -70,7 +72,7 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 		}
 
 		if (!isset($nc2RoleAuthorityId)) {
-			return $this->__idMap;
+			return $this->__map;
 		}
 
 		// 対応データがなければcommon_userを返す
@@ -80,7 +82,7 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 			]
 		];
 
-		return Hash::get($this->__idMap, [$nc2RoleAuthorityId], $default);
+		return Hash::get($this->__map, [$nc2RoleAuthorityId], $default);
 	}
 
 }

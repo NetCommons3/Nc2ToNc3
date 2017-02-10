@@ -121,6 +121,31 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
+ * Save Nc2ToNc3Map
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $modelName Model name
+ * @param array $idMap Nc2ToNc3Map.nc3_id with Nc2ToNc3Map.nc2_id as key.
+ * @return void
+ */
+	public function saveMap(Model $model, $modelName, $idMap) {
+		$this->_saveMap($modelName, $idMap);
+	}
+
+/**
+ * Get map.
+ *
+ * 継承したクラスの_getMapメソッドを呼び出す
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2Id Nc2 id.
+ * @return array|string Id map.
+ */
+	public function getMap(Model $model, $nc2Id = null) {
+		return $this->_getMap($nc2Id);
+	}
+
+/**
  * Write migration log.
  *
  * @param string $message Migration message.
@@ -265,6 +290,25 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		}
 
 		return null;
+	}
+
+/**
+ * Save Nc2ToNc3Map
+ *
+ * @param string $modelName Model name
+ * @param array $idMap Nc2ToNc3Map.nc3_id with Nc2ToNc3Map.nc2_id as key.
+ * @return array Nc2ToNc3Map data.
+ */
+	protected function _saveMap($modelName, $idMap) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$data['Nc2ToNc3Map'] = [
+			'model_name' => $modelName,
+			'nc2_id' => key($idMap),
+			'nc3_id' => current($idMap),
+		];
+
+		return $Nc2ToNc3Map->saveMap($data);
 	}
 
 }

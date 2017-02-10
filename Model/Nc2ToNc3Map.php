@@ -35,40 +35,34 @@ class Nc2ToNc3Map extends AppModel {
 /**
  * Save map
  *
- * @param string $modelName Model name
- * @param array $data map data that nc2 id as key
- * @return bool True on success, false on validation errors
+ * @param array $data Nc2ToNc3Map data.
+ * @return bool True on success, false on validation errors.
  * @throws InternalErrorException
  */
-	public function saveMap($modelName, $data) {
+	public function saveMap($data) {
 		$this->begin();
 
 		try {
 			$nc2SiteId = $this->__getNc2SiteId();
-			$nc2Id = array_keys($data)[0];
+			$data['Nc2ToNc3Map']['nc2_site_id'] = $nc2SiteId;
 
 			$map = $this->findByNc2SiteIdAndModelNameAndNc2Id(
 				$nc2SiteId,
-				$modelName,
-				$nc2Id,
+				$data['Nc2ToNc3Map']['model_name'],
+				$data['Nc2ToNc3Map']['nc2_id'],
 				null,
 				null,
 				-1
 			);
-
 			if (!$map) {
-				$map['Nc2ToNc3Map'] = [
-					'nc2_site_id' => $nc2SiteId,
-					'model_name' => $modelName,
-					'nc2_id' => $nc2Id,
-				];
-				$map = $this->create($map);
+				$data = $this->create($data);
+			}
+			if ($map) {
+				$data['Nc2ToNc3Map']['id'] = $map['Nc2ToNc3Map']['id'];
 			}
 
-			$map['Nc2ToNc3Map']['map'] = serialize($data[$nc2Id]);
-
-			$result = $this->save($map);
-			if (!$result) {
+			$data = $this->save($data);
+			if (!$data) {
 				throw new InternalErrorException(__d('net_commons', 'Internal Server Error'));
 			}
 
@@ -78,13 +72,13 @@ class Nc2ToNc3Map extends AppModel {
 
 		$this->commit();
 
-		return $result;
+		return $data;
 	}
 
 /**
  * Get nc2 site_id.
  *
- * @return string nc2 site_id.
+ * @return string Nc2 site_id.
  */
 	private function __getNc2SiteId() {
 		if (isset($this->__nc2SiteId)) {
@@ -100,16 +94,20 @@ class Nc2ToNc3Map extends AppModel {
 	}
 
 /**
- * Get map
+ * Get id list
  *
  * @param string $modelName Model name
  * @param string $nc2Id Nc2 id.
- * @return array map.
+ * @return array Id list.
  */
-	public function getMap($modelName, $nc2Id = null) {
+	public function getMapIdList($modelName, $nc2Id = null) {
 		$nc2SiteId = $this->__getNc2SiteId();
 
 		$query = [
+			'fields' => [
+				'nc2_id',
+				'nc3_id',
+			],
 			'conditions' => [
 				'nc2_site_id' => $nc2SiteId,
 				'model_name' => $modelName,
@@ -119,22 +117,9 @@ class Nc2ToNc3Map extends AppModel {
 		if (isset($nc2Id)) {
 			$query['conditions']['nc2_id'] = $nc2Id;
 		}
+		$idList = $this->find('list', $query);
 
-		$records = $this->find('all', $query);
-		if (!$records) {
-			return $records;
-		}
-
-		foreach ($records as $record) {
-			$nc2IdAsKey = $record['Nc2ToNc3Map']['nc2_id'];
-			$map[$nc2IdAsKey] = unserialize($record['Nc2ToNc3Map']['map']);
-		}
-
-		if (isset($nc2Id)) {
-			$map = $map[$nc2Id];
-		}
-
-		return $map;
+		return $idList;
 	}
 
 }

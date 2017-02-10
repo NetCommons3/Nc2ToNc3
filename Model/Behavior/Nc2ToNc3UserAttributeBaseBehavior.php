@@ -45,29 +45,6 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__userAttributeSettingWeight = null;
 
 /**
- * Put id map.
- *
- * @param Model $model Model using this behavior.
- * @param string $nc2ItemId Nc2Item item_id.
- * @param array $nc3UserAttribute Nc3UserAttribute data.
- * @return void
- */
-	public function putIdMap(Model $model, $nc2ItemId, $nc3UserAttribute) {
-		$this->_putIdMap($nc2ItemId, $nc3UserAttribute);
-	}
-
-/**
- * Get id map.
- *
- * @param Model $model Model using this behavior.
- * @param string $nc2ItemId Nc2Item item_id.
- * @return array|string Id map.
- */
-	public function getIdMap(Model $model, $nc2ItemId = null) {
-		return $this->_getIdMap($nc2ItemId);
-	}
-
-/**
  * Get Nc2Item value by constant.
  *
  * @param Model $model Model using this behavior.
@@ -153,52 +130,79 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Put id map
+ * Get map
  *
  * @param string $nc2ItemId Nc2Item item_id.
- * @param string $nc3UserAttribute Nc3UserAttribute data.
- * @return void
+ * @return array Map data with Nc2Item item_id as key.
  */
-	protected function _putIdMap($nc2ItemId, $nc3UserAttribute) {
-		$map[$nc2ItemId] = [
-			'UserAttribute' => [
-				'id' => $nc3UserAttribute['UserAttribute']['id'],
-				'key' => $nc3UserAttribute['UserAttribute']['key'],
-			],
-			'UserAttributeSetting' => [
-				'data_type_key' => $nc3UserAttribute['UserAttributeSetting']['data_type_key'],
-			]
-		];
-
-		$userAttributeChoices = $nc3UserAttribute['UserAttributeChoice'];
-		if (!isset($userAttributeChoices)) {
-			return;
-		}
-
-		$map[$nc2ItemId]['UserAttributeChoice'] = [];
-		foreach ($userAttributeChoices as $userAttributeChoice) {
-			$map[$nc2ItemId]['UserAttributeChoice'][] = [
-				'name' => $userAttributeChoice['name'],
-				'code' => $userAttributeChoice['code'],
-			];
-		}
-
+	protected function _getMap($nc2ItemId = null) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $UserAttribute UserAttribute */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$Nc2ToNc3Map->saveMap('UserAttribute', $map);
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
+
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('UserAttribute', $nc2ItemId);
+		$query = [
+			'fields' => [
+				'UserAttribute.id',
+				'UserAttribute.key',
+				'UserAttributeSetting.data_type_key',
+			],
+			'conditions' => [
+				'UserAttribute.id' => $mapIdList
+			],
+			'recursive' => 1
+		];
+		$hasManyOptions = $UserAttribute->hasMany['UserAttributeChoice'];
+		$UserAttribute->hasMany['UserAttributeChoice']['fields'] = [
+			'UserAttributeChoice.name',
+			'UserAttributeChoice.code',
+		];
+		$userAttributes = $UserAttribute->find('all', $query);
+		$UserAttribute->hasMany['UserAttributeChoice'] = $hasManyOptions;
+		if (!$userAttributes) {
+			return $userAttributes;
+		}
+
+		$map = [];
+		foreach ($userAttributes as $userAttribute) {
+			$nc2Id = array_search($userAttribute['UserAttribute']['id'], $mapIdList);
+			$map[$nc2Id] = $userAttribute;
+		}
+
+		if (isset($nc2ItemId)) {
+			$map = $map[$nc2ItemId];
+		}
+
+		return $map;
 	}
 
 /**
- * Get id map
+ * Initialize id map
  *
- * @param string $nc2ItemId Nc2Item item_id.
- * @return array|string Id map.
+ * @return void
  */
-	protected function _getIdMap($nc2ItemId = null) {
+	protected function _initializeIdMap() {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $UserAttribute UserAttribute */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
-		return $Nc2ToNc3Map->getMap('UserAttribute', $nc2ItemId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('UserAttribute');
+		$query = [
+			'fields' => [
+				'UserAttribute.id'
+			],
+			'conditions' => [
+				'UserAttribute.id' => $mapIdList
+			],
+			'recursive' => -1
+		];
+		$nc3Ids = $UserAttribute->find('list', $query);
+		$deleteIds = array_diff($mapIdList, $nc3Ids);
+		if ($deleteIds) {
+			//$Nc2ToNc3Map->deleteAll();
+		}
 	}
 
 /**

@@ -19,17 +19,17 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLanguageIdFromNc2()
  * @method string convertDate($date)
  * @method string convertLanguage($langDirName)
+ * @method array saveMap($modelName, $idMap)
+ * @method array getMap($nc2Id)
  *
  * @see Nc2ToNc3UserBaseBehavior
- * @method void putIdMap($nc2UserId, $nc3UserId)
- * @method string getIdMap($nc2UserId)
  * @method string getCreatedUser($nc2Data)
  *
  * @see Nc2ToNc3UserBehavior
  * @method string getLogArgument($nc2User)
  * @method bool isApprovalWaiting($nc2User)
  * @method bool isMigrationRow($nc2User)
- * @method void putExistingIdMap($nc2User)
+ * @method void saveExistingMap($nc2User)
  *
  * @see Nc2ToNc3UserValidationBehavior
  * @method string|bool existsRequireAttribute($nc2User)
@@ -171,7 +171,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		$User->begin();
 		try {
-			$this->putExistingIdMap($nc2Users);
+			$this->saveExistingMap($nc2Users);
 			foreach ($nc2Users as $nc2User) {
 				if (!$this->isMigrationRow($nc2User)) {
 					continue;
@@ -203,15 +203,14 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$User->validate = [];
 
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
-				if ($this->getIdMap($nc2UserId)) {
+				if ($this->getMap($nc2UserId)) {
 					continue;
 				}
 
-				// $User->Behaviors->load(''Nc2ToNc3.Nc2ToNc3User'')
-				// で、Nc2ToNc3UserBehavior::afterSaveでmapデータ作成するようにした方が良いかも。
-				// $User::dataが利用できるので。
-				$data = $User->findById($User->id, null, null, -1);
-				$this->putIdMap($nc2UserId, $data);
+				$idMap = [
+					$nc2UserId => $User->id
+				];
+				$this->saveMap('User', $idMap);
 			}
 
 			$User->commit();
@@ -278,10 +277,10 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 		$nc2UserId = $nc2User['Nc2User']['user_id'];
-		$idMap = $this->getIdMap($nc2UserId);
-		if ($idMap) {
+		$map = $this->getMap($nc2UserId);
+		if ($map) {
 			// とりあえず上書きしない
-			//$data = $User->getUser($idMap['User']['id']);
+			//$data = $User->getUser($map['User']['id']);
 			return $data;
 		} else {
 			$data = $User->createUser();
@@ -298,7 +297,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
 		$Nc2UsersItemsLink = $this->getNc2Model('users_items_link');
 
-		$userAttributeMap = $Nc2ToNc3UserAttr->getIdMap();
+		$userAttributeMap = $Nc2ToNc3UserAttr->getMap();
 		$nc2UserItemLink = $Nc2UsersItemsLink->findAllByUserId(
 			$nc2UserId,
 			null,
@@ -433,7 +432,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		if ($nc2Field == 'role_authority_id') {
 			/* @var $Nc2ToNc3UserRole Nc2ToNc3UserRole */
 			$Nc2ToNc3UserRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserRole');
-			$userRole = $Nc2ToNc3UserRole->getIdMap($nc2UserValue);
+			$userRole = $Nc2ToNc3UserRole->getMap($nc2UserValue);
 
 			return $userRole['UserRoleSetting']['role_key'];
 		}

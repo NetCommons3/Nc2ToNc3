@@ -70,8 +70,8 @@ class Nc2ToNc3UserValidationBehavior extends Nc2ToNc3UserBaseBehavior {
 
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
-		$attributeIdMap = $Nc2ToNc3UserAttr->getIdMap();
-		foreach ($attributeIdMap as $nc2ItemId => $mapValue) {
+		$attributeMap = $Nc2ToNc3UserAttr->getMap();
+		foreach ($attributeMap as $nc2ItemId => $mapValue) {
 			$userAttributeId = $mapValue['UserAttribute']['id'];
 			if (isset($nc2NotRequiredNames[$nc2ItemId]) &&
 				isset($nc3RequiredNames[$userAttributeId])

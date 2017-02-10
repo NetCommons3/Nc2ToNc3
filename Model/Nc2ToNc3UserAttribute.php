@@ -19,10 +19,10 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLanguageIdFromNc2()
  * @method string convertDate($date)
  * @method string convertLanguage($langDirName)
+ * @method array saveMap($modelName, $idMap)
+ * @method array getMap($nc2Id)
  *
  * @see Nc2ToNc3UserAttributeBaseBehavior
- * @method void putIdMap($nc2ItemId, $nc3UserAttribute)
- * @method string getIdMap($nc2ItemId)
  * @method string getNc2ItemValueByConstant($constant, $languageId)
  * @method string getNc2ItemDescriptionById($itemId)
  * @method bool isNc2AutoregistUseItem($itemId)
@@ -35,7 +35,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3UserAttributeBehavior
  * @method string getLogArgument($nc2Item)
  * @method bool isMigrationRow($nc2Item)
- * @method void putExistingIdMap($nc2Item)
+ * @method void saveExistingMap($nc2Item)
  * @method bool isChoice($type)
  * @method bool isChoiceRow($nc2Item)
  * @method bool isChoiceMergenceRow($nc2Item)
@@ -101,7 +101,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
 		// CakeMigration::runでClassRegistry::flushが呼ばれ、
-		// セットしたNc2ToNc3UserBaseBehavior::__idMapも初期化されてしまうので、
+		// セットしたPropertyも初期化されてしまうので、
 		// 一時退避して戻す処理を行う
 		// @see
 		// https://github.com/CakeDC/migrations/blob/2.4.2/Lib/CakeMigration.php#L607
@@ -119,7 +119,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$this->putExistingIdMap($nc2Item);
+				$this->saveExistingMap($nc2Item);
 				$data = $this->__generateNc3Data($nc2Item);
 				if (!$data) {
 					continue;
@@ -141,7 +141,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				}
 
 				$nc2ItemId = $nc2Item['Nc2Item']['item_id'];
-				if ($this->getIdMap($nc2ItemId)) {
+				if ($this->getMap($nc2ItemId)) {
 					continue;
 				}
 
@@ -151,11 +151,10 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				// CakeMigrationが呼び出され、ClassRegistry::flush済み
 				$calledCakeMigration = true;
 
-				// $UserAttribute->Behaviors->load(''Nc2ToNc3.Nc2ToNc3UserAttribute'')
-				// で、Nc2ToNc3UserAttributeBehavior::afterSaveでmapデータ作成するようにした方が良いかも。
-				// $UserAttribute::dataが利用できるので。
-				$data = $UserAttribute->findById($UserAttribute->id);
-				$this->putIdMap($nc2ItemId, $data);
+				$idMap = [
+					$nc2ItemId => $UserAttribute->id
+				];
+				$this->saveMap('UserAttribute', $idMap);
 				$this->incrementUserAttributeSettingWeight();
 			}
 
@@ -263,7 +262,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 		$data = [];
 
-		if (!$this->getIdMap($nc2Item['Nc2Item']['item_id'])) {
+		if (!$this->getMap($nc2Item['Nc2Item']['item_id'])) {
 			return $this->__generateNc3UserAttributeData($nc2Item);
 		}
 
@@ -396,8 +395,8 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
-		$idMap = $this->getIdMap($nc2ItemId);
-		$data = $UserAttribute->getUserAttribute($idMap['UserAttribute']['key']);
+		$map = $this->getMap($nc2ItemId);
+		$data = $UserAttribute->getUserAttribute($map['UserAttribute']['key']);
 
 		// UserAttributeChoiceMapデータ作成
 		// see https://github.com/NetCommons3/UserAttributes/blob/3.0.1/View/Elements/UserAttributes/choice_edit_form.ctp#L14-L27

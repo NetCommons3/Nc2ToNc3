@@ -32,29 +32,6 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__nc3DefaultRolePermission = null;
 
 /**
- * Put id map.
- *
- * @param Model $model Model using this behavior.
- * @param string $nc2RoomId Nc2Page room_id.
- * @param string $nc3Room Nc3Room data.
- * @return void
- */
-	public function putIdMap(Model $model, $nc2RoomId, $nc3Room) {
-		$this->_putIdMap($nc2RoomId, $nc3Room);
-	}
-
-/**
- * Get id map.
- *
- * @param Model $model Model using this behavior.
- * @param string $nc2UserId Nc2User id.
- * @return array|string Id map.
- */
-	public function getIdMap(Model $model, $nc2UserId = null) {
-		return $this->_getIdMap($nc2UserId);
-	}
-
-/**
  * Get Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
  *
  * @param Model $model Model using this behavior.
@@ -76,35 +53,43 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Put id map.
+ * Get map
  *
  * @param string $nc2RoomId Nc2Page room_id.
- * @param string $nc3Room Nc3Room data.
- * @return void
+ * @return array Map data with Nc2Page room_id as key.
  */
-	protected function _putIdMap($nc2RoomId, $nc3Room) {
-		$map[$nc2RoomId] = [
-			'Room' => [
-				'id' => $nc3Room['Room']['id']
-			]
+	protected function _getMap($nc2RoomId = null) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $User User */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Room = ClassRegistry::init('Rooms.Room');
+
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
+		$query = [
+			'fields' => [
+				'Room.id'
+			],
+			'conditions' => [
+				'Room.id' => $mapIdList
+			],
+			'recursive' => -1
 		];
+		$rooms = $Room->find('all', $query);
+		if (!$rooms) {
+			return $rooms;
+		}
 
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$Nc2ToNc3Map->saveMap('Room', $map);
-	}
+		$map = [];
+		foreach ($rooms as $room) {
+			$nc2Id = array_search($room['Room']['id'], $mapIdList);
+			$map[$nc2Id] = $room;
+		}
 
-/**
- * Get id map
- *
- * @param string $nc2RoomId Nc2Page room_id.
- * @return array|string Id map.
- */
-	protected function _getIdMap($nc2RoomId = null) {
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		if (isset($nc2RoomId)) {
+			$map = $map[$nc2RoomId];
+		}
 
-		return $Nc2ToNc3Map->getMap('Room', $nc2RoomId);
+		return $map;
 	}
 
 /**

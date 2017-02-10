@@ -19,6 +19,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLanguageIdFromNc2()
  * @method string convertDate($date)
  * @method string convertLanguage($langDirName)
+ * @method array saveMap($modelName, $idMap)
+ * @method array getMap($nc2Id)
  *
  */
 class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
@@ -41,11 +43,33 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Base'];
 
 /**
+ * Map data.
+ *
+ * @var array
+ */
+	private $__map = null;
+
+/**
+ * Get map
+ *
+ * @return array Id map.
+ */
+	public function getMap() {
+		// ゆくゆくmapテーブルに保存した方が良い気もするが、とりあえPropretyに保持しておく
+		if (!isset($this->__map)) {
+			$this->__setMap();
+		}
+
+		return $this->__map;
+	}
+
+/**
  * Get id map
  *
  * @return array|string Id map.
  */
-	public function getIdMap() {
+	private function __setMap() {
+		$this->__map = [];
 		$actionNameToKeyMap = [
 			//'authority_view_admin_init' => 'user_roles',
 			//'cleanup_view_main_init' => null,
@@ -93,13 +117,20 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 			'faq_view_main_init' => 'faqs',
 		];
 
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$map = $Nc2ToNc3Map->getMap('Plugin');
-		if ($map &&
-			count($map) == count($actionNameToKeyMap)
-		) {
-			return $map;
+		/* @var $Plugin Plugin */
+		$Plugin = ClassRegistry::init('PluginManager.Plugin');
+		$query = [
+			'fields' => [
+				'Plugin.key',
+			],
+			'conditions' => [
+				'Plugin.key' => $actionNameToKeyMap
+			],
+			'recursive' => -1
+		];
+		$nc3PluginList = $Plugin->find('list', $query);
+		if (!$nc3PluginList) {
+			return;
 		}
 
 		/* @var $Nc2PagesModulesLink AppModel */
@@ -116,29 +147,24 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 		];
 		$nc2Modules = $Nc2Module->find('all', $query);
 
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$map = [];
 		foreach ($nc2Modules as $nc2Module) {
 			$nc2ActionName = $nc2Module['Nc2Module']['action_name'];
-			if (!isset($actionNameToKeyMap[$nc2ActionName])) {
+			$nc3PluginKey = Hash::get($actionNameToKeyMap, [$nc2ActionName]);
+			if (!isset($nc3PluginKey)) {
+				continue;
+			}
+			if (!in_array($nc3PluginKey, $nc3PluginList)) {
 				continue;
 			}
 
-			$mapForSave = [];
 			$nc2ModuleId = $nc2Module['Nc2Module']['module_id'];
 
-			$map[$nc2ModuleId] = [
+			$this->__map[$nc2ModuleId] = [
 				'Plugin' => [
-					'key' => $actionNameToKeyMap[$nc2ActionName]
+					'key' => $nc3PluginKey
 				]
 			];
-
-			$mapForSave[$nc2ModuleId] = $map[$nc2ModuleId];
-			$Nc2ToNc3Map->saveMap('Plugin', $mapForSave);
 		}
-
-		return $map;
 	}
 
 }

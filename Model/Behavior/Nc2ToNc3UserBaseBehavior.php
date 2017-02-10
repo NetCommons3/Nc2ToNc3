@@ -17,29 +17,6 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
- * Put id map.
- *
- * @param Model $model Model using this behavior.
- * @param string $nc2UserId Nc2User user_id.
- * @param string $nc3User Nc3User data.
- * @return void
- */
-	public function putIdMap(Model $model, $nc2UserId, $nc3User) {
-		$this->_putIdMap($nc2UserId, $nc3User);
-	}
-
-/**
- * Get id map.
- *
- * @param Model $model Model using this behavior.
- * @param string $nc2UserId Nc2User user_id.
- * @return array|string Id map.
- */
-	public function getIdMap(Model $model, $nc2UserId = null) {
-		return $this->_getIdMap($nc2UserId);
-	}
-
-/**
  * Get Nc3 created_uer.
  *
  * @param Model $model Model using this behavior.
@@ -51,36 +28,44 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Put id map.
+ * Get map
  *
  * @param string $nc2UserId Nc2User user_id.
- * @param string $nc3User Nc3User data.
- * @return void
+ * @return array Map data with Nc2User user_id as key.
  */
-	protected function _putIdMap($nc2UserId, $nc3User) {
-		$map[$nc2UserId] = [
-			'User' => [
-				'id' => $nc3User['User']['id'],
-				'handlename' => $nc3User['User']['handlename']
-			]
+	protected function _getMap($nc2UserId = null) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $User User */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$User = ClassRegistry::init('Users.User');
+
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('User', $nc2UserId);
+		$query = [
+			'fields' => [
+				'User.id',
+				'User.handlename',
+			],
+			'conditions' => [
+				'User.id' => $mapIdList
+			],
+			'recursive' => -1
 		];
+		$users = $User->find('all', $query);
+		if (!$users) {
+			return $users;
+		}
 
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$Nc2ToNc3Map->saveMap('User', $map);
-	}
+		$map = [];
+		foreach ($users as $user) {
+			$nc2Id = array_search($user['User']['id'], $mapIdList);
+			$map[$nc2Id] = $user;
+		}
 
-/**
- * Get id map
- *
- * @param string $nc2UserId Nc2User user_id.
- * @return array|string Id map.
- */
-	protected function _getIdMap($nc2UserId = null) {
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		if (isset($nc2UserId)) {
+			$map = $map[$nc2UserId];
+		}
 
-		return $Nc2ToNc3Map->getMap('User', $nc2UserId);
+		return $map;
 	}
 
 /**
@@ -95,7 +80,7 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 			return null;
 		}
 
-		$map = $this->_getIdMap($nc2UserId);
+		$map = $this->_getMap($nc2UserId);
 		if ($map) {
 			return $map['User']['id'];
 		}
@@ -121,9 +106,12 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 			]
 		];
 		$User->create($data);
-		$data = $User->save($data, $saveOptions);
+		$User->save($data, $saveOptions);
 
-		$this->_putIdMap($nc2UserId, $data);
+		$idMap = [
+			$nc2UserId => $User->id
+		];
+		$this->_saveMap('User', $idMap);
 
 		return $User->id;
 	}
