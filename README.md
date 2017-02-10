@@ -17,9 +17,9 @@ CakePHPのMigrationを実行すると、管理画面に「NC2からの移行」�
 開発中につき、必ずNc3のDB、および、NC3のアップロードファイルをバックアップして、いつでもリストアできるようにしてから実行してください。
 
 
-nc2_to_nc3_mapsテーブルを修正しました。
-map→nc3_id
-nc2_to_nc3_mapsを一度削除して、再度Migrationを実行してください。
+nc2_to_nc3_mapsテーブルを修正しました。  
+map→nc3_id  
+nc2_to_nc3_mapsを一度削除して、再度Migrationを実行してください。  
 ```
 cakeコマンドのパス/cake Migrations.migration generate -p Nc2ToNc3  -c master -i master
 ```
