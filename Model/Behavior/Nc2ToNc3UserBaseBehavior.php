@@ -30,16 +30,16 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get map
  *
- * @param string $nc2UserId Nc2User user_id.
+ * @param array|string $nc2UserIds Nc2User user_id.
  * @return array Map data with Nc2User user_id as key.
  */
-	protected function _getMap($nc2UserId = null) {
+	protected function _getMap($nc2UserIds = null) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		/* @var $User User */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$User = ClassRegistry::init('Users.User');
 
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('User', $nc2UserId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('User', $nc2UserIds);
 		$query = [
 			'fields' => [
 				'User.id',
@@ -61,8 +61,8 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 			$map[$nc2Id] = $user;
 		}
 
-		if (isset($nc2UserId)) {
-			$map = $map[$nc2UserId];
+		if (is_string($nc2UserIds)) {
+			$map = $map[$nc2UserIds];
 		}
 
 		return $map;

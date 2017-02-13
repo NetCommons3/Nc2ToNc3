@@ -55,16 +55,16 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get map
  *
- * @param string $nc2RoomId Nc2Page room_id.
+ * @param array|string $nc2RoomIds Nc2Page room_id.
  * @return array Map data with Nc2Page room_id as key.
  */
-	protected function _getMap($nc2RoomId = null) {
+	protected function _getMap($nc2RoomIds = null) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		/* @var $User User */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$Room = ClassRegistry::init('Rooms.Room');
 
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomIds);
 		$query = [
 			'fields' => [
 				'Room.id'
@@ -85,8 +85,8 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 			$map[$nc2Id] = $room;
 		}
 
-		if (isset($nc2RoomId)) {
-			$map = $map[$nc2RoomId];
+		if (is_string($nc2RoomIds)) {
+			$map = $map[$nc2RoomIds];
 		}
 
 		return $map;

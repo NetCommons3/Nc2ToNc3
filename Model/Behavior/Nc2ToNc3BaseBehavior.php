@@ -138,11 +138,11 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * 継承したクラスの_getMapメソッドを呼び出す
  *
  * @param Model $model Model using this behavior.
- * @param string $nc2Id Nc2 id.
- * @return array|string Id map.
+ * @param array|string $nc2Ids Nc2 id.
+ * @return string Id map.
  */
-	public function getMap(Model $model, $nc2Id = null) {
-		return $this->_getMap($nc2Id);
+	public function getMap(Model $model, $nc2Ids = null) {
+		return $this->_getMap($nc2Ids);
 	}
 
 /**

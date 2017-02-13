@@ -132,16 +132,16 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get map
  *
- * @param string $nc2ItemId Nc2Item item_id.
+ * @param array|string $nc2ItemIds Nc2Item item_id.
  * @return array Map data with Nc2Item item_id as key.
  */
-	protected function _getMap($nc2ItemId = null) {
+	protected function _getMap($nc2ItemIds = null) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		/* @var $UserAttribute UserAttribute */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
 
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('UserAttribute', $nc2ItemId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('UserAttribute', $nc2ItemIds);
 		$query = [
 			'fields' => [
 				'UserAttribute.id',
@@ -170,8 +170,8 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 			$map[$nc2Id] = $userAttribute;
 		}
 
-		if (isset($nc2ItemId)) {
-			$map = $map[$nc2ItemId];
+		if (is_string($nc2ItemIds)) {
+			$map = $map[$nc2ItemIds];
 		}
 
 		return $map;

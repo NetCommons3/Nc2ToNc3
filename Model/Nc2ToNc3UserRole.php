@@ -52,10 +52,10 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 /**
  * Get map
  *
- * @param string $nc2RoleAuthorityId Nc2Authority.id.
- * @return array|string Id map.
+ * @param array|string $nc2RoleAuthorityIds Nc2Authority.id.
+ * @return array Id map.
  */
-	public function getMap($nc2RoleAuthorityId = null) {
+	public function getMap($nc2RoleAuthorityIds = null) {
 		// データの移行はしない
 		// Nc2Authority.idとNc3UserRoleSetting.role_keyの対応付けのみ行う
 		// Nc2Authority.idをkeyにUserRoleSetting.role_keyと対応付ける
@@ -71,7 +71,7 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 			];
 		}
 
-		if (!isset($nc2RoleAuthorityId)) {
+		if (!isset($nc2RoleAuthorityIds)) {
 			return $this->__map;
 		}
 
@@ -82,7 +82,15 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 			]
 		];
 
-		return Hash::get($this->__map, [$nc2RoleAuthorityId], $default);
+		if (is_string($nc2RoleAuthorityIds)) {
+			return Hash::get($this->__map, [$nc2RoleAuthorityIds], $default);
+		}
+
+		foreach ($nc2RoleAuthorityIds as $nc2RoleAuthorityId) {
+			$map[$nc2RoleAuthorityId] = Hash::get($this->__map, [$nc2RoleAuthorityIds], $default);
+		}
+
+		return $map;
 	}
 
 }

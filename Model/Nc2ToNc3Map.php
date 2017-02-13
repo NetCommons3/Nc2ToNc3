@@ -97,10 +97,10 @@ class Nc2ToNc3Map extends AppModel {
  * Get id list
  *
  * @param string $modelName Model name
- * @param string $nc2Id Nc2 id.
+ * @param array|string $nc2Ids Nc2 id.
  * @return array Id list.
  */
-	public function getMapIdList($modelName, $nc2Id = null) {
+	public function getMapIdList($modelName, $nc2Ids = null) {
 		$nc2SiteId = $this->__getNc2SiteId();
 
 		$query = [
@@ -114,8 +114,8 @@ class Nc2ToNc3Map extends AppModel {
 			],
 			'recursive' => -1
 		];
-		if (isset($nc2Id)) {
-			$query['conditions']['nc2_id'] = $nc2Id;
+		if (isset($nc2Ids)) {
+			$query['conditions']['nc2_id'] = $nc2Ids;
 		}
 		$idList = $this->find('list', $query);
 
