@@ -280,8 +280,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		$map = $this->getMap($nc2UserId);
 		if ($map) {
 			// とりあえず上書きしない
-			//$data = $User->getUser($map['User']['id']);
-			return $data;
+			$data = $User->getUser($map['User']['id']);
+			//return $data;
 		} else {
 			$data = $User->createUser();
 		}
@@ -322,6 +322,20 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			if ($Nc2ToNc3UserAttr->isChoice($dataTypeKey)) {
 				$nc2ItemContent = $this->__getChoiceCode($dataTypeKey, $nc2ItemContent, $map['UserAttributeChoice']);
 			}
+
+			// ************** FUJIKI UPDATE Start **************
+
+			if ($map['UserAttribute']['key'] == 'avatar') {
+				if(!empty($nc2ItemContent)) {
+
+				$nc2UploadId= ltrim($nc2ItemContent, "?action=common_download_user&upload_id=");
+				$nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
+				 $data['User']['avatar'] = $nc2ToNc3Upload->updateUploadFile($nc2UploadId);
+
+				var_dump($data['User']['avatar']);exit;
+			}
+		}
+			// ************** FUJIKI UPDATE End **************
 
 			if (in_array($userAttributeKey, $nc3UserFields)) {
 				$data['User'][$userAttributeKey] = $nc2ItemContent;
