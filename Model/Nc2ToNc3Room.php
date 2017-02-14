@@ -27,7 +27,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string getDefaultRoleKeyFromNc2($nc2SpaceType)
  * @method array getNc3DefaultRolePermission()
  *
- * @see Nc2ToNc3RoomsBehavior
+ * @see Nc2ToNc3RoomBehavior
  * @method string getLogArgument($nc2Page)
  * @method array getNc2RoomConditions()
  * @method array getNc2OtherLaguageRoomIdList($nc2Page)
@@ -74,7 +74,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		// Nc2Config.languageを優先する。
 		// Nc3Room.activeがちょっと問題かも。（準備中を優先した方が良い？）
 		foreach ($nc2Pages as $key => $nc2Page) {
-			$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
+			$nc2LangDirname = $nc2Page['Nc2Page']['lang_dirname'];
+
+			// Communityの場合はNc2Page.lang_dirnameが空なのでスルー
+			if (!$nc2LangDirname) {
+				continue;
+			}
+
+			$nc3LaguageId = $this->convertLanguage($nc2LangDirname);
 			if (!$nc3LaguageId) {
 				unset($nc2Pages[$key]);
 				continue;
@@ -164,7 +171,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
+				//$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
 				/*if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 					continue;
@@ -264,7 +271,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$Room = ClassRegistry::init('Rooms.Room');
 
 		// 別言語Mapデータは複数あっても、対応するNc3Room.idは1つ
-		$data = $Room->findById($otherLaguageMap[0]['Room']['id']);
+		$nc3Room = current($otherLaguageMap);
+		$data = $Room->findById($nc3Room['Room']['id']);
 		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
 		foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
 			if ($nc3RoomLaguage['language_id'] != $nc3LaguageId) {
@@ -273,6 +281,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 			$data['RoomsLanguage'][$key] = $this->__generateNc3RoomsLanguage($nc3RoomLaguage, $nc2Page);
 		}
+
+		// Space::createRoomでデータを作成する際、page_layout_permittedも初期値nullでsetされる。
+		// しかしながら、ルームの登録画面からは、page_layout_permittedがPOSTされないっぽい。 データがあると、Validationに引っかかる。
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/View/Elements/Rooms/edit_form.ctp
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L226-L231
+		unset($data['Room']['page_layout_permitted']);
 
 		return $data;
 	}
@@ -366,16 +380,15 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 /**
  * Generate Nc3PluginsRoom data.
  *
- * @param array $nc2PageLaguages Nc2Page data.
+ * @param array $nc2Page Nc2Page data.
  * @return array Nc3PluginsRoom data.
  */
-	private function __generateNc3PluginsRoom($nc2PageLaguages) {
+	private function __generateNc3PluginsRoom($nc2Page) {
 		/* @var $Nc2PagesModulesLink AppModel */
 		$Nc2PagesModulesLink = $this->getNc2Model('pages_modules_link');
-		$nc2RoomIds = Hash::extract($nc2PageLaguages, '{n}.Nc2Page.room_id');
 		$nc2PageModuleLinks = $Nc2PagesModulesLink->findAllByRoomId(
-			$nc2RoomIds,
-			'DISTINCT module_id',
+			$nc2Page['Nc2Page']['room_id'],
+			'module_id',
 			null,
 			-1
 		);

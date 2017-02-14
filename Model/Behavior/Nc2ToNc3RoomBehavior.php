@@ -46,14 +46,17 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
  */
 	public function getNc2OtherLaguageRoomIdList(Model $model, $nc2Page) {
 		/* @var $Nc2Page AppModel */
-		$Nc2Page = $this->getNc2Model('pages');
-		$conditions = $this->getNc2RoomConditions();
+		$Nc2Page = $this->_getNc2Model('pages');
+		$conditions = $this->__getNc2RoomConditions();
 		$conditions += [
 			'Nc2Page.lang_dirname !=' => $nc2Page['Nc2Page']['lang_dirname'],
 			'Nc2Page.permalink' => $nc2Page['Nc2Page']['permalink'],
 		];
 		$query = [
-			'fields' => 'Nc2Page.room_id',
+			'fields' => [
+				'Nc2Page.page_id',
+				'Nc2Page.room_id'
+			],
 			'conditions' => $conditions,
 			'recursive' => -1
 		];
