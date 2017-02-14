@@ -60,7 +60,7 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	protected function _getMap($nc2RoomIds = null) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		/* @var $User User */
+		/* @var $Room Room */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$Room = ClassRegistry::init('Rooms.Room');
 

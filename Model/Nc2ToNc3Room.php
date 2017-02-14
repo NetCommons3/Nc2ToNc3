@@ -28,6 +28,9 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getNc3DefaultRolePermission()
  *
  * @see Nc2ToNc3RoomsBehavior
+ * @method string getLogArgument($nc2Page)
+ * @method array getNc2RoomConditions()
+ * @method array getNc2OtherLaguageRoomIdList($nc2Page)
  *
  */
 class Nc2ToNc3Room extends Nc2ToNc3AppModel {
@@ -57,10 +60,36 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration start.'));
 
-		// 参加ユーザーのデータ量が多い可能性を考慮し、
-		// ルーム毎にトラザクション処理を行う
-		if (!$this->__saveRoomFromNc2()) {
-			return false;
+		// permalinkが同じデータを言語別のデータとして移行するが、
+		// 言語ごとに移行しないと、parent_idが移行済みである保証ができない
+		/* @var $Nc2Page AppModel */
+		$Nc2Page = $this->getNc2Model('pages');
+		$query = [
+			'fields' => 'DISTINCT lang_dirname',
+			'conditions' => $this->getNc2RoomConditions(),
+			'recursive' => -1
+		];
+		$nc2Pages = $Nc2Page->find('all', $query);
+
+		// Nc2Config.languageを優先する。
+		// Nc3Room.activeがちょっと問題かも。（準備中を優先した方が良い？）
+		foreach ($nc2Pages as $key => $nc2Page) {
+			$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
+			if (!$nc3LaguageId) {
+				unset($nc2Pages[$key]);
+				continue;
+			}
+
+			if ($nc3LaguageId == $this->getLanguageIdFromNc2()) {
+				unset($nc2Pages[$key]);
+				array_unshift($nc2Pages, $nc2Page);
+			}
+		}
+
+		foreach ($nc2Pages as $nc2Page) {
+			if (!$this->__saveRoomFromNc2($nc2Page['Nc2Page']['lang_dirname'])) {
+				return false;
+			}
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration end.'));
@@ -70,66 +99,57 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 /**
  * Save UserAttribue from Nc2.
  *
- * @return bool True on success
+ * @param string $nc2LangDirName Nc2Page lang_dirname.
+ * @return bool True on success.
  * @throws Exception
  */
-	private function __saveRoomFromNc2() {
+	private function __saveRoomFromNc2($nc2LangDirName) {
 		/* @var $Nc2Page AppModel */
 		$Nc2Page = $this->getNc2Model('pages');
+		$conditions = $this->getNc2RoomConditions();
+		$conditions += [
+			'Nc2Page.lang_dirname' => $nc2LangDirName
+		];
 		$query = [
-			'conditions' => [
-				'Nc2Page.page_id = Nc2Page.room_id',
-				'Nc2Page.private_flag' => '0',
-				'Nc2Page.root_id !=' => '0',
-			],
+			'conditions' => $conditions,
 			'order' => [
-				'Nc2Page.permalink',
-				'Nc2Page.lang_dirname',
+				'Nc2Page.parent_id',
 			],
+			'recursive' => -1
 		];
 		$nc2Pages = $Nc2Page->find('all', $query);
 
 		/* @var $Room Room */
 		/* @var $RolesRoomsUser RolesRoomsUser */
+		/* @var $Language Language */
 		$Room = ClassRegistry::init('Rooms.Room');
-		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
+		//$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
+		$Language = ClassRegistry::init('M17n.Language');
 
 		// 対応するルームが既存の処理について、対応させるデータが名前くらいしかない気がする。。。名前でマージして良いのか微妙なので保留
 		//$this->saveExistingMap($nc2Pages);
 
-		$currentLanguage = Current::read('Language');
-		$isOtherLaguage = false;
-		foreach ($nc2Pages as $key => $nc2Page) {
+		// is_originの値はsaveする前に現在の言語を切り替える処理が必要
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
+		$nc3LanguageId = $this->getLanguageIdFromNc2();
+		if (Current::read('Language.id') != $nc3LanguageId) {
+			$currentLanguage = Current::read('Language');
+			$language = $Language->findById($nc3LanguageId, null, null, -1);
+			Current::write('Language', $language['Language']);
+		}
+
+		foreach ($nc2Pages as $nc2Page) {
 			/*
 			if (!$this->isMigrationRow($nc2User)) {
 				continue;
 			}*/
 
-			// 次レコードのNc2Page.permalinkが同じ場合は言語別のデータとする
-			if (!$isOtherLaguage) {
-				// 別のルームとするため初期化
-				$nc2PageLaguages = [];
-			}
-			$nc2PageLaguages[] = $nc2Page;
-			$key++;
-			if (isset($nc2Pages[$key]) &&
-				$nc2Pages[$key]['Nc2Page']['permalink'] == $nc2Page['Nc2Page']['permalink']
-			) {
-				$isOtherLaguage = true;
-				continue;
-			}
-			$isOtherLaguage = false;
-
 			$Room->begin();
 			try {
-				$data = $this->__generateNc3Data($nc2PageLaguages);
+				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
 					continue;
 				}
-
-				// saveする前に現在の言語を切り替える処理が必要
-				// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
-				$this->__setCurrentLanguageId($data['RoomsLanguage']);
 
 				if (!($data = $Room->saveRoom($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返っていくるがrollbackしていないので、 ここでrollback
@@ -144,18 +164,28 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				/*$data = $this->__generateNc3RolesRoomsUser($data, $nc2PageLaguages);
-				if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
+				$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
+				/*if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 					continue;
 				}*/
 
-				$this->__saveMapEachLaguage($nc2PageLaguages, $Room->id);
+				$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
+				if ($this->getMap($nc2RoomId)) {
+					continue;
+				}
+
+				$idMap = [
+					$nc2RoomId => $Room->id
+				];
+				$this->saveMap('Room', $idMap);
 
 				$Room->commit();
 
 			} catch (Exception $ex) {
-				Current::write('Language', $currentLanguage);
+				if (isset($currentLanguage)) {
+					Current::write('Language', $currentLanguage);
+				}
 
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $User::saveUser()でthrowされるとこの処理に入ってこない
@@ -164,7 +194,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			}
 		}
 
-		Current::write('Language', $currentLanguage);
+		if (isset($currentLanguage)) {
+			Current::write('Language', $currentLanguage);
+		}
 
 		return true;
 	}
@@ -199,38 +231,81 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * data[RoomRolePermission][html_not_limited][editor][id]:
  * data[Room][active]:1
  *
- * @param array $nc2PageLaguages Nc2Page data.
+ * @param array $nc2Page Nc2Page data.
  * @return array Nc3Room data.
  */
-	private function __generateNc3Data($nc2PageLaguages) {
+	private function __generateNc3Data($nc2Page) {
 		$data = [];
-		$nc2Page = $this->__getPreferredNc2Page($nc2PageLaguages);
 
 		// 対応するルームが既存の場合（初回移行時にマッピングされる）、更新しない方が良いと思う。
-		foreach ($nc2PageLaguages as $nc2PageLaguage) {
-			$nc2RoomId = $nc2PageLaguage['Nc2Page']['room_id'];
-			if ($this->getMap($nc2RoomId)) {
-				return $data;
-			}
+		if ($this->getMap($nc2Page['Nc2Page']['room_id'])) {
+			return $data;
 		}
 
+		// 言語別のmapデータが存在する場合は、Room.name,Room.created,Room.created_userを移行
+		$otherLaguageRoomIds = $this->getNc2OtherLaguageRoomIdList($nc2Page);
+		$otherLaguageMap = $this->getMap($otherLaguageRoomIds);
+		if ($otherLaguageMap) {
+			return $this->__generateNc3ExistsRooms($nc2Page, $otherLaguageMap);
+		}
+
+		return $this->__generateNc3NotExistsRooms($nc2Page);
+	}
+
+/**
+ * Generate Nc3RoomsLanguage data.
+ *
+ * @param array $nc2Page Nc2Page data.
+ * @param array $otherLaguageMap Other laguage map data.
+ * @return array Nc3Room data.
+ */
+	private function __generateNc3ExistsRooms($nc2Page, $otherLaguageMap) {
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+
+		// 別言語Mapデータは複数あっても、対応するNc3Room.idは1つ
+		$data = $Room->findById($otherLaguageMap[0]['Room']['id']);
+		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
+		foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
+			if ($nc3RoomLaguage['language_id'] != $nc3LaguageId) {
+				continue;
+			}
+
+			$data['RoomsLanguage'][$key] = $this->__generateNc3RoomsLanguage($nc3RoomLaguage, $nc2Page);
+		}
+
+		return $data;
+	}
+
+/**
+ * Generate Nc3RoomsLanguage data.
+ *
+ * @param array $nc2Page Nc2Page data.
+ * @return array Nc3Room data.
+ */
+	private function __generateNc3NotExistsRooms($nc2Page) {
 		/* @var $Room Room */
 		$Room = ClassRegistry::init('Rooms.Room');
 		$spaces = $Room->getSpaces();
 		$nc2SpaceType = $nc2Page['Nc2Page']['space_type'];
 
+		/* @var $Space Space */
 		if ($nc2SpaceType == '1') {
-			/* @var $Space PublicSpace */
 			$Space = ClassRegistry::init('PublicSpace.PublicSpace');
 			$spaceId = Space::PUBLIC_SPACE_ID;
 			$needApproval = '1';
 
 		}
 		if ($nc2SpaceType == '2') {
-			/* @var $Space CommunitySpace */
 			$Space = ClassRegistry::init('CommunitySpace.CommunitySpace');
 			$spaceId = Space::COMMUNITY_SPACE_ID;
 			$needApproval = '0';
+		}
+
+		$parenId = $spaces[$spaceId]['Space']['room_id_root'];
+		$map = $this->getMap($nc2Page['Nc2Page']['parent_id']);
+		if ($map) {
+			$parenId = $map['Room']['id'];
 		}
 
 		$defaultRoleKey = $spaces[$spaceId]['Room']['default_role_key'];
@@ -243,7 +318,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$data = [
 			'space_id' => $spaceId,
 			'root_id' => $spaces[$spaceId]['Space']['room_id_root'],	// 使ってないっぽい
-			'parent_id' => $spaces[$spaceId]['Space']['room_id_root'],
+			'parent_id' => $parenId,
 			'active' => $nc2Page['Nc2Page']['display_flag'],
 			'default_role_key' => $defaultRoleKey,
 			'need_approval' => $needApproval,
@@ -262,7 +337,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			$Room->data['Room']['page_layout_permitted']
 		);
 
-		$data['RoomsLanguage'] = $this->__generateNc3RoomsLanguage($data, $nc2PageLaguages);
+		foreach ($data['RoomsLanguage'] as $key => $nc3RoomLaguage) {
+			$data['RoomsLanguage'][$key] = $this->__generateNc3RoomsLanguage($nc3RoomLaguage, $nc2Page);
+		}
 		$data['RoomRolePermission'] = $this->getNc3DefaultRolePermission();
 		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
 
@@ -270,75 +347,20 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Get preferred Nc2Page data.
- *
- * @param array $nc2PageLaguages Nc2Page data.
- * @return array Nc2Page data.
- */
-	private function __getPreferredNc2Page($nc2PageLaguages) {
-		$nc2Page = [];
-
-		// Nc2Config.languageを優先する。
-		// Nc2Config.languageのルームがなければ最初のNc2Pageデータを使用する。
-		// Nc3Room.activeがちょっと問題かも。（準備中を優先した方が良い？）
-		foreach ($nc2PageLaguages as $nc2PageLaguage) {
-			$nc3LaguageId = $this->convertLanguage($nc2PageLaguage['Nc2Page']['lang_dirname']);
-			if (!$nc2Page ||
-				$nc3LaguageId == $this->getLanguageIdFromNc2()
-			) {
-				$nc2Page = $nc2PageLaguage;
-			}
-		}
-
-		return $nc2Page;
-	}
-
-/**
  * Generate Nc3RoomsLanguage data.
  *
- * @param array $nc3Room Nc3Room data.
- * @param array $nc2PageLaguages Nc2Page data.
- * @return array Nc3PluginsRoom data.
+ * @param array $nc3RoomLanguage Nc3RoomsLanguage data.
+ * @param array $nc2Page Nc2Page data.
+ * @return array Nc3RoomsLanguage data.
  */
-	private function __generateNc3RoomsLanguage($nc3Room, $nc2PageLaguages) {
-		$nc2Page = $this->__getPreferredNc2Page($nc2PageLaguages);
-
+	private function __generateNc3RoomsLanguage($nc3RoomLanguage, $nc2Page) {
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$existsKeys = [];
-		foreach ($nc2PageLaguages as $nc2PageLaguage) {
-			$nc3LaguageId = $this->convertLanguage($nc2PageLaguage['Nc2Page']['lang_dirname']);
+		$nc3RoomLanguage['name'] = $nc2Page['Nc2Page']['page_name'];
+		$nc3RoomLanguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
+		$nc3RoomLanguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']);
 
-			// 1行文字数が多くなるので参照渡しのループ
-			foreach ($nc3Room['RoomsLanguage'] as $key => &$nc3RoomLaguage) {
-				if ($nc3RoomLaguage['language_id'] != $nc3LaguageId) {
-					continue;
-				}
-
-				$nc3RoomLaguage['name'] = $nc2PageLaguage['Nc2Page']['page_name'];
-				$nc3RoomLaguage['created'] = $this->convertDate($nc2PageLaguage['Nc2Page']['insert_time']);
-				$nc3RoomLaguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2PageLaguage['Nc2Page']);
-				$existsKeys[] = $key;
-
-				break;
-			}
-			unset($nc3RoomLaguage);	// 参照渡し解除
-		}
-
-		// Nc2に存在しない言語分のデータ設定
-		// 1行文字数が多くなるので参照渡しのループ
-		foreach ($nc3Room['RoomsLanguage'] as $key => &$nc3RoomLaguage) {
-			if (in_array($key, $existsKeys)) {
-				continue;
-			}
-
-			$nc3RoomLaguage['name'] = $nc2Page['Nc2Page']['page_name'];
-			$nc3RoomLaguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
-			$nc3RoomLaguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']);
-		}
-		unset($nc3RoomLaguage);	// 参照渡し解除
-
-		return $nc3Room['RoomsLanguage'];
+		return $nc3RoomLanguage;
 	}
 
 /**
@@ -380,70 +402,23 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Set current language id
- *
- * @param array $nc3RoomLanguages Nc3RoomsLanguage data.
- * @return array Nc3PluginsRoom data.
- */
-	private function __setCurrentLanguageId($nc3RoomLanguages) {
-		$minCreated = '';
-		foreach ($nc3RoomLanguages as $nc3RoomLanguage) {
-			if (!$minCreated ||
-				$nc3RoomLanguage['created'] < $minCreated
-			) {
-				$languageId = $nc3RoomLanguage['language_id'];
-				$minCreated = $nc3RoomLanguage['created'];
-			}
-		}
-
-		if ($languageId == Current::read('Language.id')) {
-			return;
-		}
-
-		/* @var $Language Language */
-		$Language = ClassRegistry::init('M17n.Language');
-		$language = $Language->findById($languageId, null, null, -1);
-		Current::write('Language', $language['Language']);
-	}
-
-/**
  * Generate Nc3PluginsRoom data.
  *
  * @param array $nc3Room Nc3Room data.
- * @param array $nc2PageLaguages Nc2Page data.
+ * @param array $nc2Page Nc2Page data.
  * @return array Nc3PluginsRoom data.
  */
-	private function __generateNc3RolesRoomsUser($nc3Room, $nc2PageLaguages) {
+	private function __generateNc3RolesRoomsUser($nc3Room, $nc2Page) {
 		/* @var $Nc2PagesUsersLink AppModel */
 		$Nc2PagesUsersLink = $this->getNc2Model('pages_users_link');
-		foreach ($nc2PageLaguages as $nc2PageLaguage) {
-			$nc2PagesUsersLink = $Nc2PagesUsersLink->findAllByRoomId(
-				$nc2PageLaguage['Nc2Page']['room_id'],
+		$nc2PagesUsersLink = $Nc2PagesUsersLink->findAllByRoomId(
+				$nc2Page['Nc2Page']['room_id'],
 				null,
 				null,
 				-1
-			);
-		}
+		);
+
+		return $nc2PagesUsersLink;
 	}
 
-/**
- * Save map
- *
- * @param array $nc2PageLaguages Nc2Page data.
- * @param array $nc3RoomId Nc3Room id.
- * @return array Nc3PluginsRoom data.
- */
-	private function __saveMapEachLaguage($nc2PageLaguages, $nc3RoomId) {
-		foreach ($nc2PageLaguages as $nc2PageLaguage) {
-			$nc2RoomId = $nc2PageLaguage['Nc2Page']['room_id'];
-			if ($this->getMap($nc2RoomId)) {
-				continue;
-			}
-
-			$idMap = [
-				$nc2RoomId => $nc3RoomId
-			];
-			$this->saveMap('Room', $idMap);
-		}
-	}
 }
