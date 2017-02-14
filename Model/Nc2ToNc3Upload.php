@@ -9,6 +9,7 @@
  */
 
 App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
+App::uses('TemporaryFolder', 'Files.Utility');
 
 /**
  * Nc2ToNc3UserRole
@@ -56,12 +57,16 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
  */
 public function updateUploadFile($nc2UploadId)
 {
+	// コマンド実行時アップロードファイルのパスが実行パス配下になるのでとりあえずここでchdir
+	// @see https://github.com/NetCommons3/Files/blob/3.0.1/Model/UploadFile.php#L172-L179
+	chdir(WWW_ROOT);
+
 	$Nc2Upload = $this->getNc2Model('uploads');
 
 	//$options = array( 'Nc2Upload.upload_id' => $nc2UploadId);
 	//$nc2UploadIdInt=intval($nc2UploadId);
 
-	$query = [
+	/*$query = [
 		'fields' => [
 			'Nc2Upload.upload_id',
 			'Nc2Upload.file_name',
@@ -76,8 +81,28 @@ public function updateUploadFile($nc2UploadId)
 		];
 
 	$nc2Upload = $Nc2Upload->find('all', $query);
+	*/
+	$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
 
-	return $nc2Upload;
+	$name = $nc2Upload['Nc2Upload']['physical_file_name'];
+	$tmpName = '/var/www/html/NC2421/webapp/uploads/' .
+		$nc2Upload['Nc2Upload']['file_path'] .
+		$name;
+
+	// アップロード処理で削除されるので一時フォルダーにコピー
+	// @see https://github.com/josegonzalez/cakephp-upload/blob/1.3.1/Model/Behavior/UploadBehavior.php#L337
+	$Folder = new TemporaryFolder();
+	copy($tmpName, $Folder->path . DS . $name);
+
+	$data = [
+		'name' => $nc2Upload['Nc2Upload']['file_name'],
+		'type' => $nc2Upload['Nc2Upload']['mimetype'],
+		'tmp_name' => $Folder->path . DS . $name,
+		'error' => UPLOAD_ERR_OK,
+		'size' => filesize($tmpName)
+	];
+
+	return $data;
 
 }
 }
