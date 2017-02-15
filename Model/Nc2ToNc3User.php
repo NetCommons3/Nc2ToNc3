@@ -276,8 +276,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
-		$nc2UserId = $nc2User['Nc2User']['user_id'];
-		$map = $this->getMap($nc2UserId);
+		$map = $this->getMap($nc2User['Nc2User']['user_id']);
 		if ($map) {
 			// とりあえず上書きしない
 			$data = $User->getUser($map['User']['id']);
@@ -292,6 +291,17 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			$data['User']['activated'] = time();
 		}
 
+		return $this->__generateNc3User($data, $nc2User);
+	}
+
+/**
+ * Generate Nc3Userdata From
+ *
+ * @param array $nc3User Nc3User data.
+ * @param array $nc2User Nc2User data.
+ * @return array Nc3UserAttribute data.
+ */
+	private function __generateNc3User($nc3User, $nc2User) {
 		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
 		/* @var $Nc2UsersItemsLink AppModel */
 		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
@@ -299,21 +309,21 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		$userAttributeMap = $Nc2ToNc3UserAttr->getMap();
 		$nc2UserItemLink = $Nc2UsersItemsLink->findAllByUserId(
-			$nc2UserId,
+			$nc2User['Nc2User']['user_id'],
 			null,
 			null,
 			null,
 			null,
 			-1
 		);
-		$nc3UserFields = array_keys($data['User']);
-		$nc3LanguageFields = array_keys($data['UsersLanguage'][0]);
+		$nc3UserFields = array_keys($nc3User['User']);
+		$nc3LanguageFields = array_keys($nc3User['UsersLanguage'][0]);
 		foreach ($userAttributeMap as $nc2ItemId => $map) {
 			$userAttributeKey = $map['UserAttribute']['key'];
 
-			$nc3User = $this->__generateNc3User($userAttributeKey, $data['User'], $nc2User);
-			if ($nc3User) {
-				$data['User'] = $nc3User;
+			$nc3UserFromNc2User = $this->__generateNc3UserFromNc2User($userAttributeKey, $nc3User['User'], $nc2User);
+			if ($nc3UserFromNc2User) {
+				$nc3User['User'] = $nc3UserFromNc2User;
 				continue;
 			}
 
@@ -324,18 +334,19 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			}
 
 			if ($map['UserAttribute']['key'] == 'avatar') {
-				if (!empty($nc2ItemContent)) {
-
-					$nc2UploadId = ltrim($nc2ItemContent, "?action=common_download_user&upload_id=");
-					$nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
-					$data['User']['avatar'] = $nc2ToNc3Upload->updateUploadFile($nc2UploadId);
-
-					//var_dump($data['User']['avatar']);exit;
+				$nc2UploadId = ltrim($nc2ItemContent, "?action=common_download_user&upload_id=");
+				/* @var $nc2ToNc3Upload Nc2ToNc3Upload */
+				$nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
+				$avatar = $nc2ToNc3Upload->updateUploadFile($nc2UploadId);
+				if ($avatar) {
+					$nc3User['User']['avatar'] = $avatar;
 				}
+				//var_dump($nc3User['User']['avatar']);exit;
+				continue;
 			}
 
 			if (in_array($userAttributeKey, $nc3UserFields)) {
-				$data['User'][$userAttributeKey] = $nc2ItemContent;
+				$nc3User['User'][$userAttributeKey] = $nc2ItemContent;
 				continue;
 			}
 
@@ -343,12 +354,12 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			foreach ($data['UsersLanguage'] as &$usersLanguage) {
+			foreach ($nc3User['UsersLanguage'] as &$usersLanguage) {
 				$usersLanguage[$userAttributeKey] = $nc2ItemContent;
 			}
 		}
 
-		return $data;
+		return $nc3User;
 	}
 
 /**
@@ -359,7 +370,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @param array $nc2User Nc2User data.
  * @return array Nc3UserAttribute data.
  */
-	private function __generateNc3User($userAttributeKey, $nc3User, $nc2User) {
+	private function __generateNc3UserFromNc2User($userAttributeKey, $nc3User, $nc2User) {
 		// 登録者、変更者はまだ存在しない
 		// 変更日時は移行した日時
 		$notMigrationFiels = [
