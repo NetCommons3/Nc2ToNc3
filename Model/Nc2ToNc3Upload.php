@@ -61,13 +61,15 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 		chdir(WWW_ROOT);
 
 		$Nc2Upload = $this->getNc2Model('uploads');
-
 		$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
+		if (!$nc2Upload) {
+			return $nc2Upload;
+		}
 
 		$name = $nc2Upload['Nc2Upload']['physical_file_name'];
 		$tmpName = '/var/www/html/NC2/webapp/uploads/' .
-		$nc2Upload['Nc2Upload']['file_path'] .
-		$name;
+			$nc2Upload['Nc2Upload']['file_path'] .
+			$name;
 
 		// アップロード処理で削除されるので一時フォルダーにコピー
 		// @see https://github.com/josegonzalez/cakephp-upload/blob/1.3.1/Model/Behavior/UploadBehavior.php#L337
