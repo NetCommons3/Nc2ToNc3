@@ -26,6 +26,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @see Nc2ToNc3RoomBaseBehavior
  * @method string getDefaultRoleKeyFromNc2($nc2SpaceType)
  * @method array getNc3DefaultRolePermission()
+ * @method string getNc2DefaultEntryRoleAuth($confName)
  *
  * @see Nc2ToNc3RoomBehavior
  * @method string getLogArgument($nc2Page)
@@ -171,7 +172,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				//$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
+				// データ量が多い可能性あり、
+				// $Room->saveRoomと$RolesRoomsUser->saveRolesRoomsUsersForRoomsのトランザクション分けた方が良いかも。
+				$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
 				/*if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 					continue;
@@ -415,7 +418,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Generate Nc3PluginsRoom data.
+ * Generate Nc3RolesRoomsUser data.
+ *
+ * Data sample
+ * data[RolesRoomsUser][99][id]:
+ * data[RolesRoomsUser][99][room_id]:88
+ * data[RolesRoomsUser][99][user_id]:99
+ * data[RolesRoomsUser][99][role_key]:'room_administrator'
+ * data[RolesRoomsUser][99][roles_room_id]:77
  *
  * @param array $nc3Room Nc3Room data.
  * @param array $nc2Page Nc2Page data.
@@ -424,12 +434,36 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 	private function __generateNc3RolesRoomsUser($nc3Room, $nc2Page) {
 		/* @var $Nc2PagesUsersLink AppModel */
 		$Nc2PagesUsersLink = $this->getNc2Model('pages_users_link');
+
+		$conditions = [
+			'Nc2PagesUsersLink.room_id' => $nc2Page['Nc2Page']['room_id'],
+		];
+		if ($nc3Room['Room']['default_participation']) {
+			$defaultEntryRoleAuth = $this->getNc2DefaultEntryRoleAuth($nc2Page['Nc2Page']['space_type']);
+			$conditions += [
+				'Nc2PagesUsersLink.role_authority_id !=' => $defaultEntryRoleAuth,
+			];
+		}
+
+		$query = [
+			'conditions' => $conditions,
+			'recursive' => -1
+		];
+		$nc2PageUserLinks = $Nc2PagesUsersLink->find('all', $query);
+
+		$data = [];
+		foreach ($nc2PageUserLinks as $nc2PageUserLink) {
+			$data;
+		}
+
+		/*
 		$nc2PagesUsersLink = $Nc2PagesUsersLink->findAllByRoomId(
-				$nc2Page['Nc2Page']['room_id'],
+				,
 				null,
 				null,
 				-1
 		);
+			*/
 
 		return $nc2PagesUsersLink;
 	}

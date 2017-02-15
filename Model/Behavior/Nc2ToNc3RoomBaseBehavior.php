@@ -32,6 +32,13 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__nc3DefaultRolePermission = null;
 
 /**
+ * Nc2DefaultEntryRoleAuth data.
+ *
+ * @var array
+ */
+	private $__nc2DefaultEntryRoleAuthList = null;
+
+/**
  * Get Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
  *
  * @param Model $model Model using this behavior.
@@ -50,6 +57,17 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	public function getNc3DefaultRolePermission(Model $model) {
 		return $this->_getNc3DefaultRolePermission();
+	}
+
+/**
+ * Get nc2 DefaultEntryRoleAuth.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2SpaceType Nc2Page space_type.1:public,2:group
+ * @return string Nc2 DefaultEntryRoleAuth
+ */
+	public function getNc2DefaultEntryRoleAuth(Model $model, $nc2SpaceType) {
+		return $this->_getNc2DefaultEntryRoleAuth($nc2SpaceType);
 	}
 
 /**
@@ -103,30 +121,19 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 			return $this->__defaultRoleKeyListFromNc2[$nc2SpaceType];
 		}
 
-		/* @var $Nc2Config AppModel */
-		$Nc2Config = $this->_getNc2Model('config');
-		$configData = $Nc2Config->findAllByConfName(
-			[
-				'default_entry_role_auth_group',
-				'default_entry_role_auth_public',
-			],
-			'conf_value',
-			'conf_name',
-			null,
-			null,
-			-1
-		);
+		if (!$this->__nc2DefaultEntryRoleAuthList) {
+			$this->__setNc2DefaultEntryRoleAuthList();
+		}
 
 		$authorityToRoleMap = [
 			'4' => 'general_user',
 			'5' => 'visitor',
 		];
 
-		$groupAuthorityId = $configData[0]['Nc2Config']['conf_value'];
-		$publicAuthorityId = $configData[1]['Nc2Config']['conf_value'];
+		// Nc2Page.space_typeをkeyにする。1:public,2:group
 		$this->__defaultRoleKeyListFromNc2 = [
-			'1' => $authorityToRoleMap[$publicAuthorityId],
-			'2' => $authorityToRoleMap[$groupAuthorityId],
+			'1' => $this->__nc2DefaultEntryRoleAuthList['1'],
+			'2' => $this->__nc2DefaultEntryRoleAuthList['2'],
 		];
 
 		return $this->__defaultRoleKeyListFromNc2[$nc2SpaceType];
@@ -170,6 +177,48 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$this->__nc3DefaultRolePermission = Hash::remove($data['DefaultRolePermission'], '{s}.{s}.id');
 
 		return $this->__nc3DefaultRolePermission;
+	}
+
+/**
+ * Get nc2 DefaultEntryRoleAuth.
+ *
+ * @param string $nc2SpaceType Nc2Page space_type.1:public,2:group
+ * @return string Nc2 DefaultEntryRoleAuth
+ */
+	protected function _getNc2DefaultEntryRoleAuth($nc2SpaceType) {
+		if (!$this->__nc2DefaultEntryRoleAuthList) {
+			$this->__setNc2DefaultEntryRoleAuthList();
+		}
+
+		return $this->__nc2DefaultEntryRoleAuthList[$nc2SpaceType];
+	}
+
+/**
+ * Set nc2 DefaultEntryRoleAuth list.
+ *
+ * @return void
+ */
+	private function __setNc2DefaultEntryRoleAuthList() {
+		/* @var $Nc2Config AppModel */
+		$Nc2Config = $this->_getNc2Model('config');
+		$query = [
+			'fields' => [
+				'Nc2Config.conf_name',
+				'Nc2Config.conf_value',
+			],
+			'conditions' => [
+				'Nc2Config.conf_name' => [
+					'default_entry_role_auth_public',
+					'default_entry_role_auth_group',
+				]
+			],
+			'recursive' => -1
+		];
+		$defaultEntryList = $Nc2Config->find('list', $query);
+
+		// Nc2Page.space_typeをkeyにする。1:public,2:group
+		$this->__nc2DefaultEntryRoleAuthList['1'] = $defaultEntryList['default_entry_role_auth_public'];
+		$this->__nc2DefaultEntryRoleAuthList['2'] = $defaultEntryList['default_entry_role_auth_group'];
 	}
 
 }
