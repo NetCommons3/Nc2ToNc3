@@ -151,7 +151,8 @@ class Nc2ToNc3UserAttributeBaseBehavior extends Nc2ToNc3BaseBehavior {
 			'conditions' => [
 				'UserAttribute.id' => $mapIdList
 			],
-			'recursive' => 1
+			'recursive' => 1,
+			'callbacks' => false
 		];
 		$hasManyOptions = $UserAttribute->hasMany['UserAttributeChoice'];
 		$UserAttribute->hasMany['UserAttributeChoice']['fields'] = [

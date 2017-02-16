@@ -48,7 +48,8 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 			'conditions' => [
 				'User.id' => $mapIdList
 			],
-			'recursive' => -1
+			'recursive' => -1,
+			'callbacks' => false
 		];
 		$users = $User->find('all', $query);
 		if (!$users) {
