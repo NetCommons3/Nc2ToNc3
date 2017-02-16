@@ -58,11 +58,47 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 				'Nc2Page.room_id'
 			],
 			'conditions' => $conditions,
-			'recursive' => -1
+			'recursive' => -1,
+			'callbacks' => false
 		];
 		$nc2OtherLaguageList = $Nc2Page->find('list', $query);
 
 		return $nc2OtherLaguageList;
+	}
+
+/**
+ * Get other laguage Nc3Room id.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $userMap User map data.
+ * @param string $nc2UserId Nc2User id.
+ * @param array $nc2Page Nc2Page data.
+ * @param array $nc3RolesRoomsUserIds Nc3RolesRoomsUser id array.
+ * @return bool True if data is migration target.
+ */
+	public function isNc2PagesUsersLinkToBeMigrationed(Model $model, $userMap, $nc2UserId, $nc2Page, $nc3RolesRoomsUserIds) {
+		// 対応するNc3User.idがなければ移行しない
+		if (!isset($userMap[$nc2UserId])) {
+			return false;
+		}
+
+		// Nc3RolesRoomsUser.idがない場合は移行する(新規作成)
+		$nc3UserId = $userMap[$nc2UserId]['User']['id'];
+		$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserIds, [$nc3UserId]);
+		if (!$nc3RolesRoomsUserId) {
+			return true;
+		}
+
+		// オリジナルの言語のNc2PagesUsersLinkデータは移行する
+		// オリジナルの言語ではない場合は、Nc3RolesRoomsUserデータを更新しない
+		//   →オリジナルの言語のNc2PagesUsersLinkデータを優先する
+		$nc3LaguageId = $this->_convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
+		$isOriginLaguage = ($nc3LaguageId == $this->_getLanguageIdFromNc2());
+		if ($isOriginLaguage) {
+			return true;
+		}
+
+		return false;
 	}
 
 /**

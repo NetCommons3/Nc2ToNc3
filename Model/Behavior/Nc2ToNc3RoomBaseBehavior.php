@@ -130,10 +130,12 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 			'5' => 'visitor',
 		];
 
+		$groupAuthorityId = $this->__nc2DefaultEntryRoleAuthList[Nc2ToNc3Room::NC2_SPACE_TYPE_PUBLIC];
+		$publicAuthorityId = $this->__nc2DefaultEntryRoleAuthList[Nc2ToNc3Room::NC2_SPACE_TYPE_GROUP];
 		// Nc2Page.space_typeをkeyにする。1:public,2:group
 		$this->__defaultRoleKeyListFromNc2 = [
-			'1' => $this->__nc2DefaultEntryRoleAuthList['1'],
-			'2' => $this->__nc2DefaultEntryRoleAuthList['2'],
+			Nc2ToNc3Room::NC2_SPACE_TYPE_PUBLIC => $authorityToRoleMap[$publicAuthorityId],
+			Nc2ToNc3Room::NC2_SPACE_TYPE_GROUP => $authorityToRoleMap[$groupAuthorityId],
 		];
 
 		return $this->__defaultRoleKeyListFromNc2[$nc2SpaceType];
@@ -217,8 +219,10 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$defaultEntryList = $Nc2Config->find('list', $query);
 
 		// Nc2Page.space_typeをkeyにする。1:public,2:group
-		$this->__nc2DefaultEntryRoleAuthList['1'] = $defaultEntryList['default_entry_role_auth_public'];
-		$this->__nc2DefaultEntryRoleAuthList['2'] = $defaultEntryList['default_entry_role_auth_group'];
+		$this->__nc2DefaultEntryRoleAuthList = [
+			Nc2ToNc3Room::NC2_SPACE_TYPE_PUBLIC => $defaultEntryList['default_entry_role_auth_public'],
+			Nc2ToNc3Room::NC2_SPACE_TYPE_GROUP => $defaultEntryList['default_entry_role_auth_group'],
+		];
 	}
 
 }

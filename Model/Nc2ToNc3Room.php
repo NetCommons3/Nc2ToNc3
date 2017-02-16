@@ -32,6 +32,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string getLogArgument($nc2Page)
  * @method array getNc2RoomConditions()
  * @method array getNc2OtherLaguageRoomIdList($nc2Page)
+ * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RolesRoomsUserIds)
  *
  */
 class Nc2ToNc3Room extends Nc2ToNc3AppModel {
@@ -52,6 +53,20 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Room'];
+
+/**
+ * Nc2Page.space_type of public
+ *
+ * @var int
+ */
+	const NC2_SPACE_TYPE_PUBLIC = '1';
+
+/**
+ * Nc2Page.space_type of group
+ *
+ * @var int
+ */
+	const NC2_SPACE_TYPE_GROUP = '2';
 
 /**
  * Migration method.
@@ -131,7 +146,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		/* @var $RolesRoomsUser RolesRoomsUser */
 		/* @var $Language Language */
 		$Room = ClassRegistry::init('Rooms.Room');
-		//$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
+		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
 		$Language = ClassRegistry::init('M17n.Language');
 
 		// 対応するルームが既存の処理について、対応させるデータが名前くらいしかない気がする。。。名前でマージして良いのか微妙なので保留
@@ -421,11 +436,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * Generate Nc3RolesRoomsUser data.
  *
  * Data sample
- * data[RolesRoomsUser][99][id]:
- * data[RolesRoomsUser][99][room_id]:88
- * data[RolesRoomsUser][99][user_id]:99
- * data[RolesRoomsUser][99][role_key]:'room_administrator'
- * data[RolesRoomsUser][99][roles_room_id]:77
+ * data[RolesRoomsUser][0][id]:
+ * data[RolesRoomsUser][0][room_id]:88
+ * data[RolesRoomsUser][0][user_id]:99
+ * data[RolesRoomsUser][0][roles_room_id]:77
+ * data[RolesRoomsUser][1][id]:
+ * data[RolesRoomsUser][1][room_id]:88
+ * data[RolesRoomsUser][1][user_id]:999
+ * data[RolesRoomsUser][1][roles_room_id]:777
  *
  * @param array $nc3Room Nc3Room data.
  * @param array $nc2Page Nc2Page data.
@@ -446,26 +464,75 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		}
 
 		$query = [
+			'fields' => [
+				'Nc2PagesUsersLink.user_id',
+				'Nc2PagesUsersLink.role_authority_id',
+			],
 			'conditions' => $conditions,
 			'recursive' => -1
 		];
-		$nc2PageUserLinks = $Nc2PagesUsersLink->find('all', $query);
+		$nc2UserAuthList = $Nc2PagesUsersLink->find('list', $query);
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$nc2UserIds = array_keys($nc2UserAuthList);
+		$userMap = $Nc2ToNc3User->getMap($nc2UserIds);
+
+		/* @var $RolesRoomsUser RolesRoomsUser */
+		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
+		$query = [
+			'fields' => [
+				'RolesRoomsUser.user_id',
+				'RolesRoomsUser.id'
+			],
+			'conditions' => [
+				'RolesRoomsUser.user_id' => Hash::extract($userMap, '{s}.User.id'),
+				'RolesRoomsUser.room_id' => $nc3Room['Room']['id']
+			],
+			'recursive' => -1
+		];
+		$nc3RolesRoomsUserIds = $RolesRoomsUser->find('list', $query);
 
 		$data = [];
-		foreach ($nc2PageUserLinks as $nc2PageUserLink) {
-			$data;
+		foreach ($nc2UserAuthList as $nc2UserId => $nc2RoleAuthotityId) {
+			$isMigrationRow = $this->isNc2PagesUsersLinkToBeMigrationed(
+				$userMap,
+				$nc2UserId,
+				$nc2Page,
+				$nc3RolesRoomsUserIds
+			);
+			if (!$isMigrationRow) {
+				continue;
+			}
+
+			$nc3UserId = $userMap[$nc2UserId]['User']['id'];
+			$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserIds, [$nc3UserId]);
+
+			// 不参加のデータ
+			if (!$nc2RoleAuthotityId &&
+				$nc3Room['Room']['default_participation'] &&
+				$nc3RolesRoomsUserId
+			) {
+				$nc3RoleRoomUser = [
+					'id' => $nc3RolesRoomsUserId,
+					'delete' => true
+				];
+				$data[] = $nc3RoleRoomUser;
+				continue;
+			}
+
+			$nc3RoleRoomUser = [
+				'id' => $nc3RolesRoomsUserId,
+				'room_id' => $nc3Room['Room']['id'],
+				'user_id' => $nc3UserId,
+				'roles_room_id' => ''
+			];
+			$data[] = $nc3RoleRoomUser;
 		}
 
-		/*
-		$nc2PagesUsersLink = $Nc2PagesUsersLink->findAllByRoomId(
-				,
-				null,
-				null,
-				-1
-		);
-			*/
+		$data['RolesRoomsUser'] = $data;
 
-		return $nc2PagesUsersLink;
+		return $data;
 	}
 
 }
