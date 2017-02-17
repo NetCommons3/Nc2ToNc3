@@ -60,40 +60,61 @@ class Nc2ToNc3RoomRole extends Nc2ToNc3AppModel {
 		// Nc2Authority.idとNc3RolesRoom.role_keyの対応付けのみ行う
 		// Nc2Authority.idをkeyにNc3RolesRoom.role_keyと対応付ける
 
-		/* @var $Nc2Page AppModel */
-		$Nc2Page = $this->getNc2Model('pages');
-
-
 		if (!$this->__map) {
-			$this->__map = [
-				'1' => [
-					'UserRoleSetting' => [
-						'role_key' => 'system_administrator'
-					]
-				]
-			];
+			$this->__setMap();
 		}
 
 		if (!isset($nc2RoleAuthorityIds)) {
 			return $this->__map;
 		}
 
-		// 対応データがなければcommon_userを返す
-		$default = [
-			'UserRoleSetting' => [
-				'role_key' => 'common_user'
-			]
-		];
-
 		if (is_string($nc2RoleAuthorityIds)) {
-			return Hash::get($this->__map, [$nc2RoleAuthorityIds], $default);
+			return Hash::get($this->__map, [$nc2RoleAuthorityIds]);
 		}
 
 		foreach ($nc2RoleAuthorityIds as $nc2RoleAuthorityId) {
-			$map[$nc2RoleAuthorityId] = Hash::get($this->__map, [$nc2RoleAuthorityIds], $default);
+			$map[$nc2RoleAuthorityId] = Hash::get($this->__map, [$nc2RoleAuthorityIds]);
 		}
 
 		return $map;
+	}
+
+
+/**
+ * Set map
+ *
+ * @return void.
+ */
+	private function __setMap() {
+		$this->__map = [
+			'2' => [
+				'RolesRoom' => [
+					'role_key' => 'room_administrator'
+				]
+			],
+			'4' => [
+				'RolesRoom' => [
+					'role_key' => 'general_user'
+				]
+			],
+			'5' => [
+				'RolesRoom' => [
+					'role_key' => 'visitor'
+				]
+			],
+		];
+
+		/* @var $Nc2Authoritiy AppModel */
+		$Nc2Authoritiy = $this->getNc2Model('authorities');
+		$nc2Moderators = $Nc2Authoritiy->findAllByUserAuthorityId('3', 'role_authority_id', null, null, null, -1);
+		foreach ($nc2Moderators as $nc2Moderator) {
+			$nc2RoleAuthorityId = $nc2Moderator['Nc2Authority']['role_authority_id'];
+			$this->__map[$nc2RoleAuthorityId] = [
+				'RolesRoom' => [
+					'role_key' => 'editor'
+				]
+			];
+		}
 	}
 
 }

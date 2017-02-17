@@ -73,10 +73,10 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
  * @param array $userMap User map data.
  * @param string $nc2UserId Nc2User id.
  * @param array $nc2Page Nc2Page data.
- * @param array $nc3RolesRoomsUserIds Nc3RolesRoomsUser id array.
+ * @param array $nc3RoleRoomUserList Nc3RolesRoomsUser id array.
  * @return bool True if data is migration target.
  */
-	public function isNc2PagesUsersLinkToBeMigrationed(Model $model, $userMap, $nc2UserId, $nc2Page, $nc3RolesRoomsUserIds) {
+	public function isNc2PagesUsersLinkToBeMigrationed(Model $model, $userMap, $nc2UserId, $nc2Page, $nc3RoleRoomUserList) {
 		// 対応するNc3User.idがなければ移行しない
 		if (!isset($userMap[$nc2UserId])) {
 			return false;
@@ -84,7 +84,7 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 
 		// Nc3RolesRoomsUser.idがない場合は移行する(新規作成)
 		$nc3UserId = $userMap[$nc2UserId]['User']['id'];
-		$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserIds, [$nc3UserId]);
+		$nc3RolesRoomsUserId = Hash::get($nc3RoleRoomUserList, [$nc3UserId]);
 		if (!$nc3RolesRoomsUserId) {
 			return true;
 		}
@@ -102,16 +102,16 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 	}
 
 /**
- * Get Nc2PagesUsersLink list.
- * [Nc2PagesUsersLink.user_id => Nc2PagesUsersLink.role_authority_id]
+ * Get Nc2PagesUsersLink data.
  *
  * @param Model $model Model using this behavior.
+ * @param array $nc3Room Nc3Room data.
  * @param array $nc2Page Nc2Page data.
  * @return array Nc2PagesUsersLink list.
  */
-	public function getNc2PagesUsersLinkListByRoomId(Model $model, $nc2Page) {
+	public function getNc2PagesUsersLinkByRoomId(Model $model, $nc3Room, $nc2Page) {
 		/* @var $Nc2PagesUsersLink AppModel */
-		$Nc2PagesUsersLink = $this->getNc2Model('pages_users_link');
+		$Nc2PagesUsersLink = $this->_getNc2Model('pages_users_link');
 
 		$conditions = [
 			'Nc2PagesUsersLink.room_id' => $nc2Page['Nc2Page']['room_id'],
@@ -124,15 +124,11 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 		}
 
 		$query = [
-			'fields' => [
-				'Nc2PagesUsersLink.user_id',
-				'Nc2PagesUsersLink.role_authority_id',
-			],
 			'conditions' => $conditions,
 			'recursive' => -1
 		];
 
-		return $Nc2PagesUsersLink->find('list', $query);
+		return $Nc2PagesUsersLink->find('all', $query);
 	}
 
 /**
@@ -179,7 +175,7 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 				'RolesRoom.id'
 			],
 			'conditions' => [
-				'RolesRoomsUser.room_id' => $nc3Room['Room']['id']
+				'RolesRoom.room_id' => $nc3Room['Room']['id']
 			],
 			'recursive' => -1
 		];
@@ -196,20 +192,12 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
  * @return array Nc2PagesUsersLink list.
  */
 	public function getNc3RoleRoomIdByNc2RoleAuthotityId(Model $model, $nc3RoleRoomList, $nc2RoleAuthotityId) {
-		/* @var $RolesRoom RolesRoom */
-		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
-		$query = [
-			'fields' => [
-				'RolesRoom.role_key',
-				'RolesRoom.id'
-			],
-			'conditions' => [
-				'RolesRoomsUser.room_id' => $nc3Room['Room']['id']
-			],
-			'recursive' => -1
-		];
+		/* @var $Nc2ToNc3RoomRole Nc2ToNc3RoomRole */
+		$Nc2ToNc3RoomRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3RoomRole');
+		$roomRoleMap = $Nc2ToNc3RoomRole->getMap($nc2RoleAuthotityId);
+		$nc3RoleKey = $roomRoleMap['RolesRoom']['role_key'];
 
-		return $RolesRoom->find('list', $query);
+		return $nc3RoleRoomList[$nc3RoleKey];
 	}
 
 /**

@@ -39,6 +39,13 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__nc2DefaultEntryRoleAuthList = null;
 
 /**
+ * Nc2DefaultEntryRoleAuth data.
+ *
+ * @var array
+ */
+	private $__nc3CurrentLanguage = null;
+
+/**
  * Get Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
  *
  * @param Model $model Model using this behavior.

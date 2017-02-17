@@ -32,11 +32,11 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string getLogArgument($nc2Page)
  * @method array getNc2RoomConditions()
  * @method array getNc2OtherLaguageRoomIdList($nc2Page)
- * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RolesRoomsUserIds)
- * @method array getNc2PagesUsersLinkListByRoomId($nc2Page)
+ * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RoleRoomUserList)
+ * @method array getNc2PagesUsersLinkByRoomId($nc3Room, $nc2Page)
  * @method array getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap)
  * @method array getNc3RoleRoomListByRoomId($nc3Room)
- *
+ * @method string getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc2RoleAuthotityId)
  */
 class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
@@ -112,10 +112,30 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			}
 		}
 
+		/* @var $Language Language */
+		$Language = ClassRegistry::init('M17n.Language');
+		// is_originの値はsaveする前に現在の言語を切り替える処理が必要
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
+		$nc3LanguageId = $this->getLanguageIdFromNc2();
+		if (Current::read('Language.id') != $nc3LanguageId) {
+			$currentLanguage = Current::read('Language');
+			$language = $Language->findById($nc3LanguageId, null, null, -1);
+			Current::write('Language', $language['Language']);
+		}
+
 		foreach ($nc2Pages as $nc2Page) {
+
 			if (!$this->__saveRoomFromNc2($nc2Page['Nc2Page']['lang_dirname'])) {
+				if (isset($currentLanguage)) {
+					Current::write('Language', $currentLanguage);
+				}
+
 				return false;
 			}
+		}
+
+		if (isset($currentLanguage)) {
+			Current::write('Language', $currentLanguage);
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration end.'));
@@ -147,22 +167,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		/* @var $Room Room */
 		/* @var $RolesRoomsUser RolesRoomsUser */
-		/* @var $Language Language */
 		$Room = ClassRegistry::init('Rooms.Room');
 		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
-		$Language = ClassRegistry::init('M17n.Language');
 
 		// 対応するルームが既存の処理について、対応させるデータが名前くらいしかない気がする。。。名前でマージして良いのか微妙なので保留
 		//$this->saveExistingMap($nc2Pages);
-
-		// is_originの値はsaveする前に現在の言語を切り替える処理が必要
-		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
-		$nc3LanguageId = $this->getLanguageIdFromNc2();
-		if (Current::read('Language.id') != $nc3LanguageId) {
-			$currentLanguage = Current::read('Language');
-			$language = $Language->findById($nc3LanguageId, null, null, -1);
-			Current::write('Language', $language['Language']);
-		}
 
 		foreach ($nc2Pages as $nc2Page) {
 			/*
@@ -170,7 +179,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				continue;
 			}*/
 
-			$Room->begin();
+			// $Room->saveRoomと$RolesRoomsUser->saveRolesRoomsUsersForRoomsのトランザクションを優先する
+			// $Roomと$RolesRoomsUserを別々にcommitする
+			//$Room->begin();
 			try {
 				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
@@ -190,13 +201,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// データ量が多い可能性あり、
-				// $Room->saveRoomと$RolesRoomsUser->saveRolesRoomsUsersForRoomsのトランザクション分けた方が良いかも。
+				// データ量が多い可能性あり、limitで分割登録した方が良いかも
 				$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
-				/*if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
+				if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 					continue;
-				}*/
+				}
 
 				$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
 				if ($this->getMap($nc2RoomId)) {
@@ -208,22 +218,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				];
 				$this->saveMap('Room', $idMap);
 
-				$Room->commit();
+				//$Room->commit();
 
 			} catch (Exception $ex) {
-				if (isset($currentLanguage)) {
-					Current::write('Language', $currentLanguage);
-				}
-
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $User::saveUser()でthrowされるとこの処理に入ってこない
-				$Room->rollback($ex);
+				//$Room->rollback($ex);
 				throw $ex;
 			}
-		}
-
-		if (isset($currentLanguage)) {
-			Current::write('Language', $currentLanguage);
 		}
 
 		return true;
@@ -360,8 +362,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			'default_role_key' => $defaultRoleKey,
 			'need_approval' => $needApproval,
 			'default_participation' => $nc2Page['Nc2Page']['default_entry_flag'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']),
 			'created' => $this->convertDate($nc2Page['Nc2Page']['insert_time']),
-			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page'])
 		];
 		$data = $Space->createRoom($data);
 
@@ -394,8 +396,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc3RoomLanguage['name'] = $nc2Page['Nc2Page']['page_name'];
-		$nc3RoomLanguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
 		$nc3RoomLanguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']);
+		$nc3RoomLanguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
 
 		return $nc3RoomLanguage;
 	}
@@ -457,30 +459,35 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * @return array Nc3PluginsRoom data.
  */
 	private function __generateNc3RolesRoomsUser($nc3Room, $nc2Page) {
-		$nc2UserAuthList = $this->getNc2PagesUsersLinkListByRoomId($nc2Page);
+		$nc2PagesUsers = $this->getNc2PagesUsersLinkByRoomId($nc3Room, $nc2Page);
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$nc2UserIds = array_keys($nc2UserAuthList);
+		$nc2UserIds = array_keys($nc2PagesUsers);
 		$userMap = $Nc2ToNc3User->getMap($nc2UserIds);
 
-		$nc3RolesRoomsUserList = $this->getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap);
+		$nc3RoleRoomUserList = $this->getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap);
 		$nc3RoleRoomList = $this->getNc3RoleRoomListByRoomId($nc3Room);
 
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [];
-		foreach ($nc2UserAuthList as $nc2UserId => $nc2RoleAuthotityId) {
+		foreach ($nc2PagesUsers as $nc2PagesUser) {
+			$nc2UserId = $nc2PagesUser['Nc2PagesUsersLink']['user_id'];
+			$nc2RoleAuthotityId = $nc2PagesUser['Nc2PagesUsersLink']['role_authority_id'];
+
 			$isMigrationRow = $this->isNc2PagesUsersLinkToBeMigrationed(
 				$userMap,
 				$nc2UserId,
 				$nc2Page,
-				$nc3RolesRoomsUserList
+				$nc3RoleRoomUserList
 			);
 			if (!$isMigrationRow) {
 				continue;
 			}
 
 			$nc3UserId = $userMap[$nc2UserId]['User']['id'];
-			$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserList, [$nc3UserId]);
+			$nc3RolesRoomsUserId = Hash::get($nc3RoleRoomUserList, [$nc3UserId]);
 
 			// 不参加のデータ
 			if (!$nc2RoleAuthotityId &&
@@ -498,7 +505,15 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				'id' => $nc3RolesRoomsUserId,
 				'room_id' => $nc3Room['Room']['id'],
 				'user_id' => $nc3UserId,
-				'roles_room_id' => ''
+				'roles_room_id' => $this->getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc2RoleAuthotityId),
+				// TODOーNC2MonthlyNumberから取得
+				/*
+				'access_count' => 0,
+				'last_accessed' => null,
+				'previous_accessed' => null,
+				*/
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2PagesUser['Nc2PagesUsersLink']),
+				'created' => $this->convertDate($nc2Page['Nc2Page']['insert_time']),
 			];
 			$data[] = $nc3RoleRoomUser;
 		}
