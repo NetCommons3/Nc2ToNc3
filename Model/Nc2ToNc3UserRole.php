@@ -59,8 +59,8 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 		// データの移行はしない
 		// Nc2Authority.idとNc3UserRoleSetting.role_keyの対応付けのみ行う
 		// Nc2Authority.idをkeyにUserRoleSetting.role_keyと対応付ける
-		// 直接変更することで、Nc2ToNc3User::__convertRoleより対応付けされるようになる
-		// @see Nc2ToNc3User::__convertRole
+		// 直接変更することで、Nc2ToNc3User::__convertFixedFieldで対応付けされるようになる
+		// @see Nc2ToNc3User::__convertFixedField
 		if (!$this->__map) {
 			$this->__map = [
 				'1' => [
