@@ -309,6 +309,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L226-L231
 		unset($data['Room']['page_layout_permitted']);
 
+		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
+
 		return $data;
 	}
 
@@ -410,6 +412,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$nc2PageModuleLinks = $Nc2PagesModulesLink->findAllByRoomId(
 			$nc2Page['Nc2Page']['room_id'],
 			'module_id',
+			null,
+			null,
 			null,
 			-1
 		);
