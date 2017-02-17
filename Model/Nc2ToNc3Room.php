@@ -27,6 +27,8 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string getDefaultRoleKeyFromNc2($nc2SpaceType)
  * @method array getNc3DefaultRolePermission()
  * @method string getNc2DefaultEntryRoleAuth($confName)
+ * @method void changeNc3CurrentLanguage()
+ * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3RoomBehavior
  * @method string getLogArgument($nc2Page)
@@ -112,31 +114,18 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			}
 		}
 
-		/* @var $Language Language */
-		$Language = ClassRegistry::init('M17n.Language');
 		// is_originの値はsaveする前に現在の言語を切り替える処理が必要
 		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
-		$nc3LanguageId = $this->getLanguageIdFromNc2();
-		if (Current::read('Language.id') != $nc3LanguageId) {
-			$currentLanguage = Current::read('Language');
-			$language = $Language->findById($nc3LanguageId, null, null, -1);
-			Current::write('Language', $language['Language']);
-		}
+		$this->changeNc3CurrentLanguage();
 
 		foreach ($nc2Pages as $nc2Page) {
-
 			if (!$this->__saveRoomFromNc2($nc2Page['Nc2Page']['lang_dirname'])) {
-				if (isset($currentLanguage)) {
-					Current::write('Language', $currentLanguage);
-				}
-
+				$this->restoreNc3CurrentLanguage();
 				return false;
 			}
 		}
 
-		if (isset($currentLanguage)) {
-			Current::write('Language', $currentLanguage);
-		}
+		$this->restoreNc3CurrentLanguage();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration end.'));
 		return true;
@@ -329,13 +318,13 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$nc2SpaceType = $nc2Page['Nc2Page']['space_type'];
 
 		/* @var $Space Space */
-		if ($nc2SpaceType == '1') {
+		if ($nc2SpaceType == self::NC2_SPACE_TYPE_PUBLIC) {
 			$Space = ClassRegistry::init('PublicSpace.PublicSpace');
 			$spaceId = Space::PUBLIC_SPACE_ID;
 			$needApproval = '1';
 
 		}
-		if ($nc2SpaceType == '2') {
+		if ($nc2SpaceType == self::NC2_SPACE_TYPE_GROUP) {
 			$Space = ClassRegistry::init('CommunitySpace.CommunitySpace');
 			$spaceId = Space::COMMUNITY_SPACE_ID;
 			$needApproval = '0';
@@ -463,7 +452,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$nc2UserIds = array_keys($nc2PagesUsers);
+		$nc2UserIds = Hash::extract($nc2PagesUsers, '{n}.Nc2PagesUsersLink.user_id');
 		$userMap = $Nc2ToNc3User->getMap($nc2UserIds);
 
 		$nc3RoleRoomUserList = $this->getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap);

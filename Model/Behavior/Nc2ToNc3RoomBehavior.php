@@ -89,6 +89,10 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 			return true;
 		}
 
+		if (!$nc2Page['Nc2Page']['lang_dirname']) {
+			return true;
+		}
+
 		// オリジナルの言語のNc2PagesUsersLinkデータは移行する
 		// オリジナルの言語ではない場合は、Nc3RolesRoomsUserデータを更新しない
 		//   →オリジナルの言語のNc2PagesUsersLinkデータを優先する
@@ -117,7 +121,7 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 			'Nc2PagesUsersLink.room_id' => $nc2Page['Nc2Page']['room_id'],
 		];
 		if ($nc3Room['Room']['default_participation']) {
-			$defaultEntryRoleAuth = $this->getNc2DefaultEntryRoleAuth($nc2Page['Nc2Page']['space_type']);
+			$defaultEntryRoleAuth = $this->_getNc2DefaultEntryRoleAuth($nc2Page['Nc2Page']['space_type']);
 			$conditions += [
 				'Nc2PagesUsersLink.role_authority_id !=' => $defaultEntryRoleAuth,
 			];

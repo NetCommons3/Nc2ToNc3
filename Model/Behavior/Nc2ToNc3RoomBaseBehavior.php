@@ -39,7 +39,7 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__nc2DefaultEntryRoleAuthList = null;
 
 /**
- * Nc2DefaultEntryRoleAuth data.
+ * Nc3Language data.
  *
  * @var array
  */
@@ -75,6 +75,25 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
  */
 	public function getNc2DefaultEntryRoleAuth(Model $model, $nc2SpaceType) {
 		return $this->_getNc2DefaultEntryRoleAuth($nc2SpaceType);
+	}
+
+/**
+ * Change nc3 current language data
+ *
+ * @param Model $model Model using this behavior.
+ * @return void
+ */
+	public function changeNc3CurrentLanguage(Model $model) {
+		$this->_changeNc3CurrentLanguage();
+	}
+
+/**
+ * Restore nc3 current language data
+ *
+ * @return void
+ */
+	public function restoreNc3CurrentLanguage() {
+		$this->_restoreNc3CurrentLanguage();
 	}
 
 /**
@@ -200,6 +219,35 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		return $this->__nc2DefaultEntryRoleAuthList[$nc2SpaceType];
+	}
+
+/**
+ * Change nc3 current language data
+ *
+ * @return void
+ */
+	protected function _changeNc3CurrentLanguage() {
+		/* @var $Language Language */
+		$Language = ClassRegistry::init('M17n.Language');
+
+		$nc3LanguageId = $this->_getLanguageIdFromNc2();
+		if (Current::read('Language.id') != $nc3LanguageId) {
+			$this->__nc3CurrentLanguage = Current::read('Language');
+			$language = $Language->findById($nc3LanguageId, null, null, -1);
+			Current::write('Language', $language['Language']);
+		}
+	}
+
+/**
+ * Restore nc3 current language data
+ *
+ * @return void
+ */
+	protected function _restoreNc3CurrentLanguage() {
+		if (isset($this->__nc3CurrentLanguage)) {
+			Current::write('Language', $this->__nc3CurrentLanguage);
+			unset($this->__nc3CurrentLanguage);
+		}
 	}
 
 /**

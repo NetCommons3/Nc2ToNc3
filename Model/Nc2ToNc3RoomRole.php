@@ -79,7 +79,6 @@ class Nc2ToNc3RoomRole extends Nc2ToNc3AppModel {
 		return $map;
 	}
 
-
 /**
  * Set map
  *
