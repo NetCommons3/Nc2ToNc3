@@ -22,7 +22,7 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @var array
  */
-	private $__defaultRoleKeyListFromNc2 = null;
+	private $__nc3DefaultRoleKeyList = null;
 
 /**
  * Nc3DefaultRolePermission data.
@@ -46,14 +46,14 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	private $__nc3CurrentLanguage = null;
 
 /**
- * Get Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
+ * Get Nc3Room default_role_key by Nc2Page space_type.
  *
  * @param Model $model Model using this behavior.
  * @param string $nc2SpaceType Nc2Page space_type
  * @return string Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
  */
-	public function getDefaultRoleKeyFromNc2(Model $model, $nc2SpaceType) {
-		return $this->_getDefaultRoleKeyFromNc2($nc2SpaceType);
+	public function getNc3DefaultRoleKeyByNc2SpaceType(Model $model, $nc2SpaceType) {
+		return $this->_getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType);
 	}
 
 /**
@@ -137,14 +137,14 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Get Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
+ * Get Nc3Room default_role_key by Nc2Page space_type.
  *
  * @param string $nc2SpaceType Nc2Page space_type.1:public,2:group
  * @return string Nc3Room default_role_key from Nc2Config default_entry_role_auth_group.
  */
-	protected function _getDefaultRoleKeyFromNc2($nc2SpaceType) {
-		if (isset($this->__defaultRoleKeyListFromNc2)) {
-			return $this->__defaultRoleKeyListFromNc2[$nc2SpaceType];
+	protected function _getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType) {
+		if (isset($this->__nc3DefaultRoleKeyList)) {
+			return $this->__nc3DefaultRoleKeyList[$nc2SpaceType];
 		}
 
 		if (!$this->__nc2DefaultEntryRoleAuthList) {
@@ -159,12 +159,12 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$groupAuthorityId = $this->__nc2DefaultEntryRoleAuthList[Nc2ToNc3Room::NC2_SPACE_TYPE_PUBLIC];
 		$publicAuthorityId = $this->__nc2DefaultEntryRoleAuthList[Nc2ToNc3Room::NC2_SPACE_TYPE_GROUP];
 		// Nc2Page.space_typeをkeyにする。1:public,2:group
-		$this->__defaultRoleKeyListFromNc2 = [
+		$this->__nc3DefaultRoleKeyList = [
 			Nc2ToNc3Room::NC2_SPACE_TYPE_PUBLIC => $authorityToRoleMap[$publicAuthorityId],
 			Nc2ToNc3Room::NC2_SPACE_TYPE_GROUP => $authorityToRoleMap[$groupAuthorityId],
 		];
 
-		return $this->__defaultRoleKeyListFromNc2[$nc2SpaceType];
+		return $this->__nc3DefaultRoleKeyList[$nc2SpaceType];
 	}
 
 /**

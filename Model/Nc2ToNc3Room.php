@@ -24,7 +24,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getMap($nc2Id)
  *
  * @see Nc2ToNc3RoomBaseBehavior
- * @method string getDefaultRoleKeyFromNc2($nc2SpaceType)
+ * @method string getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType)
  * @method array getNc3DefaultRolePermission()
  * @method string getNc2DefaultEntryRoleAuth($confName)
  * @method void changeNc3CurrentLanguage()
@@ -338,7 +338,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		$defaultRoleKey = $spaces[$spaceId]['Room']['default_role_key'];
 		if ($nc2Page['Nc2Page']['default_entry_flag'] == '1') {
-			$defaultRoleKey = $this->getDefaultRoleKeyFromNc2($nc2SpaceType);
+			$defaultRoleKey = $this->getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType);
 		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
