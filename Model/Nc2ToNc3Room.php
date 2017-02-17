@@ -33,6 +33,9 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getNc2RoomConditions()
  * @method array getNc2OtherLaguageRoomIdList($nc2Page)
  * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RolesRoomsUserIds)
+ * @method array getNc2PagesUsersLinkListByRoomId($nc2Page)
+ * @method array getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap)
+ * @method array getNc3RoleRoomListByRoomId($nc3Room)
  *
  */
 class Nc2ToNc3Room extends Nc2ToNc3AppModel {
@@ -450,48 +453,15 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * @return array Nc3PluginsRoom data.
  */
 	private function __generateNc3RolesRoomsUser($nc3Room, $nc2Page) {
-		/* @var $Nc2PagesUsersLink AppModel */
-		$Nc2PagesUsersLink = $this->getNc2Model('pages_users_link');
-
-		$conditions = [
-			'Nc2PagesUsersLink.room_id' => $nc2Page['Nc2Page']['room_id'],
-		];
-		if ($nc3Room['Room']['default_participation']) {
-			$defaultEntryRoleAuth = $this->getNc2DefaultEntryRoleAuth($nc2Page['Nc2Page']['space_type']);
-			$conditions += [
-				'Nc2PagesUsersLink.role_authority_id !=' => $defaultEntryRoleAuth,
-			];
-		}
-
-		$query = [
-			'fields' => [
-				'Nc2PagesUsersLink.user_id',
-				'Nc2PagesUsersLink.role_authority_id',
-			],
-			'conditions' => $conditions,
-			'recursive' => -1
-		];
-		$nc2UserAuthList = $Nc2PagesUsersLink->find('list', $query);
+		$nc2UserAuthList = $this->getNc2PagesUsersLinkListByRoomId($nc2Page);
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc2UserIds = array_keys($nc2UserAuthList);
 		$userMap = $Nc2ToNc3User->getMap($nc2UserIds);
 
-		/* @var $RolesRoomsUser RolesRoomsUser */
-		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
-		$query = [
-			'fields' => [
-				'RolesRoomsUser.user_id',
-				'RolesRoomsUser.id'
-			],
-			'conditions' => [
-				'RolesRoomsUser.user_id' => Hash::extract($userMap, '{s}.User.id'),
-				'RolesRoomsUser.room_id' => $nc3Room['Room']['id']
-			],
-			'recursive' => -1
-		];
-		$nc3RolesRoomsUserIds = $RolesRoomsUser->find('list', $query);
+		$nc3RolesRoomsUserList = $this->getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap);
+		$nc3RoleRoomList = $this->getNc3RoleRoomListByRoomId($nc3Room);
 
 		$data = [];
 		foreach ($nc2UserAuthList as $nc2UserId => $nc2RoleAuthotityId) {
@@ -499,18 +469,17 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				$userMap,
 				$nc2UserId,
 				$nc2Page,
-				$nc3RolesRoomsUserIds
+				$nc3RolesRoomsUserList
 			);
 			if (!$isMigrationRow) {
 				continue;
 			}
 
 			$nc3UserId = $userMap[$nc2UserId]['User']['id'];
-			$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserIds, [$nc3UserId]);
+			$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserList, [$nc3UserId]);
 
 			// 不参加のデータ
 			if (!$nc2RoleAuthotityId &&
-				$nc3Room['Room']['default_participation'] &&
 				$nc3RolesRoomsUserId
 			) {
 				$nc3RoleRoomUser = [
