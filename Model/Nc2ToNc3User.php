@@ -116,7 +116,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save UserAttribue from Nc2 while dividing.
+ * Save User from Nc2 while dividing.
  *
  * @return bool True on success.
  */
@@ -159,7 +159,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save UserAttribue from Nc2.
+ * Save User from Nc2.
  *
  * @param array $nc2Users Nc2User data.
  * @return bool True on success
