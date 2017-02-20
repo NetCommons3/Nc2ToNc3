@@ -12,7 +12,7 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 App::uses('DefaultRolePermission', 'Roles.Model');
 
 /**
- * Nc2ToNc3UserBaseBehavior
+ * Nc2ToNc3RoomBaseBehavior
  *
  */
 class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
