@@ -30,6 +30,9 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method bool isApprovalWaiting($nc2User)
  * @method bool isMigrationRow($nc2User)
  * @method void saveExistingMap($nc2User)
+ * @method string convertFixedField($nc2Field, $nc3User, $nc2User)
+ * @method string getNc2ItemContent($nc2ItemId, $nc2UserItemLink)
+ * @method string getChoiceCode($dataTypeKey, $nc2Content, $nc3Choices)
  *
  * @see Nc2ToNc3UserValidationBehavior
  * @method string|bool existsRequireAttribute($nc2User)
@@ -182,7 +185,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				if (!$User->saveUser($data)) {
+				if (!($data = $User->saveUser($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返っていくるがrollbackしていないので、
 					// ここでrollback
 					$User->rollback();
@@ -279,6 +282,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		$map = $this->getMap($nc2User['Nc2User']['user_id']);
 		if ($map) {
 			// とりあえず上書きしない
+			// $User->getUserの戻り値をそのまま戻しても、選択肢のデータが配列じゃないため、
+			// ValidationでWarning発生。
+			// @see https://github.com/NetCommons3/Users/blob/3.0.1/Model/Behavior/UsersValidationRuleBehavior.php#L75
 			$data = $User->getUser($map['User']['id']);
 			//return $data;
 		} else {
@@ -291,7 +297,17 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			$data['User']['activated'] = time();
 		}
 
-		return $this->__generateNc3User($data, $nc2User);
+		$data = $this->__generateNc3User($data, $nc2User);
+
+		// 新規作成の場合、RolesRoomsUserデータも登録する
+		if (!$map) {
+			$data['RolesRoomsUser'] = $this->__generateNc3RolesRoomsUser($nc2User);
+			if (!$data['RolesRoomsUser']) {
+				unset($data['RolesRoomsUser']);
+			}
+		}
+
+		return $data;
 	}
 
 /**
@@ -318,6 +334,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		);
 		$nc3UserFields = array_keys($nc3User['User']);
 		$nc3LanguageFields = array_keys($nc3User['UsersLanguage'][0]);
+
 		foreach ($userAttributeMap as $nc2ItemId => $map) {
 			$userAttributeKey = $map['UserAttribute']['key'];
 
@@ -327,10 +344,10 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			$nc2ItemContent = $this->__getNc2ItemContent($nc2ItemId, $nc2UserItemLink);
+			$nc2ItemContent = $this->getNc2ItemContent($nc2ItemId, $nc2UserItemLink);
 			$dataTypeKey = $map['UserAttributeSetting']['data_type_key'];
 			if ($Nc2ToNc3UserAttr->isChoice($dataTypeKey)) {
-				$nc2ItemContent = $this->__getChoiceCode($dataTypeKey, $nc2ItemContent, $map['UserAttributeChoice']);
+				$nc2ItemContent = $this->getChoiceCode($dataTypeKey, $nc2ItemContent, $map['UserAttributeChoice']);
 			}
 
 			if ($map['UserAttribute']['key'] == 'avatar') {
@@ -425,7 +442,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			'timezone_offset',
 		];
 		if (in_array($nc2Field, $fixedFields)) {
-			$nc3User[$userAttributeKey] = $this->__convertFixedField($nc2Field, $nc3User, $nc2User);
+			$nc3User[$userAttributeKey] = $this->convertFixedField($nc2Field, $nc3User, $nc2User);
 			return $nc3User;
 		}
 
@@ -441,134 +458,24 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Convert fixed field
+ * Generate Nc3RolesRoomsUser data.
  *
- * @param string $nc2Field Nc2User field name.
- * @param array $nc3User Nc3User data.
+ * Data sample
+ * data[RolesRoomsUser][0][id]:
+ * data[RolesRoomsUser][0][room_id]:88
+ * data[RolesRoomsUser][0][user_id]:99
+ * data[RolesRoomsUser][0][roles_room_id]:77
+ * data[RolesRoomsUser][1][id]:
+ * data[RolesRoomsUser][1][room_id]:88
+ * data[RolesRoomsUser][1][user_id]:999
+ * data[RolesRoomsUser][1][roles_room_id]:777
+ *
  * @param array $nc2User Nc2User data.
- * @return string convert data.
+ * @return array Nc3PluginsRoom data.
  */
-	private function __convertFixedField($nc2Field, $nc3User, $nc2User) {
-		$nc2UserValue = $nc2User['Nc2User'][$nc2Field];
-
-		if ($nc2Field == 'role_authority_id') {
-			/* @var $Nc2ToNc3UserRole Nc2ToNc3UserRole */
-			$Nc2ToNc3UserRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserRole');
-			$userRole = $Nc2ToNc3UserRole->getMap($nc2UserValue);
-
-			return $userRole['UserRoleSetting']['role_key'];
-		}
-
-		if ($nc2Field == 'lang_dirname') {
-			switch ($nc2UserValue) {
-				case 'japanese':
-					$code = 'ja';
-					break;
-
-				case 'english':
-					$code = 'en';
-					break;
-
-				default:
-					$code = 'auto';
-
-			}
-
-			return $code;
-		}
-
-		if ($nc2Field == 'timezone_offset') {
-			$timezoneMap = [
-				'-12.0' => 'Pacific/Kwajalein',
-				'-11.0' => 'Pacific/Midway',
-				'-10.0' => 'Pacific/Honolulu',
-				'-9.0' => 'America/Anchorage',
-				'-8.0' => 'America/Los_Angeles',
-				'-7.0' => 'America/Denver',
-				'-6.0' => 'America/Chicago',
-				'-5.0' => 'America/New_York',
-				'-4.0' => 'America/Dominica',
-				'-3.5' => 'America/St_Johns',
-				'-3.0' => 'America/Argentina/Buenos_Aires',
-				'-2.0' => 'Atlantic/South_Georgia',
-				'-1.0' => 'Atlantic/Azores',
-				'0.0' => 'UTC',
-				'1.0' => 'Europe/Brussels',
-				'2.0' => 'Europe/Athens',
-				'3.0' => 'Asia/Baghdad',
-				'3.5' => 'Asia/Tehran',
-				'4.0' => 'Asia/Muscat',
-				'4.5' => 'Asia/Kabul',
-				'5.0' => 'Asia/Karachi',
-				'5.5' => 'Asia/Kolkata',
-				'6.0' => 'Asia/Dhaka',
-				'7.0' => 'Asia/Bangkok',
-				'8.0' => 'Asia/Singapore',
-				'9.0' => 'Asia/Tokyo',
-				'9.5' => 'Australia/Darwin',
-				'10.0' => 'Asia/Vladivostok',
-				'11.0' => 'Australia/Sydney',
-				'12.0' => 'Asia/Kamchatka'
-			];
-
-			return Hash::get($timezoneMap, [$nc2UserValue], 'Asia/Tokyo');
-		}
-	}
-
-/**
- * GetNc2ItemContent
- *
- * @param string $nc2ItemId Nc2Item item_id.
- * @param array $nc2UserItemLink Nc2UsersItemsLink data
- * @return string Nc2UsersItemsLink.content.
- */
-	private function __getNc2ItemContent($nc2ItemId, $nc2UserItemLink) {
-		$path = '{n}.Nc2UsersItemsLink[item_id=' . $nc2ItemId . '].content';
-		$nc2ItemContent = Hash::extract($nc2UserItemLink, $path);
-		if (!$nc2ItemContent) {
-			return '';
-		}
-
-		return $nc2ItemContent[0];
-	}
-
-/**
- * GetNc2ItemContent
- *
- * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
- * @param string $nc2Content Nc2UsersItemsLink.content.
- * @param array $nc3Choices Nc3UserAttributeChoice data.
- * @return string Nc3UserAttributeChoice.code.
- */
-	private function __getChoiceCode($dataTypeKey, $nc2Content, $nc3Choices) {
-		$nc2Contents = explode('|', $nc2Content);
-		$choiceCodes = [];
-		foreach ($nc2Contents as $nc2Choice) {
-			if ($nc2Choice === '') {
-				$path = '{n}[code=no_setting]';
-				$nc3Choice = Hash::extract($nc3Choices, $path);
-				if ($nc3Choice) {
-					$choiceCodes[] = $nc3Choice[0]['code'];
-				}
-
-				continue;
-			}
-
-			$path = '{n}[name=' . $nc2Choice . ']';
-			$nc3Choice = Hash::extract($nc3Choices, $path);
-			if ($nc3Choice) {
-				$choiceCodes[] = $nc3Choice[0]['code'];
-
-				continue;
-			}
-
-		}
-
-		if ($dataTypeKey != 'checkbox') {
-			return Hash::get($choiceCodes, ['0']);
-		}
-
-		return $choiceCodes;
+	private function __generateNc3RolesRoomsUser($nc2User) {
+		$data = [];
+		return $data;
 	}
 
 }

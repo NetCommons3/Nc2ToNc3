@@ -93,6 +93,140 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 	}
 
 /**
+ * Convert fixed field
+ *
+ * @param Model $model Model using this behavior
+ * @param string $nc2Field Nc2User field name.
+ * @param array $nc3User Nc3User data.
+ * @param array $nc2User Nc2User data.
+ * @return string convert data.
+ */
+	public function convertFixedField(Model $model, $nc2Field, $nc3User, $nc2User) {
+		$nc2UserValue = $nc2User['Nc2User'][$nc2Field];
+
+		if ($nc2Field == 'role_authority_id') {
+			/* @var $Nc2ToNc3UserRole Nc2ToNc3UserRole */
+			$Nc2ToNc3UserRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserRole');
+			$userRole = $Nc2ToNc3UserRole->getMap($nc2UserValue);
+
+			return $userRole['UserRoleSetting']['role_key'];
+		}
+
+		if ($nc2Field == 'lang_dirname') {
+			switch ($nc2UserValue) {
+				case 'japanese':
+					$code = 'ja';
+					break;
+
+				case 'english':
+					$code = 'en';
+					break;
+
+				default:
+					$code = 'auto';
+
+			}
+
+			return $code;
+		}
+
+		if ($nc2Field == 'timezone_offset') {
+			$timezoneMap = [
+				'-12.0' => 'Pacific/Kwajalein',
+				'-11.0' => 'Pacific/Midway',
+				'-10.0' => 'Pacific/Honolulu',
+				'-9.0' => 'America/Anchorage',
+				'-8.0' => 'America/Los_Angeles',
+				'-7.0' => 'America/Denver',
+				'-6.0' => 'America/Chicago',
+				'-5.0' => 'America/New_York',
+				'-4.0' => 'America/Dominica',
+				'-3.5' => 'America/St_Johns',
+				'-3.0' => 'America/Argentina/Buenos_Aires',
+				'-2.0' => 'Atlantic/South_Georgia',
+				'-1.0' => 'Atlantic/Azores',
+				'0.0' => 'UTC',
+				'1.0' => 'Europe/Brussels',
+				'2.0' => 'Europe/Athens',
+				'3.0' => 'Asia/Baghdad',
+				'3.5' => 'Asia/Tehran',
+				'4.0' => 'Asia/Muscat',
+				'4.5' => 'Asia/Kabul',
+				'5.0' => 'Asia/Karachi',
+				'5.5' => 'Asia/Kolkata',
+				'6.0' => 'Asia/Dhaka',
+				'7.0' => 'Asia/Bangkok',
+				'8.0' => 'Asia/Singapore',
+				'9.0' => 'Asia/Tokyo',
+				'9.5' => 'Australia/Darwin',
+				'10.0' => 'Asia/Vladivostok',
+				'11.0' => 'Australia/Sydney',
+				'12.0' => 'Asia/Kamchatka'
+			];
+
+			return Hash::get($timezoneMap, [$nc2UserValue], 'Asia/Tokyo');
+		}
+	}
+
+/**
+ * GetNc2ItemContent
+ *
+ * @param Model $model Model using this behavior
+ * @param string $nc2ItemId Nc2Item item_id.
+ * @param array $nc2UserItemLink Nc2UsersItemsLink data
+ * @return string Nc2UsersItemsLink.content.
+ */
+	public function getNc2ItemContent(Model $model, $nc2ItemId, $nc2UserItemLink) {
+		$path = '{n}.Nc2UsersItemsLink[item_id=' . $nc2ItemId . '].content';
+		$nc2ItemContent = Hash::extract($nc2UserItemLink, $path);
+		if (!$nc2ItemContent) {
+			return '';
+		}
+
+		return $nc2ItemContent[0];
+	}
+
+/**
+ * GetNc2ItemContent
+ *
+ * @param Model $model Model using this behavior
+ * @param string $dataTypeKey Nc3UserAttributeSetting data_type_key.
+ * @param string $nc2Content Nc2UsersItemsLink.content.
+ * @param array $nc3Choices Nc3UserAttributeChoice data.
+ * @return string Nc3UserAttributeChoice.code.
+ */
+	public function getChoiceCode(Model $model, $dataTypeKey, $nc2Content, $nc3Choices) {
+		$nc2Contents = explode('|', $nc2Content);
+		$choiceCodes = [];
+		foreach ($nc2Contents as $nc2Choice) {
+			if ($nc2Choice === '') {
+				$path = '{n}[code=no_setting]';
+				$nc3Choice = Hash::extract($nc3Choices, $path);
+				if ($nc3Choice) {
+					$choiceCodes[] = $nc3Choice[0]['code'];
+				}
+
+				continue;
+			}
+
+			$path = '{n}[name=' . $nc2Choice . ']';
+			$nc3Choice = Hash::extract($nc3Choices, $path);
+			if ($nc3Choice) {
+				$choiceCodes[] = $nc3Choice[0]['code'];
+
+				continue;
+			}
+
+		}
+
+		if ($dataTypeKey != 'checkbox') {
+			return Hash::get($choiceCodes, ['0']);
+		}
+
+		return $choiceCodes;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2User Nc2User data
