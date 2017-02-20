@@ -83,6 +83,12 @@ class Nc2ToNc3Shell extends AppShell {
 				'help' => 'table prefix name of nc2',
 				'short' => 'p'
 			]
+		)->addOption(
+			'upload_path',
+			[
+				'help' => 'upload path of nc2 avatar',
+				'short' => 'u'
+			]
 		);
 
 		return $parser;

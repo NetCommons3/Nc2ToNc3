@@ -77,6 +77,22 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		$this->validate = Hash::merge(
 			$this->validate,
 			[
+				'upload_path' => [
+					'notBlank' => [
+						'rule' => ['notBlank'],
+						'message' => sprintf(
+							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Upload file path')
+						),
+					'allowEmpty' => false,
+					'required' => true,
+					],
+					'isUploadPath' => [
+						'rule' => ['isUploadPath'],
+						'message' => sprintf(
+							__d('nc2_to_nc3', 'The above Upload file path does not exist.')
+						),
+					]
+				],
 				'database' => [
 					'notBlank' => [
 						'rule' => ['notBlank'],
@@ -122,7 +138,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			CakeLog::error($ex);
 			return $ex->getMessage();
 		}
-
 		return true;
 	}
 
@@ -221,4 +236,16 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		return true;
 	}
 
+/**
+ * Validate Upload Path for nc2.
+ *
+ * @return string|bool True on it access to config table of nc2.
+ */
+	public function isUploadPath() {
+		$config = $this->data['Nc2ToNc3'];
+		$nc2UploadPath = $config['upload_path'];
+
+		return is_dir($nc2UploadPath);
+	}
 }
+

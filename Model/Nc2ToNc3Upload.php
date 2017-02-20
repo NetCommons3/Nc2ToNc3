@@ -63,13 +63,26 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 		$Nc2Upload = $this->getNc2Model('uploads');
 		$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
 		if (!$nc2Upload) {
-			return $nc2Upload;
+
+			$data = [];
+			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload:' . $nc2UploadId);
+			$this->writeMigrationLog($message);
+			return $data;
 		}
 
 		$name = $nc2Upload['Nc2Upload']['physical_file_name'];
-		$tmpName = '/var/www/html/NC2/webapp/uploads/' .
-			$nc2Upload['Nc2Upload']['file_path'] .
-			$name;
+
+		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
+		$tmpName = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'upload_path']) .
+		$nc2Upload['Nc2Upload']['file_path'] .
+		$name;
+
+		if (!is_readable($tmpName)) {
+			$data = [];
+			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload upload_id:' . $nc2Upload['Nc2Upload']['upload_id']);
+			$this->writeMigrationLog($message);
+			return $data;
+		}
 
 		// アップロード処理で削除されるので一時フォルダーにコピー
 		// @see https://github.com/josegonzalez/cakephp-upload/blob/1.3.1/Model/Behavior/UploadBehavior.php#L337
