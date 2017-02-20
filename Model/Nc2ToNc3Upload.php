@@ -56,15 +56,14 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
  * @return array avatar data
  */
 	public function updateUploadFile($nc2UploadId) {
-		// コマンド実行時アップロードファイルのパスが実行パス配下になるのでとりあえずここでchdir
-		// @see https://github.com/NetCommons3/Files/blob/3.0.1/Model/UploadFile.php#L172-L179
-		chdir(WWW_ROOT);
+		$data = [];
+		if (!$nc2UploadId) {
+			return $data;
+		}
 
 		$Nc2Upload = $this->getNc2Model('uploads');
 		$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
 		if (!$nc2Upload) {
-
-			$data = [];
 			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload:' . $nc2UploadId);
 			$this->writeMigrationLog($message);
 			return $data;
@@ -74,15 +73,18 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$tmpName = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'upload_path']) .
-		$nc2Upload['Nc2Upload']['file_path'] .
-		$name;
+			$nc2Upload['Nc2Upload']['file_path'] .
+			$name;
 
 		if (!is_readable($tmpName)) {
-			$data = [];
 			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload upload_id:' . $nc2Upload['Nc2Upload']['upload_id']);
 			$this->writeMigrationLog($message);
 			return $data;
 		}
+
+		// コマンド実行時アップロードファイルのパスが実行パス配下になるのでとりあえずここでchdir
+		// @see https://github.com/NetCommons3/Files/blob/3.0.1/Model/UploadFile.php#L172-L179
+		chdir(WWW_ROOT);
 
 		// アップロード処理で削除されるので一時フォルダーにコピー
 		// @see https://github.com/josegonzalez/cakephp-upload/blob/1.3.1/Model/Behavior/UploadBehavior.php#L337
