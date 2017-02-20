@@ -231,6 +231,13 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
+		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
+		if (!$Nc2ToNc3Page->migrate()) {
+			$this->validationErrors = $Nc2ToNc3Page->validationErrors;
+			return false;
+		}
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
 
 		return true;

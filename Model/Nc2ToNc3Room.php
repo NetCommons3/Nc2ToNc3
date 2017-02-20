@@ -24,16 +24,21 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getMap($nc2Id)
  *
  * @see Nc2ToNc3RoomBaseBehavior
- * @method string getDefaultRoleKeyFromNc2($nc2SpaceType)
+ * @method string getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType)
  * @method array getNc3DefaultRolePermission()
  * @method string getNc2DefaultEntryRoleAuth($confName)
+ * @method void changeNc3CurrentLanguage()
+ * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3RoomBehavior
  * @method string getLogArgument($nc2Page)
  * @method array getNc2RoomConditions()
  * @method array getNc2OtherLaguageRoomIdList($nc2Page)
- * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RolesRoomsUserIds)
- *
+ * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RoleRoomUserList)
+ * @method array getNc2PagesUsersLinkByRoomId($nc3Room, $nc2Page)
+ * @method array getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap)
+ * @method array getNc3RoleRoomListByRoomId($nc3Room)
+ * @method string getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc2RoleAuthotityId)
  */
 class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
@@ -109,11 +114,18 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			}
 		}
 
+		// is_originの値はsaveする前に現在の言語を切り替える処理が必要
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
+		$this->changeNc3CurrentLanguage();
+
 		foreach ($nc2Pages as $nc2Page) {
 			if (!$this->__saveRoomFromNc2($nc2Page['Nc2Page']['lang_dirname'])) {
+				$this->restoreNc3CurrentLanguage();
 				return false;
 			}
 		}
+
+		$this->restoreNc3CurrentLanguage();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration end.'));
 		return true;
@@ -144,22 +156,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		/* @var $Room Room */
 		/* @var $RolesRoomsUser RolesRoomsUser */
-		/* @var $Language Language */
 		$Room = ClassRegistry::init('Rooms.Room');
 		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
-		$Language = ClassRegistry::init('M17n.Language');
 
 		// 対応するルームが既存の処理について、対応させるデータが名前くらいしかない気がする。。。名前でマージして良いのか微妙なので保留
 		//$this->saveExistingMap($nc2Pages);
-
-		// is_originの値はsaveする前に現在の言語を切り替える処理が必要
-		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
-		$nc3LanguageId = $this->getLanguageIdFromNc2();
-		if (Current::read('Language.id') != $nc3LanguageId) {
-			$currentLanguage = Current::read('Language');
-			$language = $Language->findById($nc3LanguageId, null, null, -1);
-			Current::write('Language', $language['Language']);
-		}
 
 		foreach ($nc2Pages as $nc2Page) {
 			/*
@@ -167,7 +168,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				continue;
 			}*/
 
-			$Room->begin();
+			// $Room->saveRoomと$RolesRoomsUser->saveRolesRoomsUsersForRoomsのトランザクションを優先する
+			// $Roomと$RolesRoomsUserを別々にcommitする
+			//$Room->begin();
 			try {
 				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
@@ -187,13 +190,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// データ量が多い可能性あり、
-				// $Room->saveRoomと$RolesRoomsUser->saveRolesRoomsUsersForRoomsのトランザクション分けた方が良いかも。
+				// データ量が多い可能性あり、limitで分割登録した方が良いかも
 				$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
-				/*if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
+				if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 					continue;
-				}*/
+				}
 
 				$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
 				if ($this->getMap($nc2RoomId)) {
@@ -205,22 +207,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				];
 				$this->saveMap('Room', $idMap);
 
-				$Room->commit();
+				//$Room->commit();
 
 			} catch (Exception $ex) {
-				if (isset($currentLanguage)) {
-					Current::write('Language', $currentLanguage);
-				}
-
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $User::saveUser()でthrowされるとこの処理に入ってこない
-				$Room->rollback($ex);
+				//$Room->rollback($ex);
 				throw $ex;
 			}
-		}
-
-		if (isset($currentLanguage)) {
-			Current::write('Language', $currentLanguage);
 		}
 
 		return true;
@@ -306,6 +300,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L226-L231
 		unset($data['Room']['page_layout_permitted']);
 
+		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
+
 		return $data;
 	}
 
@@ -322,13 +318,13 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$nc2SpaceType = $nc2Page['Nc2Page']['space_type'];
 
 		/* @var $Space Space */
-		if ($nc2SpaceType == '1') {
+		if ($nc2SpaceType == self::NC2_SPACE_TYPE_PUBLIC) {
 			$Space = ClassRegistry::init('PublicSpace.PublicSpace');
 			$spaceId = Space::PUBLIC_SPACE_ID;
 			$needApproval = '1';
 
 		}
-		if ($nc2SpaceType == '2') {
+		if ($nc2SpaceType == self::NC2_SPACE_TYPE_GROUP) {
 			$Space = ClassRegistry::init('CommunitySpace.CommunitySpace');
 			$spaceId = Space::COMMUNITY_SPACE_ID;
 			$needApproval = '0';
@@ -342,7 +338,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		$defaultRoleKey = $spaces[$spaceId]['Room']['default_role_key'];
 		if ($nc2Page['Nc2Page']['default_entry_flag'] == '1') {
-			$defaultRoleKey = $this->getDefaultRoleKeyFromNc2($nc2SpaceType);
+			$defaultRoleKey = $this->getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType);
 		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
@@ -355,8 +351,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			'default_role_key' => $defaultRoleKey,
 			'need_approval' => $needApproval,
 			'default_participation' => $nc2Page['Nc2Page']['default_entry_flag'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']),
 			'created' => $this->convertDate($nc2Page['Nc2Page']['insert_time']),
-			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page'])
 		];
 		$data = $Space->createRoom($data);
 
@@ -389,8 +385,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc3RoomLanguage['name'] = $nc2Page['Nc2Page']['page_name'];
-		$nc3RoomLanguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
 		$nc3RoomLanguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']);
+		$nc3RoomLanguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
 
 		return $nc3RoomLanguage;
 	}
@@ -407,6 +403,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$nc2PageModuleLinks = $Nc2PagesModulesLink->findAllByRoomId(
 			$nc2Page['Nc2Page']['room_id'],
 			'module_id',
+			null,
+			null,
 			null,
 			-1
 		);
@@ -450,67 +448,38 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * @return array Nc3PluginsRoom data.
  */
 	private function __generateNc3RolesRoomsUser($nc3Room, $nc2Page) {
-		/* @var $Nc2PagesUsersLink AppModel */
-		$Nc2PagesUsersLink = $this->getNc2Model('pages_users_link');
-
-		$conditions = [
-			'Nc2PagesUsersLink.room_id' => $nc2Page['Nc2Page']['room_id'],
-		];
-		if ($nc3Room['Room']['default_participation']) {
-			$defaultEntryRoleAuth = $this->getNc2DefaultEntryRoleAuth($nc2Page['Nc2Page']['space_type']);
-			$conditions += [
-				'Nc2PagesUsersLink.role_authority_id !=' => $defaultEntryRoleAuth,
-			];
-		}
-
-		$query = [
-			'fields' => [
-				'Nc2PagesUsersLink.user_id',
-				'Nc2PagesUsersLink.role_authority_id',
-			],
-			'conditions' => $conditions,
-			'recursive' => -1
-		];
-		$nc2UserAuthList = $Nc2PagesUsersLink->find('list', $query);
+		$nc2PagesUsers = $this->getNc2PagesUsersLinkByRoomId($nc3Room, $nc2Page);
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$nc2UserIds = array_keys($nc2UserAuthList);
+		$nc2UserIds = Hash::extract($nc2PagesUsers, '{n}.Nc2PagesUsersLink.user_id');
 		$userMap = $Nc2ToNc3User->getMap($nc2UserIds);
 
-		/* @var $RolesRoomsUser RolesRoomsUser */
-		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
-		$query = [
-			'fields' => [
-				'RolesRoomsUser.user_id',
-				'RolesRoomsUser.id'
-			],
-			'conditions' => [
-				'RolesRoomsUser.user_id' => Hash::extract($userMap, '{s}.User.id'),
-				'RolesRoomsUser.room_id' => $nc3Room['Room']['id']
-			],
-			'recursive' => -1
-		];
-		$nc3RolesRoomsUserIds = $RolesRoomsUser->find('list', $query);
+		$nc3RoleRoomUserList = $this->getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap);
+		$nc3RoleRoomList = $this->getNc3RoleRoomListByRoomId($nc3Room);
 
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [];
-		foreach ($nc2UserAuthList as $nc2UserId => $nc2RoleAuthotityId) {
+		foreach ($nc2PagesUsers as $nc2PagesUser) {
+			$nc2UserId = $nc2PagesUser['Nc2PagesUsersLink']['user_id'];
+			$nc2RoleAuthotityId = $nc2PagesUser['Nc2PagesUsersLink']['role_authority_id'];
+
 			$isMigrationRow = $this->isNc2PagesUsersLinkToBeMigrationed(
 				$userMap,
 				$nc2UserId,
 				$nc2Page,
-				$nc3RolesRoomsUserIds
+				$nc3RoleRoomUserList
 			);
 			if (!$isMigrationRow) {
 				continue;
 			}
 
 			$nc3UserId = $userMap[$nc2UserId]['User']['id'];
-			$nc3RolesRoomsUserId = Hash::get($nc3RolesRoomsUserIds, [$nc3UserId]);
+			$nc3RolesRoomsUserId = Hash::get($nc3RoleRoomUserList, [$nc3UserId]);
 
 			// 不参加のデータ
 			if (!$nc2RoleAuthotityId &&
-				$nc3Room['Room']['default_participation'] &&
 				$nc3RolesRoomsUserId
 			) {
 				$nc3RoleRoomUser = [
@@ -525,7 +494,15 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				'id' => $nc3RolesRoomsUserId,
 				'room_id' => $nc3Room['Room']['id'],
 				'user_id' => $nc3UserId,
-				'roles_room_id' => ''
+				'roles_room_id' => $this->getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc2RoleAuthotityId),
+				// TODOーNC2MonthlyNumberから取得
+				/*
+				'access_count' => 0,
+				'last_accessed' => null,
+				'previous_accessed' => null,
+				*/
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2PagesUser['Nc2PagesUsersLink']),
+				'created' => $this->convertDate($nc2Page['Nc2Page']['insert_time']),
 			];
 			$data[] = $nc3RoleRoomUser;
 		}
