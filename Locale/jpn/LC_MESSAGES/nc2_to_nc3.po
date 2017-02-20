@@ -77,3 +77,6 @@ msgstr "NetCommons2のテーブルがありません。プレフィックスを�
 
 msgid "NetCommons2 version is not %s"
 msgstr "NetCommons2のバージョンが%sではありません。"
+
+msgid "The above Upload file path does not exist."
+msgstr "上記のアップロードファイルパスは存在しません。"
