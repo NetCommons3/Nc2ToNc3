@@ -86,7 +86,7 @@ class Nc2ToNc3Shell extends AppShell {
 		)->addOption(
 			'upload_path',
 			[
-				'help' => 'upload path of nc2 avatar',
+				'help' => 'upload path of nc2',
 				'short' => 'u'
 			]
 		);
