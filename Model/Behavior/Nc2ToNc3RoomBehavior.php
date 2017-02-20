@@ -67,7 +67,7 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 	}
 
 /**
- * Get other laguage Nc3Room id.
+ * Check migration target.
  *
  * @param Model $model Model using this behavior.
  * @param array $userMap User map data.
