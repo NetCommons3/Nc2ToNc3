@@ -50,12 +50,13 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 	//private $__idMap = null;
 
 /**
- * Update upload file
+ * Generate Nc3Upload data for Files.AttachmentBehavior.
+ * Copy target file to temporary folder.
  *
  * @param string $nc2UploadId Nc2Upload.id.
  * @return array avatar data
  */
-	public function updateUploadFile($nc2UploadId) {
+	public function generateUploadFile($nc2UploadId) {
 		$data = [];
 		if (!$nc2UploadId) {
 			return $data;

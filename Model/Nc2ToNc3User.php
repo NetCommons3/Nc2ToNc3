@@ -358,11 +358,11 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$nc2UploadId = ltrim($nc2ItemContent, "?action=common_download_user&upload_id=");
 				/* @var $nc2ToNc3Upload Nc2ToNc3Upload */
 				$nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
-				$avatar = $nc2ToNc3Upload->updateUploadFile($nc2UploadId);
+				$avatar = $nc2ToNc3Upload->generateUploadFile($nc2UploadId);
 				if ($avatar) {
 					$nc3User['User']['avatar'] = $avatar;
 				}
-				//var_dump($nc3User['User']['avatar']);exit;
+
 				continue;
 			}
 
