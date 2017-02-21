@@ -89,6 +89,26 @@ class Nc2ToNc3Shell extends AppShell {
 				'help' => 'upload path of nc2',
 				'short' => 'u'
 			]
+		)->addOption(
+			'host',
+			[
+				'help' => 'host name of nc2',
+			]
+		)->addOption(
+			'port',
+			[
+				'help' => 'database port of nc2',
+			]
+		)->addOption(
+			'login',
+			[
+				'help' => 'database login user of nc2',
+			]
+		)->addOption(
+			'password',
+			[
+				'help' => 'database login password of nc2',
+			]
 		);
 
 		return $parser;
