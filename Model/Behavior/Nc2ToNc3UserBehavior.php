@@ -227,6 +227,103 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 	}
 
 /**
+ * Get Nc2PagesUsersLink data.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2User Nc3User data.
+ * @return array Nc2PagesUsersLink list.
+ */
+	public function getNc2PagesUsersLinkByUserId(Model $model, $nc2User) {
+		/* @var $Nc2PagesUsersLink AppModel */
+		$Nc2PagesUsersLink = $this->_getNc2Model('pages_users_link');
+
+		$query = [
+			'conditions' => [
+				'Nc2PagesUsersLink.user_id' => $nc2User['Nc2User']['user_id'],
+			],
+			'recursive' => -1
+		];
+
+		return $Nc2PagesUsersLink->find('all', $query);
+	}
+
+/**
+ * Get Nc3RolesRoomsUser list.
+ * [Nc3RolesRoomsUser.room_id => Nc3RolesRoomsUser.id]
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc3User Nc3Room data.
+ * @param array $roomMap Room map data.
+ * @return array Nc3RolesRoomsUser list.
+ */
+	public function getNc3RolesRoomsUserListByUserIdAndRoomId(Model $model, $nc3User, $roomMap) {
+		$nc3UserId = Hash::get($nc3User, ['User', 'id']);
+		if (!$nc3UserId) {
+			return [];
+		}
+
+		/* @var $RolesRoomsUser RolesRoomsUser */
+		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
+		$query = [
+			'fields' => [
+				'RolesRoomsUser.room_id',
+				'RolesRoomsUser.id'
+			],
+			'conditions' => [
+				'RolesRoomsUser.user_id' => $nc3UserId,
+				'RolesRoomsUser.room_id' => Hash::extract($roomMap, '{n}.Room.id')
+			],
+			'recursive' => -1
+		];
+
+		return $RolesRoomsUser->find('list', $query);
+	}
+
+/**
+ * Get Nc3RoleRoom list.
+ * [RolesRoom.room_id => [Nc3RolesRoom.role_key => Nc3RolesRoom.id]]
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $roomMap Room map data.
+ * @return array Nc3RoleRoom list.
+ */
+	public function getNc3RoleRoomListByRoomId(Model $model, $roomMap) {
+		/* @var $RolesRoom RolesRoom */
+		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
+		$query = [
+			'fields' => [
+				'RolesRoom.role_key',
+				'RolesRoom.id',
+				'RolesRoom.room_id'
+			],
+			'conditions' => [
+				'RolesRoom.room_id' => Hash::extract($roomMap, '{n}.Room.id')
+			],
+			'recursive' => -1
+		];
+
+		return $RolesRoom->find('list', $query);
+	}
+
+/**
+ * Get Nc3RoleRoom id.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc3RoleRoomList Nc3RoleRoom list.
+ * @param string $nc3RoomId Nc2Room id.
+ * @param string $nc2RoleAuthotityId Nc2PagesUsersLink role_authority_id.
+ * @return array Nc2PagesUsersLink list.
+ */
+	public function getNc3RoleRoomIdByNc2RoleAuthotityId(Model $model, $nc3RoleRoomList, $nc3RoomId, $nc2RoleAuthotityId) {
+		/* @var $Nc2ToNc3RoomRole Nc2ToNc3RoomRole */
+		$Nc2ToNc3RoomRole = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3RoomRole');
+		$roomRoleMap = $Nc2ToNc3RoomRole->getMap($nc2RoleAuthotityId);
+		$nc3RoleKey = $roomRoleMap['RolesRoom']['role_key'];
+
+		return $nc3RoleRoomList[$nc3RoomId][$nc3RoleKey];
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2User Nc2User data

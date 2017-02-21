@@ -33,6 +33,10 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string convertFixedField($nc2Field, $nc3User, $nc2User)
  * @method string getNc2ItemContent($nc2ItemId, $nc2UserItemLink)
  * @method string getChoiceCode($dataTypeKey, $nc2Content, $nc3Choices)
+ * @method array getNc2PagesUsersLinkByUserId($nc2User)
+ * @method array getNc3RolesRoomsUserListByUserIdAndRoomId($nc3User, $roomMap)
+ * @method array getNc3RoleRoomListByRoomId($roomMap)
+ * @method array getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc3RoomId, $nc2RoleAuthotityId)
  *
  * @see Nc2ToNc3UserValidationBehavior
  * @method string|bool existsRequireAttribute($nc2User)
@@ -301,7 +305,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		// 新規作成の場合、RolesRoomsUserデータも登録する
 		if (!$map) {
-			$data['RolesRoomsUser'] = $this->__generateNc3RolesRoomsUser($nc2User);
+			$data['RolesRoomsUser'] = $this->__generateNc3RolesRoomsUser($data, $nc2User);
 			if (!$data['RolesRoomsUser']) {
 				unset($data['RolesRoomsUser']);
 			}
@@ -463,18 +467,65 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * Data sample
  * data[RolesRoomsUser][0][id]:
  * data[RolesRoomsUser][0][room_id]:88
- * data[RolesRoomsUser][0][user_id]:99
  * data[RolesRoomsUser][0][roles_room_id]:77
  * data[RolesRoomsUser][1][id]:
- * data[RolesRoomsUser][1][room_id]:88
- * data[RolesRoomsUser][1][user_id]:999
+ * data[RolesRoomsUser][1][room_id]:99
  * data[RolesRoomsUser][1][roles_room_id]:777
  *
+ * @param array $nc3User Nc3User data.
  * @param array $nc2User Nc2User data.
  * @return array Nc3PluginsRoom data.
  */
-	private function __generateNc3RolesRoomsUser($nc2User) {
-		$data = [];
+	private function __generateNc3RolesRoomsUser($nc3User, $nc2User) {
+		$nc2PagesUsers = $this->getNc2PagesUsersLinkByUserId($nc2User);
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$nc2RoomIds = Hash::extract($nc2PagesUsers, '{n}.Nc2PagesUsersLink.room_id');
+		$roomMap = $Nc2ToNc3Room->getMap($nc2RoomIds);
+
+		$nc3RoleRoomUserList = $this->getNc3RolesRoomsUserListByUserIdAndRoomId($nc3User, $roomMap);
+		$nc3RoleRoomList = $this->getNc3RoleRoomListByRoomId($roomMap);
+
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+		$data = $Room->getDefaultRolesRoomsUser();
+		foreach ($nc2PagesUsers as $nc2PagesUser) {
+			$nc2RoomId = $nc2PagesUser['Nc2PagesUsersLink']['room_id'];
+
+			// 対応するNc3Room.idがなければ移行しない
+			if (!isset($roomMap[$nc2RoomId])) {
+				continue;
+			}
+
+			$nc2RoleAuthotityId = $nc2PagesUser['Nc2PagesUsersLink']['role_authority_id'];
+			$nc3RoomId = $roomMap[$nc2RoomId]['Room']['id'];
+			$nc3RolesRoomsUserId = Hash::get($nc3RoleRoomUserList, [$nc3RoomId]);
+
+			// 不参加のデータ
+			if (!$nc2RoleAuthotityId) {
+				unset($data[$nc3RoomId]);
+				continue;
+			}
+
+			$nc3RoleRoomUser = [
+				'id' => $nc3RolesRoomsUserId,
+				'room_id' => $nc3RoomId,
+				//'user_id' => null,	// 登録前なので未定
+				'roles_room_id' => $this->getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc3RoomId, $nc2RoleAuthotityId),
+				// TODOーNC2MonthlyNumberから取得
+				/*
+				'access_count' => 0,
+				'last_accessed' => null,
+				'previous_accessed' => null,
+				*/
+				// まだいない可能性が高い気がする
+				//'created_user' => $this->getCreatedUser($nc2PagesUser['Nc2PagesUsersLink']),
+				'created' => $this->convertDate($nc2User['Nc2User']['insert_time']),
+			];
+			$data[] = $nc3RoleRoomUser;
+		}
+
 		return $data;
 	}
 
