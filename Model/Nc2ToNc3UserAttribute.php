@@ -61,6 +61,16 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3UserAttribute'];
 
 /**
+ * True if called CakeMigration
+ *
+ * CakeMigration::runでClassRegistry::flushが呼ばれ、セットしたPropertyも初期化されてしまうので、戻す処理を行うためのFlag
+ * @see https://github.com/CakeDC/migrations/blob/2.4.2/Lib/CakeMigration.php#L607
+ *
+ * @var bool
+ */
+	public $calledCakeMigration = false;
+
+/**
  * Migration method.
  *
  * @return bool True on success
@@ -99,13 +109,6 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 		$nc2Items = $Nc2Item->find('all', $query);
 		/* @var $UserAttribute UserAttribute */
 		$UserAttribute = ClassRegistry::init('UserAttributes.UserAttribute');
-
-		// CakeMigration::runでClassRegistry::flushが呼ばれ、
-		// セットしたPropertyも初期化されてしまうので、
-		// 一時退避して戻す処理を行う
-		// @see
-		// https://github.com/CakeDC/migrations/blob/2.4.2/Lib/CakeMigration.php#L607
-		$calledCakeMigration = false;
 
 		// Nc2ToNc3UserAttributeBehavior::__getNc3UserAttributeIdByTagNameAndDataTypeKeyで
 		// 'UserAttribute.id'を取得する際、TrackableBehaviorでUsersテーブルを参照する
@@ -149,7 +152,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 				unset($UserAttribute->Behaviors->UserAttribute->cakeMigration->migration['up']['create_field']);
 
 				// CakeMigrationが呼び出され、ClassRegistry::flush済み
-				$calledCakeMigration = true;
+				$this->calledCakeMigration = true;
 
 				$idMap = [
 					$nc2ItemId => $UserAttribute->id
@@ -173,7 +176,7 @@ class Nc2ToNc3UserAttribute extends Nc2ToNc3AppModel {
 			// throw $ex;
 		}
 
-		if ($calledCakeMigration) {
+		if ($this->calledCakeMigration) {
 			ClassRegistry::addObject('Nc2ToNc3UserAttribute', $this);
 		}
 

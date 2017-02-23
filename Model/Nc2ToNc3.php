@@ -192,6 +192,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		// TODOー開発用データ
 		$nc3config['database'] = 'nc2421';
 		$nc3config['prefix'] = 'nc_';
+		$nc3config['upload_path'] = '/var/www/html/NC2421/webapp/uploads/';
 
 		return $nc3config;
 	}
@@ -215,6 +216,11 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		if (!$Nc2ToNc3UserAttr->migrate()) {
 			$this->validationErrors = $Nc2ToNc3UserAttr->validationErrors;
 			return false;
+		}
+
+		// @see Nc2ToNc3UserAttribute::calledCakeMigration
+		if ($Nc2ToNc3UserAttr->calledCakeMigration) {
+			ClassRegistry::addObject('Nc2ToNc3', $this);
 		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */

@@ -24,8 +24,11 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getMap($nc2Id)
  *
  * @see Nc2ToNc3PageBaseBehavior
+ * @method string convertPermalink($nc2Permalink)
  *
  * @see Nc2ToNc3PageBehavior
+ * @method string getLogArgument($nc2Item)
+ *
  */
 class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
