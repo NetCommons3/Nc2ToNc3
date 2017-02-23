@@ -542,7 +542,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @param array $nc2User Nc2User data.
  * @param string $nc3UserId Nc3User id.
  * @return bool True on success
- * @throws Exception
  */
 	private function __saveRoomAndPageFromNc2($nc2User, $nc3UserId) {
 		// Nc2PageからPrivateRoomのデータを取得
