@@ -553,6 +553,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		$query = [
 			'fields' => [
 				'Nc2Page.page_id',
+				'Nc2Page.room_id',
 				'Nc2Page.page_name',
 				'Nc2Page.permalink',
 			],
@@ -568,7 +569,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		// mapデータがあれば更新しない。
 		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
-		$pageMap = $Nc2ToNc3Page->getMap($nc2Page['Nc2Page']['page_id']);
+		$nc2PageId = $nc2Page['Nc2Page']['page_id'];
+		$pageMap = $Nc2ToNc3Page->getMap($nc2PageId);
 		if ($pageMap) {
 			return true;
 		}
@@ -604,6 +606,11 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 			return false;
 		}
+		$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
+		$idMap = [
+			$nc2RoomId => $Room->id
+		];
+		$this->saveMap('Room', $idMap);
 
 		/* @var $PagesLanguage PagesLanguage */
 		$Page = ClassRegistry::init('Pages.Page');
@@ -625,6 +632,10 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 			return false;
 		}
+		$idMap = [
+			$nc2PageId => $Page->id
+		];
+		$this->saveMap('Page', $idMap);
 
 		return true;
 	}
