@@ -176,21 +176,21 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		/* @var $User User */
 		$User = ClassRegistry::init('Users.User');
 
-		$User->begin();
-		try {
-			$this->saveExistingMap($nc2Users);
-			foreach ($nc2Users as $nc2User) {
-				if (!$this->isMigrationRow($nc2User)) {
-					continue;
-				}
+		$this->saveExistingMap($nc2Users);
+		foreach ($nc2Users as $nc2User) {
+			if (!$this->isMigrationRow($nc2User)) {
+				continue;
+			}
 
-				$data = $this->__generateNc3Data($nc2User);
-				if (!$data) {
-					continue;
-				}
+			$data = $this->__generateNc3Data($nc2User);
+			if (!$data) {
+				continue;
+			}
 
+			$User->begin();
+			try {
 				if (!($data = $User->saveUser($data))) {
-					// 各プラグインのsave○○にてvalidation error発生時falseが返っていくるがrollbackしていないので、
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
 					$User->rollback();
 
@@ -206,11 +206,18 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// Nc3Room,Nc3Pageの値をNC2Pageの値に更新
+				if (!$this->__saveRoomAndPageFromNc2($nc2User, $User->id)) {
+					$User->rollback();
+					continue;
+				}
+
 				// User::beforeValidateでValidationを設定しているが、残ってしまうので1行ごとにクリア
 				$User->validate = [];
 
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
 				if ($this->getMap($nc2UserId)) {
+					$User->commit();
 					continue;
 				}
 
@@ -218,15 +225,15 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					$nc2UserId => $User->id
 				];
 				$this->saveMap('User', $idMap);
+
+				$User->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $User::saveUser()でthrowされるとこの処理に入ってこない
+				$User->rollback($ex);
+				throw $ex;
 			}
-
-			$User->commit();
-
-		} catch (Exception $ex) {
-			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-			// $User::saveUser()でthrowされるとこの処理に入ってこない
-			$User->rollback($ex);
-			throw $ex;
 		}
 
 		return true;
@@ -527,6 +534,99 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		}
 
 		return $data;
+	}
+
+/**
+ * Save User from Nc2.
+ *
+ * @param array $nc2User Nc2User data.
+ * @param string $nc3UserId Nc3User id.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveRoomAndPageFromNc2($nc2User, $nc3UserId) {
+		// Nc2PageからPrivateRoomのデータを取得
+		// @see https://github.com/netcommons/NetCommons2/blob/2.4.2.1/html/webapp/modules/user/action/admin/regist/Regist.class.php#L491-L519
+		// @see https://github.com/netcommons/NetCommons2/blob/2.4.2.1/html/webapp/modules/menu/components/View.class.php#L113-L114
+		/* @var $Nc2Page AppModel */
+		$Nc2Page = $this->getNc2Model('pages');
+		$query = [
+			'fields' => [
+				'Nc2Page.page_id',
+				'Nc2Page.page_name',
+				'Nc2Page.permalink',
+			],
+			'conditions' => [
+				'Nc2Page.page_id = Nc2Page.room_id',
+				'Nc2Page.private_flag' => '1',
+				'Nc2Page.insert_user_id' => $nc2User['Nc2User']['user_id']
+			],
+			'recursive' => -1
+		];
+		$nc2Page = $Nc2Page->find('first', $query);
+
+		// mapデータがあれば更新しない。
+		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
+		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
+		$pageMap = $Nc2ToNc3Page->getMap($nc2Page['Nc2Page']['page_id']);
+		if ($pageMap) {
+			return true;
+		}
+
+		// Nc3RoomからPrivateRoomデータを取得
+		// @see https://github.com/NetCommons3/Rooms/blob/3.0.1/Model/Behavior/RoomBehavior.php#L124-L142
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+		$conditions = [
+			'Room.space_id' => Space::PRIVATE_SPACE_ID,
+		];
+		$query = $Room->getReadableRoomsConditions($conditions, $nc3UserId);
+		$query['recursive'] = -1;
+		$nc3Room = $Room->find('first', $query);
+
+		/* @var $RoomsLanguage RoomsLanguage */
+		$RoomsLanguage = ClassRegistry::init('Rooms.RoomsLanguage');
+		$nc3RoomLanguages = $RoomsLanguage->findAllByRoomId($nc3Room['Room']['id'], null, null, null, null, -1);
+		// valueを使わないとphpmdでAvoid unused local variablesになるため、keyでループ
+		foreach (array_keys($nc3RoomLanguages) as $key) {
+			$nc3RoomLanguages[$key]['RoomsLanguage']['name'] = $nc2Page['Nc2Page']['page_name'];
+		}
+		$nc3Room['RoomsLanguage'] = $nc3RoomLanguages;
+
+		if (!$Room->saveRoom($nc3Room)) {
+			// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+			// ここでrollback
+			$Room->rollback();
+
+			$message = $this->getLogArgument($nc2User) . "\n" .
+				var_export($Room->validationErrors, true);
+			$this->writeMigrationLog($message);
+
+			return false;
+		}
+
+		/* @var $PagesLanguage PagesLanguage */
+		$Page = ClassRegistry::init('Pages.Page');
+		$nc3Page = $Page->findById($nc3Room['Room']['page_id_top'], null, null, -1);
+		// Page.slugに設定すれば良い？
+		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
+		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
+		$nc3Page['Page']['slug'] = $Nc2ToNc3Page->convertPermalink($nc2Page['Nc2Page']['permalink']);
+		unset($nc3Page['Page']['theme']);	// themeのvalidationに引っかかる
+
+		if (!$Page->savePage($nc3Page)) {
+			// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+			// ここでrollback
+			$Page->rollback();
+
+			$message = $this->getLogArgument($nc2User) . "\n" .
+				var_export($Page->validationErrors, true);
+			$this->writeMigrationLog($message);
+
+			return false;
+		}
+
+		return true;
 	}
 
 }
