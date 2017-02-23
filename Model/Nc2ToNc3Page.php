@@ -62,6 +62,8 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		return true;
 	}
 
+
+
 /**
  * Save Page from Nc2 while dividing.
  *
@@ -167,4 +169,29 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		return true;
 	}
 
+	public function getMap($nc2BlockPageId) {
+
+		$Map = [
+			'Page' => [
+  				'id' => '5'
+ 			],
+ 			'Box' => [
+ 				'id' => '64'
+ 			],
+			'Room' => [
+ 					'id' => '5'
+			]
+		];
+		return $Map;
+	}
+
+/*	public function getMap($nc2BlockPageId) {
+
+			$Map = [
+//			'page_id' => '5',
+			'box_id' => '64'
+		];
+		return $Map;
+	}
+*/
 }
