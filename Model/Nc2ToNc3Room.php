@@ -168,12 +168,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				continue;
 			}*/
 
-			// $Room->saveRoomと$RolesRoomsUser->saveRolesRoomsUsersForRoomsのトランザクションを優先する
-			// $Roomと$RolesRoomsUserを別々にcommitする
-			//$Room->begin();
+			$Room->begin();
 			try {
 				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
+					$Room->rollback();
 					continue;
 				}
 
@@ -187,18 +186,26 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 						var_export($Room->validationErrors, true);
 					$this->writeMigrationLog($message);
 
+					$Room->rollback();
 					continue;
 				}
+				$nc2PageId = $nc2Page['Nc2Page']['page_id'];
+				$idMap = [
+					$nc2PageId => $data['Room']['page_id_top']
+				];
+				$this->saveMap('Page', $idMap);
 
 				// データ量が多い可能性あり、limitで分割登録した方が良いかも
 				$data = $this->__generateNc3RolesRoomsUser($data, $nc2Page);
 				if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
+					$Room->rollback();
 					continue;
 				}
 
 				$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
 				if ($this->getMap($nc2RoomId)) {
+					$Room->commit();
 					continue;
 				}
 
@@ -207,12 +214,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				];
 				$this->saveMap('Room', $idMap);
 
-				//$Room->commit();
+				$Room->commit();
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $User::saveUser()でthrowされるとこの処理に入ってこない
-				//$Room->rollback($ex);
+				// $Room::saveRoom()でthrowされるとこの処理に入ってこない
+				$Room->rollback($ex);
 				throw $ex;
 			}
 		}
