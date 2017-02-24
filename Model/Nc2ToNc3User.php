@@ -178,17 +178,19 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		$this->saveExistingMap($nc2Users);
 		foreach ($nc2Users as $nc2User) {
-			if (!$this->isMigrationRow($nc2User)) {
-				continue;
-			}
-
-			$data = $this->__generateNc3Data($nc2User);
-			if (!$data) {
-				continue;
-			}
-
 			$User->begin();
 			try {
+				if (!$this->isMigrationRow($nc2User)) {
+					$User->rollback();
+					continue;
+				}
+
+				$data = $this->__generateNc3Data($nc2User);
+				if (!$data) {
+					$User->rollback();
+					continue;
+				}
+
 				if (!($data = $User->saveUser($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
