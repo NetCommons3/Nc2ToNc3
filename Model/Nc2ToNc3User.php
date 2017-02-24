@@ -68,7 +68,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  *
  * @var int
  */
-	private $__numberOfvalidationError = 0;
+	private $__numberOfValidationError = 0;
 
 /**
  * Called during validation operations, before validation. Please note that custom
@@ -148,7 +148,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			}
 
 			$numberOfUsers += count($nc2Users);
-			$errorRate = round($this->__numberOfvalidationError / $numberOfUsers);
+			$errorRate = round($this->__numberOfValidationError / $numberOfUsers);
 			// 5割エラー発生で止める
 			if ($errorRate >= 0.5) {
 				$this->validationErrors = [
@@ -203,7 +203,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 						var_export($User->validationErrors, true);
 					$this->writeMigrationLog($message);
 
-					$this->__numberOfvalidationError++;
+					$this->__numberOfValidationError++;
 
 					$User->rollback();
 					continue;
