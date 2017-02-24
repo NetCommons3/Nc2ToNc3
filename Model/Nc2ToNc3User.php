@@ -196,7 +196,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
-					// see https://phpmd.org/rules/design.html
+					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2User) . "\n" .
 						var_export($User->validationErrors, true);
 					$this->writeMigrationLog($message);
