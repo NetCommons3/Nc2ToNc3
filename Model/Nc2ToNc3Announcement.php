@@ -3,7 +3,7 @@
  * Nc2ToNc3Announcement
  *
  * @copyright Copyright 2014, NetCommons Project
- * @author Kohei Teraguchi <kteraguchi@commonsnet.org>
+ * @author Fujiki Hideyuki <TriangleShooter@gmail.com>
  * @link http://www.netcommons.org NetCommons Project
  * @license http://www.netcommons.org/license.txt NetCommons License
  */
@@ -82,29 +82,29 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel
 
 				$nc2AnnouncementBlockld = $key['Nc2Announcement']['block_id'];
 				/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
-				$nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-				$nc2ToNc3Frame->generateFrame($nc2AnnouncementBlockld);
+				$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+				$nc3Frame = $Nc2ToNc3Frame->generateFrame($nc2AnnouncementBlockld);
 
-				var_dump('end de su');exit;
+				$data = [
+					'status' => '1',
+					'content' => $key['Nc2Announcement']['content'],
+				];
+
+				$nc3RoomId = $nc3Frame['Frame']['room_id'];
+				//SAVE前にCurrentのデータを書き換えが必要なため
+				Current::write('Room.id', $nc3RoomId);
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+				$Announcement = ClassRegistry::init('Announcements.Announcement');
+				$aaa = $Announcement->saveAnnouncement($data);
+
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				Current::remove('Room.id', $nc3RoomId);
 
 
+				var_dump('OK');exit;
 				}
 
-				// is_originの値はsaveする前に現在の言語を切り替える処理が必要
-				// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
-				$this->changeNc3CurrentLanguage();
-
-				foreach ($nc2Pages as $nc2Page) {
-					if (!$this->__saveRoomFromNc2($nc2Page['Nc2Page']['lang_dirname'])) {
-						$this->restoreNc3CurrentLanguage();
-						return false;
-					}
-				}
-
-				$this->restoreNc3CurrentLanguage();
-
-				$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration end.'));
-				return true;
 
 	}
 }
