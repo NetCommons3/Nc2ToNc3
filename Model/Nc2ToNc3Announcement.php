@@ -76,7 +76,6 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel
 		$Nc2Announcement = $this->getNc2Model('announcement');
 		$nc2Announcement = $Nc2Announcement->find('all');
 
-
 		// block_idをキーにFrameの移行を実施
 			foreach ($nc2Announcement as $key )  {
 

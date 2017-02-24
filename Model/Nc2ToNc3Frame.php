@@ -73,7 +73,6 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 		$Frame->saveFrame($data);
 
 		return $data;
-
 	}
 
 
