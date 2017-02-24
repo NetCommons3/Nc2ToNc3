@@ -203,6 +203,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 					$this->__numberOfvalidationError++;
 
+					$User->rollback();
 					continue;
 				}
 
