@@ -66,6 +66,7 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
  * @return void
  */
 	public function saveExistingMap(Model $model, $nc2Users) {
+		// [Nc2User.login_id => Nc2User.user_id]]
 		$idList = Hash::combine($nc2Users, '{n}.Nc2User.login_id', '{n}.Nc2User.user_id');
 
 		/* @var $User User */
