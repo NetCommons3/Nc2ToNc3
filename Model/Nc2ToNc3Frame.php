@@ -69,10 +69,13 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 			'plugin_key' => 'announcements',
 		];
 
+		//var_dump($data['Frame']);
 		$Frame = ClassRegistry::init('Frames.Frame');
-		$Frame->saveFrame($data);
+		$Frame->create();
 
-		return $data;
+		$FrameData = $Frame->saveFrame($data);
+
+		return $FrameData;
 	}
 
 

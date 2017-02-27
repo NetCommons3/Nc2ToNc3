@@ -76,35 +76,65 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel
 		$Nc2Announcement = $this->getNc2Model('announcement');
 		$nc2Announcement = $Nc2Announcement->find('all');
 
-		// block_idをキーにFrameの移行を実施
-			foreach ($nc2Announcement as $key )  {
 
+		foreach ($nc2Announcement as $key )  {
+
+				// block_idをキーにFrameの移行を実施
 				$nc2AnnouncementBlockld = $key['Nc2Announcement']['block_id'];
-				/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
+
+				/* @var $nc2ToNc3Frame Nc2ToNc3Frame */	
 				$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 				$nc3Frame = $Nc2ToNc3Frame->generateFrame($nc2AnnouncementBlockld);
+				$nc3RoomId = $nc3Frame['Frame']['room_id'];
 
 				$data = [
-					'status' => '1',
-					'content' => $key['Nc2Announcement']['content'],
+					'Announcement' => [
+						'status' => '1',
+						'content' => $key['Nc2Announcement']['content'],
+					],
+					'Block' => [
+						'room_id' => $nc3RoomId,
+						'plugin_key' => 'blocks'
+					],
+					'Frame' => [
+						'id' => $nc3Frame['Frame']['id']
+//					],
+//					'Topic' => [
+//						'plugin_key' => 'announcements'
+					]
 				];
+				//var_dump($data);
 
-				$nc3RoomId = $nc3Frame['Frame']['room_id'];
+				//Announcement テーブルの移行を実施
 				//SAVE前にCurrentのデータを書き換えが必要なため
+				Current::write('Plugin.key', 'announcements');
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-				$Announcement = ClassRegistry::init('Announcements.Announcement');
-				$aaa = $Announcement->saveAnnouncement($data);
+				$Nc2ToNc3Announcement = ClassRegistry::init('Announcements.Announcement');
+				$Nc2ToNc3Block = ClassRegistry::init('Blocks.Block');
+				$Nc2ToNc3Topic = ClassRegistry::init('Topics.Topic');
+				$Nc2ToNc3Announcement->create();
+				$Nc2ToNc3Block->create();
+				$Nc2ToNc3Topic->create();
+
+				if (!$Nc2ToNc3Announcement->saveAnnouncement($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					//$aaa = $Announcement->saveAnnouncement($data);
+					$Nc2ToNc3Announcement->rollback();
+
+					return false;
+				}
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 				Current::remove('Room.id', $nc3RoomId);
+				Current::remove('Plugin.key', 'announcements');
 
 
-				var_dump('OK');exit;
-				}
-
-
+		}
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Announcement Migration end.'));
+		return true;
 	}
 }
 
