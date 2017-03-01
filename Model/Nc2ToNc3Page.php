@@ -186,7 +186,6 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 					$Page->rollback();
 					continue;
 				}
-				var_dump($data);continue;
 
 				$Page->create(false);
 				if (!$Page->savePage($data)) {
@@ -285,10 +284,20 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				'room_id' => $roomMap['Room']['id'],
 				'root_id' => $this->getNc3RootId($nc2Page, $roomMap),
 				'parent_id' => $map['Page']['id'],
-				'permalink' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
 			]
 		];
-		$data = array_merge($nc3Page, $data);
+		if ($nc3Page) {
+			$data = array_merge($nc3Page, $data);
+		}
+
+		// 先頭のNc2Page.permalinkは空だが、Validationにひっかかるための処理
+		// Page.slugに設定すれば良い？
+		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
+		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
+		$nc3Slug = $this->convertPermalink($nc2Page['Nc2Page']['permalink']);
+		if ($nc3Slug) {
+			$data['Page']['slug'] = $nc3Slug;
+		}
 
 		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
 		if (!$nc3LaguageId) {

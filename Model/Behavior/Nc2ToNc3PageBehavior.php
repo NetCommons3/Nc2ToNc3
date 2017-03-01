@@ -88,7 +88,12 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 		$nc3RoomParentId = $roomMap['Room']['parent_id'];
 		if (!in_array($nc3RoomParentId, $rootRoomIds)) {
 			$nc3Room = $Room->findById($nc3RoomParentId, 'Room.page_id_top', null, -1);
-			return $nc3Room['Room']['page_id_top'];
+			$nc3RootId = $nc3Room['Room']['page_id_top'];
+			// サイト全体のルームが親の場合Room.page_id_topはnull
+			// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Config/Migration/1479455827_switch_boxes.php#L70-L79
+			if ($nc3RootId) {
+				return $nc3RootId;
+			}
 		}
 
 		if ($nc2Page['Nc2Page']['space_type'] == '1') {
