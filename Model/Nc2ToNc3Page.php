@@ -30,6 +30,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string getLogArgument($nc2Item)
  * @method void saveExistingMap($nc2Pages)
  * @method array getNc2PageConditions()
+ * @method string getNc3RootId($nc2Page, $roomMap)
  *
  */
 class Nc2ToNc3Page extends Nc2ToNc3AppModel {
@@ -180,15 +181,14 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 					continue;
 				}*/
 
-				//var_dump($nc2Page);continue;
-
 				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
 					$Page->rollback();
 					continue;
 				}
-				//var_dump($data);continue;
+				var_dump($data);continue;
 
+				$Page->create(false);
 				if (!$Page->savePage($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
@@ -252,7 +252,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 	private function __generateNc3Data($nc2Page) {
 		$data = [];
 
-		// 対応するルームが既存の場合（初回移行時にマッピングされる）
+		// 対応するページが既存の場合（初回移行時にマッピングされる）上書き
 		$pageMap = $this->getMap($nc2Page['Nc2Page']['page_id']);
 		if ($pageMap) {
 			/* @var $PagesLanguage PagesLanguage */
@@ -275,6 +275,30 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
  */
 	private function __generateNc3Page($nc2Page, $nc3Page) {
 		$data = [];
+
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$roomMap = $Nc2ToNc3Room->getMap($nc2Page['Nc2Page']['room_id']);
+		$map = $this->getMap($nc2Page['Nc2Page']['parent_id']);
+		$data = [
+			'Page' => [
+				'room_id' => $roomMap['Room']['id'],
+				'root_id' => $this->getNc3RootId($nc2Page, $roomMap),
+				'parent_id' => $map['Page']['id'],
+				'permalink' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
+			]
+		];
+		$data = array_merge($nc3Page, $data);
+
+		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
+		if (!$nc3LaguageId) {
+			$nc3LaguageId = $this->getLanguageIdFromNc2();
+		}
+
+		$data['PagesLanguage'] = [
+			'language_id' => $nc3LaguageId,
+			'name' => $nc2Page['Nc2Page']['page_name'],
+		];
 
 		return $data;
 	}

@@ -63,15 +63,14 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		/* @var $BoxesPageContainer BoxesPageContainer */
-		// Nc3Box.page_idはNullがあったため、Nc3BoxesPageContainerから取得してみたが、
-		// 結果Nc3Boxから取得でも同じになった。
-		//  →とりあえずこのまま。
+		// Nc3Box.page_idはNullがあったため、Nc3BoxesPageContainerから取得
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$BoxesPageContainer = ClassRegistry::init('Boxes.BoxesPageContainer');
 
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('Page', $nc2MainPageIds);
 		$query = [
 			'fields' => [
+				'Page.id',
 				'Box.id',
 				'Box.room_id',
 			],
@@ -96,6 +95,9 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		if (!$map) {
+			/*
+			 *  Pageデータ移行ができれば不要
+			 *  Nc3Box.room_idがあったため、'Room.id'は返さなくなる
 			$map = [
 				'Page' => [
 					'id' => '5'
@@ -107,6 +109,7 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 					'id' => '5'
 				]
 			];
+			 */
 			return $map;
 		}
 
@@ -133,6 +136,9 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		$url = '/' . $nc2Permalink;
 		$route = $this->__CakeRouter->parse($url);
+		if (!$route['pass']) {
+			return $nc2Permalink;
+		}
 
 		// この処理で良いのか？
 		$Space = ClassRegistry::init('Rooms.Space');
@@ -177,7 +183,7 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Box Box */
 		// 対応候補のNc3Boxデータを取得
-		// [Nc3Box.space_id => [Nc3Box.container_type => Nc3Box.id]]
+		// Page.idはuniqueにならないので、設定しない。
 		$Box = ClassRegistry::init('Boxes.Box');
 		$query = [
 			'fields' => [

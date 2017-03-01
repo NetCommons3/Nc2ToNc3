@@ -71,6 +71,46 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 	}
 
 /**
+ * Get Nc3Page root_id.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Page Nc2Page data.
+ * @param array $roomMap Room map data.
+ * @return string Nc3Page root_id.
+ */
+	public function getNc3RootId(Model $model, $nc2Page, $roomMap) {
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+		$spaces = $Room->getSpaces();
+		$rootRoomIds = Hash::extract($spaces, '{n}.Space.room_id_root');
+
+		// Nc3Room.parent_idがNc3Space.room_id_rootになければサブルーム
+		$nc3RoomParentId = $roomMap['Room']['parent_id'];
+		if (!in_array($nc3RoomParentId, $rootRoomIds)) {
+			$nc3Room = $Room->findById($nc3RoomParentId, 'Room.page_id_top', null, -1);
+			return $nc3Room['Room']['page_id_top'];
+		}
+
+		if ($nc2Page['Nc2Page']['space_type'] == '1') {
+			$nc3RootId = '1';
+		}
+
+		if ($nc2Page['Nc2Page']['space_type'] == '2' &&
+			$nc2Page['Nc2Page']['private_flag'] == '1'
+		) {
+			$nc3RootId = '2';
+		}
+
+		if ($nc2Page['Nc2Page']['space_type'] == '2' &&
+			$nc2Page['Nc2Page']['private_flag'] == '0'
+		) {
+			$nc3RootId = '3';
+		}
+
+		return $nc3RootId;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2Page Nc2Page data
