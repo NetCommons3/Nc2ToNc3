@@ -206,7 +206,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$nc2PageId = $nc2Pages['Nc2Page']['page_id'];
+				$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 				if ($this->getMap($nc2PageId)) {
 					$Page->commit();
 					continue;
@@ -273,43 +273,50 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
  * @return array Nc3Page data.
  */
 	private function __generateNc3Page($nc2Page, $nc3Page) {
-		$data = [];
-
 		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$roomMap = $Nc2ToNc3Room->getMap($nc2Page['Nc2Page']['room_id']);
 		$map = $this->getMap($nc2Page['Nc2Page']['parent_id']);
+		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
+		if (!$nc3LaguageId) {
+			$nc3LaguageId = $this->getLanguageIdFromNc2();
+		}
+
 		$data = [
 			'Page' => [
 				'room_id' => $roomMap['Room']['id'],
 				'root_id' => $this->getNc3RootId($nc2Page, $roomMap),
 				'parent_id' => $map['Page']['id'],
+			],
+			'Room' => [
+				'id' => $roomMap['Room']['id'],
+				'space_id' => $roomMap['Room']['space_id'],
+			],
+			'PagesLanguage' => [
+				'language_id' => $nc3LaguageId,
+				'name' => $nc2Page['Nc2Page']['page_name'],
 			]
 		];
 		if ($nc3Page) {
-			$data = array_merge($nc3Page, $data);
+			$nc3Page['Page'] = array_merge($nc3Page['Page'], $data['Page']);
+			$nc3Page['PagesLanguage'] = array_merge($nc3Page['PagesLanguage'], $data['PagesLanguage']);
+		}
+		if (!$nc3Page) {
+			$nc3Page = $data;
 		}
 
 		// 先頭のNc2Page.permalinkは空だが、Validationにひっかかるための処理
 		// Page.slugに設定すれば良い？
 		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
 		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
-		$nc3Slug = $this->convertPermalink($nc2Page['Nc2Page']['permalink']);
-		if ($nc3Slug) {
-			$data['Page']['slug'] = $nc3Slug;
+		if (!isset($nc3Page['Page']['slug'])) {
+			$nc3Page['Page']['slug'] = $this->convertPermalink($nc2Page['Nc2Page']['permalink']);
+			if (!Validation::notBlank($nc3Page['Page']['slug'])) {
+				$nc3Page['Page']['slug'] = OriginalKeyBehavior::generateKey('Nc2ToNc3', $this->useDbConfig);
+			}
 		}
 
-		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
-		if (!$nc3LaguageId) {
-			$nc3LaguageId = $this->getLanguageIdFromNc2();
-		}
-
-		$data['PagesLanguage'] = [
-			'language_id' => $nc3LaguageId,
-			'name' => $nc2Page['Nc2Page']['page_name'],
-		];
-
-		return $data;
+		return $nc3Page;
 	}
 
 }

@@ -112,6 +112,7 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$query = [
 			'fields' => [
 				'Room.id',
+				'Room.space_id',
 				'Room.parent_id'
 			],
 			'conditions' => [
