@@ -37,6 +37,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method array getNc3RolesRoomsUserListByUserIdAndRoomId($nc3User, $roomMap)
  * @method array getNc3RoleRoomListByRoomId($roomMap)
  * @method array getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc3RoomId, $nc2RoleAuthotityId)
+ * @method array getNc2PrivateRoomByUserId($nc2UserId)
+ * @method array getNc3PrivateRoomByUserId($nc3UserId)
  *
  * @see Nc2ToNc3UserValidationBehavior
  * @method string|bool existsRequireAttribute($nc2User)
@@ -547,47 +549,17 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @return bool True on success
  */
 	private function __saveRoomAndPageFromNc2($nc2User, $nc3UserId) {
-		// Nc2PageからPrivateRoomのデータを取得
-		// @see https://github.com/netcommons/NetCommons2/blob/2.4.2.1/html/webapp/modules/user/action/admin/regist/Regist.class.php#L491-L519
-		// @see https://github.com/netcommons/NetCommons2/blob/2.4.2.1/html/webapp/modules/menu/components/View.class.php#L113-L114
-		/* @var $Nc2Page AppModel */
-		$Nc2Page = $this->getNc2Model('pages');
-		$query = [
-			'fields' => [
-				'Nc2Page.page_id',
-				'Nc2Page.room_id',
-				'Nc2Page.page_name',
-				'Nc2Page.permalink',
-			],
-			'conditions' => [
-				'Nc2Page.page_id = Nc2Page.room_id',
-				'Nc2Page.private_flag' => '1',
-				'Nc2Page.insert_user_id' => $nc2User['Nc2User']['user_id']
-			],
-			'recursive' => -1
-		];
-		$nc2Page = $Nc2Page->find('first', $query);
-
-		// mapデータがあれば更新しない。
+		$nc2Page = $this->getNc2PrivateRoomByUserId($nc2User['Nc2User']['user_id']);
 		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 		$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 		$pageMap = $Nc2ToNc3Page->getMap($nc2PageId);
 		if ($pageMap) {
+			// mapデータがあれば更新しない。
 			return true;
 		}
 
-		// Nc3RoomからPrivateRoomデータを取得
-		// @see https://github.com/NetCommons3/Rooms/blob/3.0.1/Model/Behavior/RoomBehavior.php#L124-L142
-		/* @var $Room Room */
-		$Room = ClassRegistry::init('Rooms.Room');
-		$conditions = [
-			'Room.space_id' => Space::PRIVATE_SPACE_ID,
-		];
-		$query = $Room->getReadableRoomsConditions($conditions, $nc3UserId);
-		$query['recursive'] = -1;
-		$nc3Room = $Room->find('first', $query);
-
+		$nc3Room = $this->getNc3PrivateRoomByUserId($nc3UserId);
 		/* @var $RoomsLanguage RoomsLanguage */
 		$RoomsLanguage = ClassRegistry::init('Rooms.RoomsLanguage');
 		$nc3RoomLanguages = $RoomsLanguage->findAllByRoomId($nc3Room['Room']['id'], null, null, null, null, -1);
@@ -597,6 +569,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		}
 		$nc3Room['RoomsLanguage'] = $nc3RoomLanguages;
 
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
 		if (!$Room->saveRoom($nc3Room)) {
 			// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 			// ここでrollback
@@ -614,7 +588,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		];
 		$this->saveMap('Room', $idMap);
 
-		/* @var $PagesLanguage PagesLanguage */
+		/* @var $Page Page */
 		$Page = ClassRegistry::init('Pages.Page');
 		$nc3Page = $Page->findById($nc3Room['Room']['page_id_top'], null, null, -1);
 		// Page.slugに設定すれば良い？
