@@ -217,17 +217,35 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 
 		/* @var $Nc2Page AppModel */
 		$Nc2Page = $this->_getNc2Model('pages');
-		$nc2Page = $Nc2Page->findByRootIdAndSpaceType('0', '1', 'Nc2Page.room_id', null, -1);
-		$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
+		$nc2Page = $Nc2Page->findByRootIdAndSpaceType(
+			'0',
+			'1',
+			[
+				'Nc2Page.page_id',
+				'Nc2Page.room_id',
+			],
+			null,
+			-1
+		);
+		$nc2Id = $nc2Page['Nc2Page']['room_id'];
 
 		/* @var $Room Room */
 		$Room = ClassRegistry::init('Rooms.Room');
 		$spaces = $Room->getSpaces();
+		$nc3RoomId = $spaces[Space::PUBLIC_SPACE_ID]['Space']['room_id_root'];
 
 		$idMap = [
-			$nc2RoomId => $spaces[Space::PUBLIC_SPACE_ID]['Space']['room_id_root']
+			$nc2Id => $nc3RoomId
 		];
 		$this->_saveMap('Room', $idMap);
+
+		// パブリックルームの先頭ページmapデータ作成。Nc3Page.idを1で対応付け
+		//　@see https://github.com/NetCommons3/Pages/blob/3.1.0/Config/Migration/1472409223_records.php#L47
+		$nc2Id = $nc2Page['Nc2Page']['page_id'];
+		$idMap = [
+			$nc2Id => '1'
+		];
+		$this->_saveMap('Page', $idMap);
 	}
 
 /**
