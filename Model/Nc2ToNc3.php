@@ -205,6 +205,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  */
 	public function migration($data) {
 		$this->set($data);
+
 		if (!$this->validates()) {
 			return false;
 		}
@@ -241,6 +242,13 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 		if (!$Nc2ToNc3Page->migrate()) {
 			$this->validationErrors = $Nc2ToNc3Page->validationErrors;
+			return false;
+		}
+
+		/* @var $Nc2ToNc3Announcement Nc2ToNc3Announcement */
+		$Nc2ToNc3Announcement = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Announcement');
+		if (!$Nc2ToNc3Announcement->migrate()) {
+			$this->validationErrors = $Nc2ToNc3Announcement->validationErrors;
 			return false;
 		}
 
