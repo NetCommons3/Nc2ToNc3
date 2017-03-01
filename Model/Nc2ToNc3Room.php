@@ -350,9 +350,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		// root_idは親Roomのroot_idを引き継いでいるっぽいが、Migratoinで親Roomのroot_idが変わったため正常なroot_idが不明
+		// 使ってないっぽいので、とりあえすSpace.room_id_rootを設定しとく
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Config/Migration/1479455827_switch_boxes.php#L242-L262
 		$data = [
 			'space_id' => $spaceId,
-			'root_id' => $spaces[$spaceId]['Space']['room_id_root'],	// 使ってないっぽい
+			'root_id' => $spaces[$spaceId]['Space']['room_id_root'],
 			'parent_id' => $parenId,
 			'active' => $nc2Page['Nc2Page']['display_flag'],
 			'default_role_key' => $defaultRoleKey,
