@@ -16,6 +16,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
+ * @method Model saveFrame($data)
+ * @method array generateFrame($nc2Blockld, $nc3FramePluginKey, $nc3FramesLangName)
  *
  */
 class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
@@ -48,35 +50,44 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 /**
  * Generate Frame data for Nc3 Plugin data .
  *
- *
- * @param string nc2AnnouncementBlockld nc2Announcement block_id.
+ * @param int $nc2Blockld Nc2 block_id.
+ * @param string $nc3FramePluginKey Nc3 plugin_key.
+ * @param string $nc3FramesLangName Nc3 name.
  * @return array frame data
  */
-	public function generateFrame($nc2AnnouncementBlockld)
-	{
-
+	public function generateFrame($nc2Blockld, $nc3FramePluginKey, $nc3FramesLangName) {
 		$Nc2Block = $this->getNc2Model('blocks');
-		$nc2Block = $Nc2Block->findByBlockId($nc2AnnouncementBlockld, null, null, -1);
+		$nc2Block = $Nc2Block->findByBlockId($nc2Blockld, null, null, -1);
 
 		$nc2BlockPageId = $nc2Block['Nc2Block']['page_id'];
 
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 		$PageMap = $Nc2ToNc3Page->getMap($nc2BlockPageId);
 
-		$data['Frame'] = [
-  		  'room_id' => $PageMap['Room']['id'],
-			'box_id' => $PageMap['Box']['id'],
-			'plugin_key' => 'announcements',
+		$data = [
+			'Frame' => [
+				'room_id' => $PageMap['Room']['id'],
+				'box_id' => $PageMap['Box']['id'],
+				'plugin_key' => $nc3FramePluginKey,
+				'is_deleted' => '0',
+				'language_id' => '2'
+			],
+			'FramesLanguage' => [
+				'language_id' => '2',
+				'name' => $nc3FramesLangName
+			],
+			'FramePublicLanguage' => [
+				'language_id' => [
+						'{n}' => '0'
+				]
+			]
 		];
 
-		//var_dump($data['Frame']);
 		$Frame = ClassRegistry::init('Frames.Frame');
-		$Frame->create();
+		$Frame->create(false);
 
 		$FrameData = $Frame->saveFrame($data);
 
 		return $FrameData;
 	}
-
-
 }

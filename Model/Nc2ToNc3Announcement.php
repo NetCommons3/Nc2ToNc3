@@ -17,120 +17,99 @@ App::uses('Current', 'NetCommons.Utility');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
- * @method string getLanguageIdFromNc2()
- * @method string convertDate($date)
- * @method string convertLanguage($langDirName)
- * @method array saveMap($modelName, $idMap)
- * @method array getMap($nc2Id)
+ * @method generateFrame($nc2AnnounceBlockld, $nc3FramePluginKey, $nc3FramesLangName)
+ * @method Model saveAnnouncement($data)
  *
- * @see Nc2ToNc3AnnouncementBaseBehavior
- * @method string getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType)
- * @method array getNc3DefaultRolePermission()
- * @method string getNc2DefaultEntryRoleAuth($confName)
- * @method void changeNc3CurrentLanguage()
- * @method void restoreNc3CurrentLanguage()
- *
- * @see Nc2ToNc3AnnouncementBehavior
- * @method string getLogArgument($nc2Page)
- * @method array getNc2RoomConditions()
- * @method array getNc2OtherLaguageRoomIdList($nc2Page)
- * @method bool isNc2PagesUsersLinkToBeMigrationed($userMap, $nc2UserId, $nc2Page, $nc3RoleRoomUserList)
- * @method array getNc2PagesUsersLinkByRoomId($nc3Room, $nc2Page)
- * @method array getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap)
- * @method array getNc3RoleRoomListByRoomId($nc3Room)
- * @method string getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc2RoleAuthotityId)
  */
-class Nc2ToNc3Announcement extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 
-	/**
-	 * Custom database table name, or null/false if no table association is desired.
-	 *
-	 * @var string
-	 * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-	 */
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
 	public $useTable = false;
 
-	/**
-	 * List of behaviors to load when the model object is initialized. Settings can be
-	 * passed to behaviors by using the behavior name as index.
-	 *
-	 * @var array
-	 * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-	 */
-
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Base'];
-
-//	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Announcement'];
-	/*
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
  *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Base'];
+/**
  * Migration method.
  *
  * @return bool True on success.
  */
-	public function migrate()
-	{
+
+	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Announcement Migration start.'));
 
 		/* @var $Nc2Announcement AppModel */
+
 		$Nc2Announcement = $this->getNc2Model('announcement');
 		$nc2Announcement = $Nc2Announcement->find('all');
 
+		// block_idをキーにFrameの移行を実施。3以下はデフォルトのため、移行しない
+		foreach ($nc2Announcement as $key) {
+			if ($key['Nc2Announcement']['block_id'] <= 3) {
+				continue;
+			} else {
+				$nc2AnnounceBlockld = $key['Nc2Announcement']['block_id'];
+			}
 
-		foreach ($nc2Announcement as $key )  {
+			$nc3FramePluginKey = 'announcements';
+			$nc3FramesLangName = 'お知らせ';
 
-				// block_idをキーにFrameの移行を実施
-				$nc2AnnouncementBlockld = $key['Nc2Announcement']['block_id'];
+			/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
+			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+			$nc3Frame = $Nc2ToNc3Frame->generateFrame($nc2AnnounceBlockld, $nc3FramePluginKey, $nc3FramesLangName);
+			$nc3RoomId = $nc3Frame['Frame']['room_id'];
 
-				/* @var $nc2ToNc3Frame Nc2ToNc3Frame */	
-				$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-				$nc3Frame = $Nc2ToNc3Frame->generateFrame($nc2AnnouncementBlockld);
-				$nc3RoomId = $nc3Frame['Frame']['room_id'];
+			$data = [
+				'Announcement' => [
+					'status' => '1',
+					'content' => $key['Nc2Announcement']['content'],
+				],
+				'Block' => [
+					'room_id' => $nc3RoomId,
+					'plugin_key' => 'blocks'
+				],
+				'Frame' => [
+					'id' => $nc3Frame['Frame']['id']
+				],
+				'Topic' => [
+					'plugin_key' => 'announcements'
+				]
+			];
 
-				$data = [
-					'Announcement' => [
-						'status' => '1',
-						'content' => $key['Nc2Announcement']['content'],
-					],
-					'Block' => [
-						'room_id' => $nc3RoomId,
-						'plugin_key' => 'blocks'
-					],
-					'Frame' => [
-						'id' => $nc3Frame['Frame']['id']
-//					],
-//					'Topic' => [
-//						'plugin_key' => 'announcements'
-					]
-				];
-				//var_dump($data);
+			//Announcement テーブルの移行を実施
+			//SAVE前にCurrentのデータを書き換えが必要なため
+			Current::write('Plugin.key', 'announcements');
+			Current::write('Room.id', $nc3RoomId);
 
-				//Announcement テーブルの移行を実施
-				//SAVE前にCurrentのデータを書き換えが必要なため
-				Current::write('Plugin.key', 'announcements');
-				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-				$Nc2ToNc3Announcement = ClassRegistry::init('Announcements.Announcement');
-				$Nc2ToNc3Block = ClassRegistry::init('Blocks.Block');
-				$Nc2ToNc3Topic = ClassRegistry::init('Topics.Topic');
-				$Nc2ToNc3Announcement->create();
-				$Nc2ToNc3Block->create();
-				$Nc2ToNc3Topic->create();
+			$Nc2ToNc3Announcement = ClassRegistry::init('Announcements.Announcement');
+			$Nc2ToNc3Block = ClassRegistry::init('Blocks.Block');
+			$Nc2ToNc3Topic = ClassRegistry::init('Topics.Topic');
+			$Nc2ToNc3Announcement->create();
+			$Nc2ToNc3Block->create();
+			$Nc2ToNc3Topic->create();
 
-				if (!$Nc2ToNc3Announcement->saveAnnouncement($data)) {
-					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
-					// ここでrollback
-					//$aaa = $Announcement->saveAnnouncement($data);
-					$Nc2ToNc3Announcement->rollback();
+			if (!$Nc2ToNc3Announcement->saveAnnouncement($data)) {
+				// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+				// ここでrollback
+				$Nc2ToNc3Announcement->rollback();
+				return false;
+			}
 
-					return false;
-				}
-
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);
-				Current::remove('Plugin.key', 'announcements');
-
+			unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+			Current::remove('Room.id', $nc3RoomId);
+			Current::remove('Plugin.key', 'announcements');
 
 		}
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Announcement Migration end.'));
