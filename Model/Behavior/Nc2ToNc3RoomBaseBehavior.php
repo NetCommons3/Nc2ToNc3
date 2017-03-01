@@ -111,7 +111,8 @@ class Nc2ToNc3RoomBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomIds);
 		$query = [
 			'fields' => [
-				'Room.id'
+				'Room.id',
+				'Room.parent_id'
 			],
 			'conditions' => [
 				'Room.id' => $mapIdList

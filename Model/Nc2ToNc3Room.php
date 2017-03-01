@@ -39,6 +39,8 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getNc3RolesRoomsUserListByRoomIdAndUserId($nc3Room, $userMap)
  * @method array getNc3RoleRoomListByRoomId($nc3Room)
  * @method string getNc3RoleRoomIdByNc2RoleAuthotityId($nc3RoleRoomList, $nc2RoleAuthotityId)
+ * @method void saveExistingMap($nc2Pages)
+ *
  */
 class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
@@ -159,9 +161,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$Room = ClassRegistry::init('Rooms.Room');
 		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
 
-		// 対応するルームが既存の処理について、対応させるデータが名前くらいしかない気がする。。。名前でマージして良いのか微妙なので保留
-		//$this->saveExistingMap($nc2Pages);
-
+		$this->saveExistingMap($nc2Pages);
 		foreach ($nc2Pages as $nc2Page) {
 			/*
 			if (!$this->isMigrationRow($nc2User)) {
@@ -319,9 +319,6 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * @return array Nc3Room data.
  */
 	private function __generateNc3NotExistsRooms($nc2Page) {
-		/* @var $Room Room */
-		$Room = ClassRegistry::init('Rooms.Room');
-		$spaces = $Room->getSpaces();
 		$nc2SpaceType = $nc2Page['Nc2Page']['space_type'];
 
 		/* @var $Space Space */
@@ -337,6 +334,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			$needApproval = '0';
 		}
 
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+		$spaces = $Room->getSpaces();
 		$parenId = $spaces[$spaceId]['Space']['room_id_root'];
 		$map = $this->getMap($nc2Page['Nc2Page']['parent_id']);
 		if ($map) {
