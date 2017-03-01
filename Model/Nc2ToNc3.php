@@ -205,6 +205,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  */
 	public function migration($data) {
 		$this->set($data);
+
 		if (!$this->validates()) {
 			return false;
 		}
