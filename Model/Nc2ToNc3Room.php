@@ -265,6 +265,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		// 対応するルームが既存の場合（初回移行時にマッピングされる）、更新しない方が良いと思う。
 		if ($this->getMap($nc2Page['Nc2Page']['room_id'])) {
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Page));
+			$this->writeMigrationLog($message);
 			return $data;
 		}
 
