@@ -22,13 +22,13 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string convertLanguage($langDirName)
  * @method array saveMap($modelName, $idMap)
  * @method array getMap($nc2Id)
+ * @method void changeNc3CurrentLanguage()
+ * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3RoomBaseBehavior
  * @method string getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType)
  * @method array getNc3DefaultRolePermission()
  * @method string getNc2DefaultEntryRoleAuth($confName)
- * @method void changeNc3CurrentLanguage()
- * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3RoomBehavior
  * @method string getLogArgument($nc2Page)
