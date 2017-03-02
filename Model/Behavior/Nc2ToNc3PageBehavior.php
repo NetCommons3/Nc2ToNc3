@@ -116,6 +116,22 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 	}
 
 /**
+ * Get Nc3Language id from Nc2Page lang_dirname.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2LangDirname Nc2Page lang_dirname.
+ * @return string Nc3Language id.
+ */
+	public function getNc3LanguageIdFromNc2PageLangDirname(Model $model, $nc2LangDirname) {
+		$nc3LaguageId = $this->_convertLanguage($nc2LangDirname);
+		if (!$nc3LaguageId) {
+			$nc3LaguageId = $this->_getLanguageIdFromNc2();
+		}
+
+		return $nc3LaguageId;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2Page Nc2Page data
@@ -123,7 +139,7 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
  */
 	private function __getLogArgument($nc2Page) {
 		return 'Nc2Page ' .
-			'page_id:' . $nc2Page['Nc2Page']['page_id'] .
+			'page_id:' . $nc2Page['Nc2Page']['page_id'] . ',' .
 			'page_name:' . $nc2Page['Nc2Page']['page_name'];
 	}
 
