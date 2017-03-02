@@ -83,8 +83,6 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 		];
 		$nc3Users = $User->find('all', $query);
 
-		/* @var $Page Page */
-		$Page = ClassRegistry::init('Pages.Page');
 		foreach ($nc3Users as $nc3User) {
 			$username = $nc3User['User']['username'];
 			$nc2UserId = $idList[$username];
