@@ -22,6 +22,8 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string convertLanguage($langDirName)
  * @method array saveMap($modelName, $idMap)
  * @method array getMap($nc2Id)
+ * @method void changeNc3CurrentLanguage()
+ * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3PageBaseBehavior
  * @method string convertPermalink($nc2Permalink)
@@ -31,6 +33,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @method void saveExistingMap($nc2Pages)
  * @method array getNc2PageConditions()
  * @method string getNc3RootId($nc2Page, $roomMap)
+ * @method string getNc3LanguageIdFromNc2PageLangDirname($nc2LangDirname)
  *
  */
 class Nc2ToNc3Page extends Nc2ToNc3AppModel {
@@ -101,6 +104,10 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			}
 		}
 
+		// PagesLanguage.language_id値はsaveする前に現在の言語を切り替える処理が必要
+		// @see https://github.com/NetCommons3/M17n/blob/3.1.0/Model/Behavior/M17nBehavior.php#L228
+		$this->changeNc3CurrentLanguage();
+
 		foreach ($nc2Pages as $nc2Page) {
 			if (!$this->__savePageFromNc2WhileDividing($nc2Page['Nc2Page']['lang_dirname'])) {
 				return false;
@@ -136,16 +143,16 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			'offset' => 0,
 		];
 
-		$numberOfUsers = 0;
+		$numberOfPages = 0;
 		while ($nc2Pages = $Nc2Page->find('all', $query)) {
 			if (!$this->__savePageFromNc2($nc2Pages)) {
 				return false;
 			}
 
-			$numberOfUsers += count($nc2Pages);
-			$errorRate = round($this->__numberOfValidationError / $numberOfUsers);
-			// 5割エラー発生で止める
-			if ($errorRate >= 0.5) {
+			$numberOfPages += count($nc2Pages);
+			$errorRate = round($this->__numberOfValidationError / $numberOfPages);
+			// 5割エラー発生で止める。英語ページは少ない可能性があるので、最低件数も判断する
+			if ($errorRate >= 0.5 && $numberOfPages > 100) {
 				$this->validationErrors = [
 					'database' => [
 						__d('nc2_to_nc3', 'Many error data.Please check the log.')
@@ -254,11 +261,12 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		// 対応するページが既存の場合（初回移行時にマッピングされる）上書き
 		$pageMap = $this->getMap($nc2Page['Nc2Page']['page_id']);
 		if ($pageMap) {
+			return $data;
 			/* @var $PagesLanguage PagesLanguage */
 			$PagesLanguage = ClassRegistry::init('Pages.PagesLanguage');
 			$data = $PagesLanguage->getPagesLanguage(
 				$pageMap['Page']['id'],
-				$this->convertLanguage($nc2Page['Nc2Page']['lang_dirname'])
+				$this->getNc3LanguageIdFromNc2PageLangDirname($nc2Page['Nc2Page']['lang_dirname'])
 			);
 		}
 
@@ -277,11 +285,13 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$roomMap = $Nc2ToNc3Room->getMap($nc2Page['Nc2Page']['room_id']);
 		$map = $this->getMap($nc2Page['Nc2Page']['parent_id']);
-		$nc3LaguageId = $this->convertLanguage($nc2Page['Nc2Page']['lang_dirname']);
-		if (!$nc3LaguageId) {
-			$nc3LaguageId = $this->getLanguageIdFromNc2();
+		if (!$map) {
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Page));
+			$this->writeMigrationLog($message);
+			return [];
 		}
 
+		$nc3LaguageId = $this->getNc3LanguageIdFromNc2PageLangDirname($nc2Page['Nc2Page']['lang_dirname']);
 		$data = [
 			'Page' => [
 				'room_id' => $roomMap['Room']['id'],
@@ -315,6 +325,9 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				$nc3Page['Page']['slug'] = OriginalKeyBehavior::generateKey('Nc2ToNc3', $this->useDbConfig);
 			}
 		}
+
+		// validationに引っかかる
+		unset($nc3Page['Page']['theme'], $nc3Page['PagesLanguage']['meta_title']);
 
 		return $nc3Page;
 	}

@@ -288,6 +288,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		// Model毎にInstanceが作成されるため、Model毎にNc3Languageから読み込まれる
 		// 今のところ、RoomとPageだけなので、Propertyで保持するが、
 		// 増えてきたらstatic等でNc3Languageから読み込まないよう変更する
+		// Nc2ToNc3LabuageというModelクラス作った方が良いかも。
 		if (!isset($this->__languageList)) {
 			/* @var $Language Language */
 			$Language = ClassRegistry::init('M17n.Language');
