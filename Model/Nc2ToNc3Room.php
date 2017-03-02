@@ -394,9 +394,17 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * @return array Nc3RoomsLanguage data.
  */
 	private function __generateNc3RoomsLanguage($nc3RoomLanguage, $nc2Page) {
+		// Nc3RoomsLanguage.is_originはデフォルト値'1'が入るのでここで設定
+		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L356
+		$isOrigin = true;
+		if ($nc3RoomLanguage['language_id'] != Current::read('Language.id')) {
+			$isOrigin = false;
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc3RoomLanguage['name'] = $nc2Page['Nc2Page']['page_name'];
+		$nc3RoomLanguage['is_origin'] = $isOrigin;
 		$nc3RoomLanguage['created_user'] = $Nc2ToNc3User->getCreatedUser($nc2Page['Nc2Page']);
 		$nc3RoomLanguage['created'] = $this->convertDate($nc2Page['Nc2Page']['insert_time']);
 
