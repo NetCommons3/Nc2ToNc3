@@ -66,7 +66,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 
 		$data = [
 			'Frame' => [
-				'room_id' => $PageMap['Room']['id'],
+				'room_id' => $PageMap['Box']['room_id'],
 				'box_id' => $PageMap['Box']['id'],
 				'plugin_key' => $nc3FramePluginKey,
 				'is_deleted' => '0',

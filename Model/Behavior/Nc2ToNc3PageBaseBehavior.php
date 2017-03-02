@@ -96,21 +96,6 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		if (!$map) {
-			/*
-			 *  Pageデータ移行ができれば不要
-			 *  Nc3Box.room_idがあったため、'Room.id'は返さなくなる
-			$map = [
-				'Page' => [
-					'id' => '5'
-				],
-				'Box' => [
-					'id' => '64'
-				],
-				'Room' => [
-					'id' => '5'
-				]
-			];
-			 */
 			return $map;
 		}
 
