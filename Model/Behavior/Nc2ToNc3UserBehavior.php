@@ -102,10 +102,9 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 			];
 			$this->_saveMap('Room', $idMap);
 
-			$nc3Page = $Page->findById($nc3Room['Room']['page_id_top'], 'Page.id', null, -1);
-			$nc2PageId = $nc3Page['Page']['id'];
+			$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 			$idMap = [
-				$nc2PageId => $nc3User['User']['id']
+				$nc2PageId => $nc3Room['Room']['page_id_top']
 			];
 			$this->_saveMap('Page', $idMap);
 		}
