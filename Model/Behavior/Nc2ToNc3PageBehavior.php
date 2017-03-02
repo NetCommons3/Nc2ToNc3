@@ -35,11 +35,39 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
  * @return void
  */
 	public function saveExistingMap(Model $model, $nc2Pages) {
-		// permalinkが同一データをmapデータに登録しようと考えたが、room_id、language_idも絡むし、
+		// 先頭ページを対応付け → 新しいページで追加した方が良いのか？
+
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+		$spaces = $Room->getSpaces();
+		$nc3RoomId = $spaces[Space::PUBLIC_SPACE_ID]['Space']['room_id_root'];
+		$nc3Room = $Room->findById($nc3RoomId, 'Room.page_id_top', null, -1);
+		$nc3PageId = $nc3Room['Room']['page_id_top'];
+
+		// 取得条件がはおそらく正しい。
+		/* @var $Nc2Page AppModel */
+		$Nc2Page = $this->_getNc2Model('pages');
+		$nc2Pages = $Nc2Page->findAllByParentIdAndPermalink(
+			'1',
+			'',
+			'Nc2Page.page_id',
+			null,
+			null,
+			null,
+			-1
+		);
+		foreach ($nc2Pages as $nc2Page) {
+			$nc2PageId = $nc2Page['Nc2Page']['page_id'];
+			$idMap = [
+				$nc2PageId => $nc3PageId
+			];
+			$this->_saveMap('Page', $idMap);
+		}
+
+		// 先頭ページ以外で、permalinkが同一データをmapデータに登録しようと考えたが、room_id、language_idも絡むし、
 		// Nc2ToNc3PageBaseBehavior::_convertPermalinkもしないとなので、1レコードづつの確認になる。
 		// 処理が重くなるので保留
 		//   →Nc3に既存の同名permalinkのデータは移行されない。
-
 		// [Nc2Page.permalink => Nc2Page.page_id]]
 		//$idList = Hash::combine($nc2Pages, '{n}.Nc2Page.permalink', '{n}.Nc2Page.page_id');
 
