@@ -10,6 +10,7 @@
 
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 App::uses('CakeRoute', 'Routing/Route');
+App::uses('PageContainer', 'Pages.Model');
 
 /**
  * Nc2ToNc3PageBaseBehavior
