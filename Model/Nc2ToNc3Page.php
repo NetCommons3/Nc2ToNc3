@@ -24,6 +24,8 @@ App::uses('Current', 'NetCommons.Utility');
  * @method array getMap($nc2Id)
  * @method void changeNc3CurrentLanguage()
  * @method void restoreNc3CurrentLanguage()
+ * @method void changeNc3CurrentLanguage($langDirName = null)
+ * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3PageBaseBehavior
  * @method string convertPermalink($nc2Permalink)
@@ -104,10 +106,6 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			}
 		}
 
-		// PagesLanguage.language_id値はsaveする前に現在の言語を切り替える処理が必要
-		// @see https://github.com/NetCommons3/M17n/blob/3.1.0/Model/Behavior/M17nBehavior.php#L228
-		$this->changeNc3CurrentLanguage();
-
 		foreach ($nc2Pages as $nc2Page) {
 			if (!$this->__savePageFromNc2WhileDividing($nc2Page['Nc2Page']['lang_dirname'])) {
 				return false;
@@ -143,9 +141,14 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			'offset' => 0,
 		];
 
+		// PagesLanguage.language_id値はsaveする前に現在の言語を切り替える処理が必要
+		// @see https://github.com/NetCommons3/M17n/blob/3.1.0/Model/Behavior/M17nBehavior.php#L228
+		$this->changeNc3CurrentLanguage($nc2LangDirName);
+
 		$numberOfPages = 0;
 		while ($nc2Pages = $Nc2Page->find('all', $query)) {
 			if (!$this->__savePageFromNc2($nc2Pages)) {
+				$this->restoreNc3CurrentLanguage();
 				return false;
 			}
 
@@ -158,11 +161,15 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 						__d('nc2_to_nc3', 'Many error data.Please check the log.')
 					]
 				];
+
+				$this->restoreNc3CurrentLanguage();
 				return false;
 			}
 
 			$query['offset'] += $limit;
 		}
+
+		$this->restoreNc3CurrentLanguage();
 
 		return true;
 	}
@@ -261,7 +268,6 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		// 対応するページが既存の場合（初回移行時にマッピングされる）上書き
 		$pageMap = $this->getMap($nc2Page['Nc2Page']['page_id']);
 		if ($pageMap) {
-			return $data;
 			/* @var $PagesLanguage PagesLanguage */
 			$PagesLanguage = ClassRegistry::init('Pages.PagesLanguage');
 			$data = $PagesLanguage->getPagesLanguage(

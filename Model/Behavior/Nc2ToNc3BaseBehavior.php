@@ -156,10 +156,11 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * Change nc3 current language data
  *
  * @param Model $model Model using this behavior.
+ * @param string $langDirName nc2 lang_dirname.
  * @return void
  */
-	public function changeNc3CurrentLanguage(Model $model) {
-		$this->_changeNc3CurrentLanguage();
+	public function changeNc3CurrentLanguage(Model $model, $langDirName = null) {
+		$this->_changeNc3CurrentLanguage($langDirName);
 	}
 
 /**
@@ -341,13 +342,21 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 /**
  * Change nc3 current language data
  *
+ * @param string $langDirName nc2 lang_dirname.
  * @return void
  */
-	protected function _changeNc3CurrentLanguage() {
+	protected function _changeNc3CurrentLanguage($langDirName = null) {
+		$nc3LanguageId = null;
+		if ($langDirName) {
+			$nc3LanguageId = $this->_convertLanguage($langDirName);
+		}
+		if (!$nc3LanguageId) {
+			$nc3LanguageId = $this->_getLanguageIdFromNc2();
+		}
+
 		/* @var $Language Language */
 		$Language = ClassRegistry::init('M17n.Language');
 
-		$nc3LanguageId = $this->_getLanguageIdFromNc2();
 		if (Current::read('Language.id') != $nc3LanguageId) {
 			$this->__nc3CurrentLanguage = Current::read('Language');
 			$language = $Language->findById($nc3LanguageId, null, null, -1);
