@@ -22,7 +22,7 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string convertLanguage($langDirName)
  * @method array saveMap($modelName, $idMap)
  * @method array getMap($nc2Id)
- * @method void changeNc3CurrentLanguage()
+ * @method void changeNc3CurrentLanguage($langDirName = null)
  * @method void restoreNc3CurrentLanguage()
  *
  * @see Nc2ToNc3RoomBaseBehavior
@@ -395,7 +395,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  */
 	private function __generateNc3RoomsLanguage($nc3RoomLanguage, $nc2Page) {
 		// Nc3RoomsLanguage.is_originはデフォルト値'1'が入るのでここで設定
-		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L356
+		// Nc3RoomsLanguage.is_translation,Nc3PagesLanguage.is_translationは'0'のまま。
+		// @see https://github.com/NetCommons3/NetCommons3/issues/807
 		$isOrigin = true;
 		if ($nc3RoomLanguage['language_id'] != Current::read('Language.id')) {
 			$isOrigin = false;
