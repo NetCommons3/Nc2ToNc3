@@ -298,11 +298,15 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		}
 
 		$nc3LaguageId = $this->getNc3LanguageIdFromNc2PageLangDirname($nc2Page['Nc2Page']['lang_dirname']);
+		// Page.slugに設定すれば良い？
+		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
+		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
 		$data = [
 			'Page' => [
 				'room_id' => $roomMap['Room']['id'],
 				'root_id' => $this->getNc3RootId($nc2Page, $roomMap),
 				'parent_id' => $map['Page']['id'],
+				'slug' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
 			],
 			'Room' => [
 				'id' => $roomMap['Room']['id'],
@@ -322,14 +326,12 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		}
 
 		// 先頭のNc2Page.permalinkは空だが、Validationにひっかかるための処理
-		// Page.slugに設定すれば良い？
-		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
-		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
-		if (!isset($nc3Page['Page']['slug'])) {
-			$nc3Page['Page']['slug'] = $this->convertPermalink($nc2Page['Nc2Page']['permalink']);
-			if (!Validation::notBlank($nc3Page['Page']['slug'])) {
-				$nc3Page['Page']['slug'] = OriginalKeyBehavior::generateKey('Nc2ToNc3', $this->useDbConfig);
-			}
+		if (!isset($nc3Page['Page']['id']) &&
+			!Validation::notBlank($nc3Page['Page']['slug'])
+		) {
+			$nc3Page['Page']['slug'] = OriginalKeyBehavior::generateKey('Nc2ToNc3', $this->useDbConfig);
+			$message = __d('nc2_to_nc3', 'Permalink of %s is change , because of empty.', $this->getLogArgument($nc2Page));
+			$this->writeMigrationLog($message);
 		}
 
 		// validationに引っかかる
