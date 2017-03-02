@@ -317,21 +317,20 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				'name' => $nc2Page['Nc2Page']['page_name'],
 			]
 		];
+
+		// 先頭のNc2Page.permalinkは空だが、Validationにひっかかるための処理
+		if (!Validation::notBlank($data['Page']['slug'])) {
+			unset($data['Page']['slug']);
+			$message = __d('nc2_to_nc3', 'Permalink of %s is change , because of empty.', $this->getLogArgument($nc2Page));
+			$this->writeMigrationLog($message);
+		}
+
 		if ($nc3Page) {
 			$nc3Page['Page'] = array_merge($nc3Page['Page'], $data['Page']);
 			$nc3Page['PagesLanguage'] = array_merge($nc3Page['PagesLanguage'], $data['PagesLanguage']);
 		}
 		if (!$nc3Page) {
 			$nc3Page = $data;
-		}
-
-		// 先頭のNc2Page.permalinkは空だが、Validationにひっかかるための処理
-		if (!isset($nc3Page['Page']['id']) &&
-			!Validation::notBlank($nc3Page['Page']['slug'])
-		) {
-			$nc3Page['Page']['slug'] = OriginalKeyBehavior::generateKey('Nc2ToNc3', $this->useDbConfig);
-			$message = __d('nc2_to_nc3', 'Permalink of %s is change , because of empty.', $this->getLogArgument($nc2Page));
-			$this->writeMigrationLog($message);
 		}
 
 		// validationに引っかかる
