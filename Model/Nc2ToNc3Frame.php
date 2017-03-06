@@ -88,10 +88,13 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 				'Nc2Block.block_id >=' => '3'
 			],
 			// Nc2Block.parent_idから再帰処理するのと同じ結果になると思う。
+			// Frame::saveFrame で　追加時は一番上に配置する処理があるため、どうするのが良いのか？
+			// @see https://github.com/NetCommons3/Frames/blob/3.1.0/Model/Frame.php#L230-L232
+			// とりあえず、降順で処理しとく
 			'order' => [
-				'Nc2Block.parent_id',
-				'Nc2Block.col_num',
-				'Nc2Block.row_num'
+				'Nc2Block.parent_id DESC',
+				'Nc2Block.row_num DESC',
+				'Nc2Block.col_num DESC',
 			],
 			'limit' => $limit,
 			'offset' => 0,
