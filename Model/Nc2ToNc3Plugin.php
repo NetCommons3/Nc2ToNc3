@@ -61,6 +61,10 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 			$this->__setMap();
 		}
 
+		if (!isset($nc2ModuleIds)) {
+			return $this->__map;
+		}
+
 		$nc2ReturnModuleIds = $nc2ModuleIds;
 		if (is_string($nc2ModuleIds)) {
 			$nc2ReturnModuleIds = [$nc2ModuleIds];
