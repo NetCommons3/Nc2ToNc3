@@ -245,12 +245,19 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		/* @var $Nc2ToNc3Announcement Nc2ToNc3Announcement */
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		if (!$Nc2ToNc3Frame->migrate()) {
+			$this->validationErrors = $Nc2ToNc3Frame->validationErrors;
+			return false;
+		}
+
+		/* @var $Nc2ToNc3Announcement Nc2ToNc3Announcement
 		$Nc2ToNc3Announcement = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Announcement');
 		if (!$Nc2ToNc3Announcement->migrate()) {
 			$this->validationErrors = $Nc2ToNc3Announcement->validationErrors;
 			return false;
-		}
+		} */
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
 
