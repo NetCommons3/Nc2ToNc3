@@ -61,11 +61,23 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 			$this->__setMap();
 		}
 
+		$nc2ReturnModuleIds = $nc2ModuleIds;
 		if (is_string($nc2ModuleIds)) {
-			return $this->__map[$nc2ModuleIds];
+			$nc2ReturnModuleIds = [$nc2ModuleIds];
 		}
 
-		return $this->__map;
+		$map = [];
+		foreach ($nc2ReturnModuleIds as $nc2ModuleId) {
+			if (isset($this->__map[$nc2ModuleId])) {
+				$map[$nc2ModuleId] = $this->__map[$nc2ModuleId];
+			}
+		}
+
+		if (is_string($nc2ModuleIds) && isset($map[$nc2ModuleIds])) {
+			return $map[$nc2ModuleIds];
+		}
+
+		return $map;
 	}
 
 /**
