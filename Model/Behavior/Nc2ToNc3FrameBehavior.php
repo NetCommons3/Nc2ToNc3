@@ -56,6 +56,7 @@ class Nc2ToNc3FrameBehavior extends Nc2ToNc3BaseBehavior {
 			'fields' => [
 				'Frame.id',
 				'Frame.room_id',
+				'Frame.key',
 			],
 			'conditions' => [
 				'Frame.id' => $mapIdList
