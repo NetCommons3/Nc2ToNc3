@@ -52,12 +52,17 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 /**
  * Get map
  *
+ * @param array|string $nc2ModuleIds Nc2Module module_id.
  * @return array Id map.
  */
-	public function getMap() {
+	public function getMap($nc2ModuleIds = null) {
 		// ゆくゆくmapテーブルに保存した方が良い気もするが、とりあえPropretyに保持しておく
 		if (!isset($this->__map)) {
 			$this->__setMap();
+		}
+
+		if (is_string($nc2ModuleIds)) {
+			return $this->__map[$nc2ModuleIds];
 		}
 
 		return $this->__map;
