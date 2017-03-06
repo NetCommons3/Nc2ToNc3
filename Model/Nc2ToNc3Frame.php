@@ -85,7 +85,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 			'conditions' => [
 				'Nc2Block.module_id !=' => '0',
 				// デフォルトのNc2Blockデータ（お知らせ３つ）は移行しない方が良いと思う。
-				'Nc2Block.block_id >=' => '3'
+				'Nc2Block.block_id >' => '3'
 			],
 			// Nc2Block.parent_idから再帰処理するのと同じ結果になると思う。
 			// Frame::saveFrame で　追加時は一番上に配置する処理があるため、どうするのが良いのか？
