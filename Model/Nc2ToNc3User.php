@@ -306,6 +306,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			// $User->getUserの戻り値をそのまま戻しても、選択肢のデータが配列じゃないため、
 			// ValidationでWarning発生。
 			// @see https://github.com/NetCommons3/Users/blob/3.0.1/Model/Behavior/UsersValidationRuleBehavior.php#L75
+			/*
 			$data = $User->getUser($map['User']['id']);
 			if ($data['User']['is_deleted']) {
 				// 削除ユーザーを復活させても関連データが作成されない他ためログインできない。
@@ -315,7 +316,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$data['User']['id'] = $map['User']['id'];
 				$data['User']['is_deleted'] = '1';
 			}
-			//return $data;
+			*/
 		} else {
 			$data = $User->createUser();
 		}
@@ -336,9 +337,11 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 			}
 		}
 
+		/*
 		if ($data['User']['is_deleted']) {
 			$data['User']['is_deleted'] = '0';
 		}
+		*/
 
 		return $data;
 	}
