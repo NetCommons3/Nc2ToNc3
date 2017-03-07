@@ -56,12 +56,12 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Calendar Migration start.'));
 
-		/* @var $Nc2CalendarManage AppModel
+		/* @var $Nc2CalendarManage AppModel */
 		$Nc2CalendarManage = $this->getNc2Model('calendar_manage');
 		$nc2CalendarManages = $Nc2CalendarManage->find('all');
 		if (!$this->__saveCalendarPermissionFromNc2($nc2CalendarManages)) {
 			return false;
-		} */
+		}
 
 		/* @var $Nc2CalendarBlock AppModel */
 		$Nc2CalendarBlock = $this->getNc2Model('calendar_block');
@@ -82,6 +82,60 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 	}
 
 /**
+ * Save CalendarPermission from Nc2.
+ *
+ * @param array $nc2CalendarManages Nc2CalendarManage data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveCalendarPermissionFromNc2($nc2CalendarManages) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  CalendarPermission data Migration start.'));
+
+		/* @var $CalendarPermission CalendarPermission */
+		$CalendarPermission = ClassRegistry::init('Calendars.CalendarPermission');
+		foreach ($nc2CalendarManages as $nc2CalendarManage) {
+			$CalendarPermission->begin();
+			try {
+				$data = $this->generateNc3CalendarPermissionData($nc2CalendarManage);
+				if (!$data) {
+					$CalendarPermission->rollback();
+					continue;
+				}
+
+				if (!$CalendarPermission->savePermission($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2CalendarManage) . "\n" .
+						var_export($CalendarPermission->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$CalendarPermission->rollback();
+					continue;
+				}
+
+				$nc2RoomId = $nc2CalendarManage['Nc2CalendarManage']['room_id'];
+				$idMap = [
+					$nc2RoomId => $CalendarPermission->id
+				];
+				$this->saveMap('CalendarPermission', $idMap);
+
+				$CalendarPermission->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $CalendarFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$CalendarPermission->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  CalendarPermission data Migration end.'));
+
+		return true;
+	}
+
+/**
  * Save CalendarFrameSetting from Nc2.
  *
  * @param array $nc2CalendarBlocks Nc2CalendarBlock data.
@@ -96,8 +150,9 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		foreach ($nc2CalendarBlocks as $nc2CalendarBlock) {
 			$CalendarFrameSetting->begin();
 			try {
-				$data = $this->generateNc3CalendarFrameSettingData($nc2CalendarBlock);
+				$data = $this->generateNc3CalendarFrameSettingData($nc2CalendarBlocks);
 				if (!$data) {
+					$CalendarFrameSetting->rollback();
 					continue;
 				}
 
