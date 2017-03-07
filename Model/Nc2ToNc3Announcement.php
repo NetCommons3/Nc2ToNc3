@@ -58,18 +58,14 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$Nc2Announcement = $this->getNc2Model('announcement');
 		$nc2Announcements = $Nc2Announcement->find('all');
 
-		// block_idをキーにFrameの移行を実施。3以下はデフォルトのため、移行しない
+		/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Announcement = ClassRegistry::init('Announcements.Announcement');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$Topic = ClassRegistry::init('Topics.Topic');
 		foreach ($nc2Announcements as $nc2Announcement) {
-
-			//$nc3FramePluginKey = 'announcements';
-			//$nc3FramesLangName = 'お知らせ';
 			$nc2AnnounceBlockld = $nc2Announcement['Nc2Announcement']['block_id'];
-
-			/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
-			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-			//$nc3Frame = $Nc2ToNc3Frame->generateFrame($nc2AnnounceBlockld, $nc3FramePluginKey, $nc3FramesLangName);
 			$nc3Frame = $Nc2ToNc3Frame->getMap($nc2AnnounceBlockld);
-
 			if (!$nc3Frame) {
 				continue;
 			}
@@ -99,9 +95,6 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 
 			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-			$Announcement = ClassRegistry::init('Announcements.Announcement');
-			$Block = ClassRegistry::init('Blocks.Block');
-			$Topic = ClassRegistry::init('Topics.Topic');
 			$Announcement->create();
 			$Block->create();
 			$Topic->create();
