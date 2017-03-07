@@ -59,7 +59,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		/* @var $Nc2CalendarManage AppModel
 		$Nc2CalendarManage = $this->getNc2Model('calendar_manage');
 		$nc2CalendarManages = $Nc2CalendarManage->find('all');
-		if (!$this->__saveBlockRolePermissionFromNc2($nc2CalendarManages)) {
+		if (!$this->__saveCalendarPermissionFromNc2($nc2CalendarManages)) {
 			return false;
 		} */
 
@@ -109,6 +109,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 						var_export($CalendarFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
+					$CalendarFrameSetting->rollback($ex);
 					continue;
 				}
 
@@ -123,7 +124,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $CalendarFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$CalendarFrameSetting->saveFrameSetting($ex);
+				$CalendarFrameSetting->rollback($ex);
 				throw $ex;
 			}
 		}
@@ -132,5 +133,6 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 
 		return true;
 	}
+
 }
 
