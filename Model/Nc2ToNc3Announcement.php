@@ -17,8 +17,13 @@ App::uses('Current', 'NetCommons.Utility');
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
  * @method Model getNc2Model($tableName)
- * @method getMap($nc2AnnounceBlockld)
- * @method Model saveAnnouncement($data)
+ * @method string getLanguageIdFromNc2()
+ * @method string convertDate($date)
+ * @method string convertLanguage($langDirName)
+ * @method array saveMap($modelName, $idMap)
+ * @method array getMap($nc2Id)
+ * @method void changeNc3CurrentLanguage($langDirName = null)
+ * @method void restoreNc3CurrentLanguage()
  *
  */
 class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
@@ -51,14 +56,14 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		/* @var $Nc2Announcement AppModel */
 
 		$Nc2Announcement = $this->getNc2Model('announcement');
-		$nc2Announcement = $Nc2Announcement->find('all');
+		$nc2Announcements = $Nc2Announcement->find('all');
 
 		// block_idをキーにFrameの移行を実施。3以下はデフォルトのため、移行しない
-		foreach ($nc2Announcement as $key) {
+		foreach ($nc2Announcements as $nc2Announcement) {
 
 			//$nc3FramePluginKey = 'announcements';
 			//$nc3FramesLangName = 'お知らせ';
-			$nc2AnnounceBlockld = $key['Nc2Announcement']['block_id'];
+			$nc2AnnounceBlockld = $nc2Announcement['Nc2Announcement']['block_id'];
 
 			/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
 			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
@@ -73,7 +78,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			$data = [
 				'Announcement' => [
 					'status' => '1',
-					'content' => $key['Nc2Announcement']['content']
+					'content' => $nc2Announcement['Nc2Announcement']['content']
 				],
 				'Block' => [
 					'room_id' => $nc3RoomId,
@@ -106,7 +111,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				// ここでrollback
 				$Announcement->rollback();
 
-				$message = $this->getLogArgument($key) . "\n" .
+				$message = $this->getLogArgument($nc2Announcement) . "\n" .
 					var_export($Announcement->validationErrors, true);
 				$this->writeMigrationLog($message);
 
@@ -121,5 +126,17 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Announcement Migration end.'));
 		return true;
 	}
+
+/**
+ * Get Log argument.
+ *
+ * @param array $nc2Announcement Nc2Announcement data
+ * @return string Log argument
+ */
+	public function getLogArgument($nc2Announcement) {
+		return 'Nc2Announcement ' .
+			'block_id:' . $nc2Announcement['Nc2Announcement']['block_id'];
+	}
+
 }
 
