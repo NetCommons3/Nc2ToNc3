@@ -212,51 +212,36 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
-		/* @var $Nc2ToNc3UserAttr Nc2ToNc3UserAttribute */
-		$Nc2ToNc3UserAttr = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3UserAttribute');
-		if (!$Nc2ToNc3UserAttr->migrate()) {
-			$this->validationErrors = $Nc2ToNc3UserAttr->validationErrors;
-			return false;
-		}
+			// phpmdのNPath complexity threshold is 200 に対応するように機能ごとにループ
+		$migrationModelNames = [
+			'Nc2ToNc3UserAttribute',
+			'Nc2ToNc3User',
+			'Nc2ToNc3Room',
+			'Nc2ToNc3Page',
+			'Nc2ToNc3Frame',
+			'Nc2ToNc3Announcement',
+		];
 
-		// @see Nc2ToNc3UserAttribute::calledCakeMigration
-		if ($Nc2ToNc3UserAttr->calledCakeMigration) {
-			ClassRegistry::addObject('Nc2ToNc3', $this);
-		}
+		foreach ($migrationModelNames as $migrationModelName) {
+			$migrationModelName = 'Nc2ToNc3.' . $migrationModelName;
 
-		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		if (!$Nc2ToNc3User->migrate()) {
-			$this->validationErrors = $Nc2ToNc3User->validationErrors;
-			return false;
-		}
+			/* @var $MigrationModel Nc2ToNc3UserAttribute */
+			/* @var $MigrationModel Nc2ToNc3User */
+			/* @var $MigrationModel Nc2ToNc3Room */
+			/* @var $MigrationModel Nc2ToNc3Page */
+			/* @var $MigrationModel Nc2ToNc3Frame */
+			/* @var $MigrationModel Nc2ToNc3Announcement */
+			$MigrationModel = ClassRegistry::init($migrationModelName);
+			if (!$MigrationModel->migrate()) {
+				$this->validationErrors = $MigrationModel->validationErrors;
+				return false;
+			}
 
-		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
-		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
-		if (!$Nc2ToNc3Room->migrate()) {
-			$this->validationErrors = $Nc2ToNc3Room->validationErrors;
-			return false;
-		}
-
-		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
-		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
-		if (!$Nc2ToNc3Page->migrate()) {
-			$this->validationErrors = $Nc2ToNc3Page->validationErrors;
-			return false;
-		}
-
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		if (!$Nc2ToNc3Frame->migrate()) {
-			$this->validationErrors = $Nc2ToNc3Frame->validationErrors;
-			return false;
-		}
-
-		/*@var $Nc2ToNc3Announcement Nc2ToNc3Announcement */
-		$Nc2ToNc3Announcement = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Announcement');
-		if (!$Nc2ToNc3Announcement->migrate()) {
-			$this->validationErrors = $Nc2ToNc3Announcement->validationErrors;
-			return false;
+			// @see Nc2ToNc3UserAttribute::calledCakeMigration
+			if ($migrationModelName == 'Nc2ToNc3.Nc2ToNc3UserAttribute' &&
+				$MigrationModel->calledCakeMigration) {
+				ClassRegistry::addObject('Nc2ToNc3', $this);
+			}
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
