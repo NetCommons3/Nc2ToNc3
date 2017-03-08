@@ -190,9 +190,9 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		unset($nc3config['database'], $nc3config['prefix']);
 
 		// TODOー開発用データ
-		$nc3config['database'] = 'nc2421';
+		$nc3config['database'] = 'netcommons';
 		$nc3config['prefix'] = 'nc_';
-		$nc3config['upload_path'] = '/var/www/html/NC2421/webapp/uploads/';
+		$nc3config['upload_path'] = '/var/www/html/NC2/webapp/uploads/';
 
 		return $nc3config;
 	}
@@ -212,7 +212,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
-		// phpmdのNPath complexity threshold is 200 に対応するように機能ごとにループ
+			// phpmdのNPath complexity threshold is 200 に対応するように機能ごとにループ
 		$migrationModelNames = [
 			'Nc2ToNc3UserAttribute',
 			'Nc2ToNc3User',
@@ -220,7 +220,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Page',
 			'Nc2ToNc3Frame',
 			'Nc2ToNc3Announcement',
-			'Nc2ToNc3Calendar',
+			'Nc2ToNc3Blog'
 		];
 
 		foreach ($migrationModelNames as $migrationModelName) {
