@@ -173,6 +173,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
+ * Convert nc2 display_days.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $displayDays nc2 display_days.
+ * @return string converted nc2 display_days.
+ */
+	public function convertDisplayDays(Model $model, $displayDays) {
+		return $this->_convertDisplayDays($displayDays);
+	}
+
+/**
  * Write migration log.
  *
  * @param string $message Migration message.
@@ -376,4 +387,24 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		}
 	}
 
+/**
+ * Convert nc2 display_days.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $displayDays nc2 display_days.
+ * @return string converted nc2 display_days.
+ */
+	protected function _convertDisplayDays($displayDays) {
+		if (!$displayDays) {
+			return null;
+		}
+  		$arr = [30,14,7,3,1];
+  		foreach ($arr as $num) {
+   			if ($displayDays >= $num) {
+				$displayDays = $num;
+				break;
+			}
+		}
+		return $displayDays;
+	}
 }
