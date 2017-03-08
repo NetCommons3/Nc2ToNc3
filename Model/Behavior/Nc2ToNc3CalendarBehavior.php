@@ -194,6 +194,53 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Generate Nc3CalendarActionPlan data.
+ *
+ * Data sample
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2CalendarPlan Nc2CalendarPlan data.
+ * @return array Nc3CalendarFrameSetting data.
+ */
+	public function generateNc3CalendarActionPlanData(Model $model, $nc2CalendarPlan) {
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$nc2RoomId = $nc2CalendarPlan['Nc2CalendarPlan']['room_id'];
+		$roomMap = $Nc2ToNc3Room->getMap($nc2RoomId);
+		if (!$roomMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarPlan));
+			$this->_writeMigrationLog($message);
+			return [];
+		}
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$nc2CalendarId = $nc2CalendarPlan['Nc2CalendarPlan']['calendar_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('CalendarActionPlan', $nc2CalendarId);
+		if ($mapIdList) {
+			// 移行済み
+			return [];
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$data = [
+			/*
+			'display_type' => (string)((int)$nc2CalendarBlock['Nc2CalendarBlock']['display_type'] - 1),
+			'start_pos' => $nc2CalendarBlock['Nc2CalendarBlock']['start_pos'],
+			'display_count' => $nc2CalendarBlock['Nc2CalendarBlock']['display_count'],
+			'is_myroom' => $nc2CalendarBlock['Nc2CalendarBlock']['myroom_flag'],
+			'is_select_room' => $nc2CalendarBlock['Nc2CalendarBlock']['select_room'],
+			*/
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CalendarPlan['Nc2CalendarPlan']),
+			'created' => $this->_convertDate($nc2CalendarPlan['Nc2CalendarPlan']['insert_time']),
+		];
+		$data = [];
+
+		return $data;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2Calendar Array data of Nc2CalendarManage, Nc2CalendarBlock and Nc2CalendarPlan.
