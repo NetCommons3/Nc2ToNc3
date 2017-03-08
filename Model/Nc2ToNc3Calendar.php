@@ -150,7 +150,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		foreach ($nc2CalendarBlocks as $nc2CalendarBlock) {
 			$CalendarFrameSetting->begin();
 			try {
-				$data = $this->generateNc3CalendarFrameSettingData($nc2CalendarBlocks);
+				$data = $this->generateNc3CalendarFrameSettingData($nc2CalendarBlock);
 				if (!$data) {
 					$CalendarFrameSetting->rollback();
 					continue;

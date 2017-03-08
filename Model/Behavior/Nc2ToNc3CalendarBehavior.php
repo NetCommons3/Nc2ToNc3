@@ -102,7 +102,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		$nc3PermissionValue = '0';
-		if ($nc2CalendarManage['Nc2CalendarManage']['add_authority_id'] == '4') {
+		if ($nc2CalendarManage['Nc2CalendarManage']['add_authority_id'] == '2') {
 			$nc3PermissionValue = '1';
 		}
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
