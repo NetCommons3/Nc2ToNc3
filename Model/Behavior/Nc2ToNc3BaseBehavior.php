@@ -184,6 +184,18 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
+ * Convert nc2 display_days.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2Value Nc2 value.
+ * @param array $nc3Choices Nc3 array choices
+ * @return string converted Nc3 value.
+ */
+	public function convertChoiceValue(Model $model, $nc2Value, $nc3Choices) {
+		return $this->_convertDisplayDays($nc2Value, $nc3Choices);
+	}
+
+/**
  * Write migration log.
  *
  * @param string $message Migration message.
@@ -390,7 +402,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 /**
  * Convert nc2 display_days.
  *
- * @param Model $model Model using this behavior.
  * @param string $displayDays nc2 display_days.
  * @return string converted nc2 display_days.
  */
@@ -398,13 +409,36 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		if (!$displayDays) {
 			return null;
 		}
-  		$arr = [30,14,7,3,1];
-  		foreach ($arr as $num) {
-   			if ($displayDays >= $num) {
+		$arr = [30, 14, 7, 3, 1];
+		foreach ($arr as $num) {
+			if ($displayDays >= $num) {
 				$displayDays = $num;
 				break;
 			}
 		}
 		return $displayDays;
+	}
+
+/**
+ * Convert nc2 choice value.
+ *
+ * @param string $nc2Value Nc2 value.
+ * @param array $nc3Choices Nc3 array choices
+ * @return string converted Nc3 value.
+ */
+	protected function _convertChoiceValue($nc2Value, $nc3Choices) {
+		if (!$nc2Value) {
+			return null;
+		}
+
+		$nc3Choices = rsort($nc3Choices, SORT_NUMERIC);
+		foreach ($nc3Choices as $nc3Choice) {
+			if ($nc2Value >= $nc3Choice) {
+				$nc2Value = $nc3Choice;
+				break;
+			}
+		}
+
+		return $nc2Value;
 	}
 }
