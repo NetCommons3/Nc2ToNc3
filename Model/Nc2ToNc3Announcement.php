@@ -61,6 +61,11 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Announcement = ClassRegistry::init('Announcements.Announcement');
+
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		$Announcement->Behaviors->Block->settings = $Announcement->actsAs['Blocks.Block'];
+
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
 		foreach ($nc2Announcements as $nc2Announcement) {

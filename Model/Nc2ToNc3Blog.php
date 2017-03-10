@@ -58,7 +58,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 		/* @var $Nc2Blog AppModel */
 
 		/* @var $Nc2JournalBlock AppModel */
-		$Blog->Behaviors->Block->settings['nameHtml'] = false;
 		//var_dump($this->settings);exit;
 		$Nc2JournalBlock = $this->getNc2Model('journal_block');
 		$nc2JournalBlocks = $Nc2JournalBlock->find('all');
@@ -86,6 +85,14 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
 		$Blog = ClassRegistry::init('Blogs.Blog');
+
+		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
+		$Blog->Behaviors->Block->settings['nameHtml'] = false;
+
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
+
 		$Nc2Journal = $this->getNc2Model('journal');
 
 		foreach ($nc2JournalBlocks as $nc2JournalBlock) {
