@@ -51,10 +51,10 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior
 	 * @param array $nc2BlogBlock Nc2BlogBlock data.
 	 * @return array Nc3BlogFrameSetting data.
 	 */
-	public function generateNc3FrameSettingData(Model $model, $nc2JournalBlock)
+	/*public function generateNc3FrameSettingData(Model $model, $nc2JournalBlock)
 	{
 	 	/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+	/*	$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		if (!$frameMap) {
@@ -64,7 +64,7 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior
 		}
 
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+	/*	$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogFrameSetting', $nc2BlockId);
 		if ($mapIdList) {
 			// 移行済み
@@ -72,16 +72,95 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior
 		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+	/*	$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
 			'frame_key' => $frameMap['Frame']['key'],
-            'articles_per_page' =>  $nc2JournalBlock['Nc2JournalBlock']['visible_item'],
+            'articles_per_page' =>  $nc2Jo	urnalBlock['Nc2JournalBlock']['visible_item'],
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalBlock['Nc2JournalBlock']),
 			'created' => $this->_convertDate($nc2JournalBlock['Nc2JournalBlock']['insert_time']),
 		];
 
 		/* @var $BlogFrameSetting BlogFrameSetting */
-		$BlogFrameSetting = ClassRegistry::init('Blogs.BlogFrameSetting');
+	/*	$BlogFrameSetting = ClassRegistry::init('Blogs.BlogFrameSetting');
+		$nc3BlogSetting = $BlogFrameSetting->findByFrameKey($frameMap['Frame']['key'], null, null, -1);
+
+		if (!$nc3BlogSetting) {
+			return $data;
+		}
+
+		$data['BlogFrameSetting'] = $data + $nc3BlogSetting['BlogFrameSetting'];
+		return $data;
+	}
+	*/
+
+
+
+
+
+	public function generateNc3BlogData(Model $model, $nc2JournalBlock,$nc2Journal)
+	{
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if (!$frameMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2JournalBlock));
+			$this->_writeMigrationLog($message);
+			return [];
+		}
+
+		//$nc2JournalId = $nc2JournalBlock['Nc2JournalBlock']['journal_id'];
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Blog', $nc2BlockId);
+		if ($mapIdList) {
+			// 移行済み
+			return [];
+		}
+
+	$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$data = [
+			'Frame' => [
+				'id' => $frameMap['Frame']['id']
+			],
+			'Block' => [
+				'id' => '',
+				'room_id' => $frameMap['Frame']['room_id'],
+				'plugin_key' => 'blogs',
+				'name'  => $nc2Journal['Nc2Journal']['journal_name'],
+				'public_type' =>  $nc2Journal['Nc2Journal']['active_flag']
+			],
+			'Blog' => [
+				'id' => '',
+				'key' => '',
+				'name' => $nc2Journal['Nc2Journal']['journal_name'],
+				'created' => $this->_convertDate($nc2JournalBlock['Nc2JournalBlock']['insert_time']),
+			],
+			'BlogFrameSetting' => [
+				'id' => '',
+				'frame_key' => $frameMap['Frame']['key'],
+				'articles_per_page' => $nc2JournalBlock['Nc2JournalBlock']['visible_item'],
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalBlock['Nc2JournalBlock']),
+				'created' => $this->_convertDate($nc2JournalBlock['Nc2JournalBlock']['insert_time']),
+			],
+			'BlocksLanguage' => [
+				'language_id'=> '',
+				'name' => $nc2Journal['Nc2Journal']['journal_name']
+			],
+			'BlogSetting' => [
+				'use_like'=> $nc2Journal['Nc2Journal']['vote_flag'],
+				'use_unlike'=> '0',
+				'use_comment'=> $nc2Journal['Nc2Journal']['comment_flag'],
+				'use_sns'=> $nc2Journal['Nc2Journal']['sns_flag'],
+			]
+		];
+			return $data;
+	}
+
+		/* @var $BlogFrameSetting BlogFrameSetting */
+	/*	$BlogFrameSetting = ClassRegistry::init('Blogs.BlogFrameSetting');
 		$nc3BlogSetting = $BlogFrameSetting->findByFrameKey($frameMap['Frame']['key'], null, null, -1);
 
 		if (!$nc3BlogSetting) {
@@ -98,7 +177,7 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior
 	 * @param array $nc2Blog Array data of Nc2BlogManage, nc2JournalBlock and Nc2BlogPlan.
 	 * @return string Log argument
 	 */
-	private function __getLogArgument($nc2Blog)
+	/*private function __getLogArgument($nc2Blog)
 	{
 		if (isset($nc2Blog['Nc2BlogManage'])) {
 			return 'Nc2BlogManage ' .
