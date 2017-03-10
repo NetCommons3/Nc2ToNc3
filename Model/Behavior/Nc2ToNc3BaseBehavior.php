@@ -10,6 +10,8 @@
 
 App::uses('ModelBehavior', 'Model');
 App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
+App::uses('Nc2ToNc3BaseLanguage', 'Nc2ToNc3.Model/Behavior');
+//App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
 
 /**
  * Nc2ToNc3MigrationBehavior
@@ -18,25 +20,23 @@ App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
 class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 /**
- * Language id from Nc2.
+ * Magic method
  *
- * @var array
+ * @param string $method Name of method to call.
+ * @param array $params Parameters for the method.
+ * @return mixed Whatever is returned by called method
  */
-	private $__languageIdFromNc2 = null;
+	public function __call($method, $params) {
+		if ($method == '_getMap') {
+			var_dump(get_class($this));exit;
+		}
+		$Modle = array_shift($params);	// 第１引数のModelを除去
 
-/**
- * Language list.
- *
- * @var array
- */
-	private $__languageList = null;
+		if ($method == '_getMap') {
+		}
 
-/**
- * Nc3Language data.
- *
- * @var array
- */
-	private $__nc3CurrentLanguage = null;
+		var_dump($method);
+	}
 
 /**
  * Setup this behavior with the specified configuration settings.
@@ -61,6 +61,34 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 				'file' => 'Nc2ToNc3.log',
 			]
 		);
+
+		// PHPMD ExcessiveClassComplexity になるため
+		// Nc2ToNc3DividedBaseLanguageBehavior
+		// Nc2ToNc3DividedBaseConvertBehavior
+		// へ分割
+		//
+		// このsetupでロードし、呼び出し側の修正をしないようにしたい。
+		//   → publicメソッドは、Model::__callから、BehaviorCollection::dispatchMethodで呼び出しくれるが、
+		//     Behaviorから、第1引数になるModelを指定しないで呼び出すことができない（Behavior間のつながりがないので呼び出せない。）
+		//   → なので、protectedメソッドを定義して、そこから、対象のメソッドを呼び出すようにする。
+		//   → Trait機能使いたいが、PHP5.4からの機能。CakePHP(~2.7)がPHP5.3でも動作するらしいので使わない。
+		//     @see https://book.cakephp.org/2.0/ja/appendices/2-7-migration-guide.html
+		//   → BehaviorCollection::load から Behavior::setupが呼び出されるため、Nc2ToNc3BaseBehaviorを継承していると無限ループになる
+		//      → ロードされていない場合の判断を追加し回避
+		//   → BehaviorCollection::_methods に登録される順番が問題になる(先優先)
+		//      → getMapメソッドがNc2ToNc3DividedBaseLanguageBehaviorで登録されるので、Magic methos(__call)で対応を試みた。
+		//         → publicメソッドだったgetMapを削除したため、そもそも、BehaviorCollection::dispatchMethodから呼ばれなくなるのでダメ。
+		//   → 継承先のBehaviorでgetMapを定義するしかさなそう。
+		//   → もしくは、Nc2ToNc3AppModelで、分割したBehaviorをロードする処理を入れるかになる
+		//       分割による影響の処理をNc2ToNc3AppModelで吸収するのは、処理が分散して分かりづらいのでやりたくない。
+		//   → BaseBehaviorの分割は、呼び出し側の修正も考慮してやった方が良い。 ということで、一旦commit →すぐ戻す
+		$actsAs = [
+			'Nc2ToNc3.Nc2ToNc3DividedBaseLanguage'
+		];
+		if ($model->Behaviors->loaded($actsAs[0])) {
+			return;
+		}
+		$model->Behaviors->init($model->alias, $actsAs);
 	}
 
 /**
@@ -96,16 +124,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get languageId from Nc2.
- *
- * @param Model $model Model using this behavior.
- * @return string LanguageId from Nc2.
- */
-	public function getLanguageIdFromNc2(Model $model) {
-		return $this->_getLanguageIdFromNc2();
-	}
-
-/**
  * Convert nc2 date.
  *
  * @param Model $model Model using this behavior.
@@ -114,17 +132,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function convertDate(Model $model, $date) {
 		return $this->_convertDate($date);
-	}
-
-/**
- * Convert nc2 lang_dirname.
- *
- * @param Model $model Model using this behavior.
- * @param string $langDirName nc2 lang_dirname.
- * @return string converted nc2 lang_dirname.
- */
-	public function convertLanguage(Model $model, $langDirName) {
-		return $this->_convertLanguage($langDirName);
 	}
 
 /**
@@ -137,39 +144,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function saveMap(Model $model, $modelName, $idMap) {
 		$this->_saveMap($modelName, $idMap);
-	}
-
-/**
- * Get map.
- *
- * 継承したクラスの_getMapメソッドを呼び出す
- *
- * @param Model $model Model using this behavior.
- * @param array|string $nc2Ids Nc2 id.
- * @return string Id map.
- */
-	public function getMap(Model $model, $nc2Ids = null) {
-		return $this->_getMap($nc2Ids);
-	}
-
-/**
- * Change nc3 current language data
- *
- * @param Model $model Model using this behavior.
- * @param string $langDirName nc2 lang_dirname.
- * @return void
- */
-	public function changeNc3CurrentLanguage(Model $model, $langDirName = null) {
-		$this->_changeNc3CurrentLanguage($langDirName);
-	}
-
-/**
- * Restore nc3 current language data
- *
- * @return void
- */
-	public function restoreNc3CurrentLanguage() {
-		$this->_restoreNc3CurrentLanguage();
 	}
 
 /**
@@ -241,42 +215,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Get languageId from Nc2.
- *
- * @return string LanguageId from Nc2.
- */
-	protected function _getLanguageIdFromNc2() {
-		// Model毎にInstanceが作成されるため、Model毎にNc2Configから読み込まれる
-		// 今のところ、UserAttributeとUserだけなので、Propertyで保持するが、
-		// 増えてきたらstatic等でNc2Configから読み込まないよう変更する
-		if (isset($this->__languageIdFromNc2)) {
-			return $this->__languageIdFromNc2;
-		}
-
-		/* @var $Nc2Config AppModel */
-		$Nc2Config = $this->_getNc2Model('config');
-		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
-
-		$language = $configData['Nc2Config']['conf_value'];
-		switch ($language) {
-			case 'english':
-				$code = 'en';
-				break;
-
-			default:
-				$code = 'ja';
-
-		}
-
-		/* @var $Language Language */
-		$Language = ClassRegistry::init('M17n.Language');
-		$language = $Language->findByCode($code, 'id', null, -1);
-		$this->__languageIdFromNc2 = $language['Language']['id'];
-
-		return $this->__languageIdFromNc2;
-	}
-
-/**
  * Convert nc3 date.
  *
  * @param string $date Nc2 date.
@@ -299,51 +237,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Convert nc2 lang_dirname.
- *
- * @param string $langDirName nc2 lang_dirname.
- * @return string converted nc2 lang_dirname.
- */
-	protected function _convertLanguage($langDirName) {
-		if (!$langDirName) {
-			return null;
-		}
-
-		// Model毎にInstanceが作成されるため、Model毎にNc3Languageから読み込まれる
-		// 今のところ、RoomとPageだけなので、Propertyで保持するが、
-		// 増えてきたらstatic等でNc3Languageから読み込まないよう変更する
-		// Nc2ToNc3LabuageというModelクラス作った方が良いかも。
-		if (!isset($this->__languageList)) {
-			/* @var $Language Language */
-			$Language = ClassRegistry::init('M17n.Language');
-			$query = [
-				'fields' => [
-					'Language.code',
-					'Language.id'
-				],
-				'conditions' => [
-					'is_active' => true
-				],
-				'recursive' => -1
-			];
-			$this->__languageList = $Language->find('list', $query);
-		}
-
-		$map = [
-			'japanese' => 'ja',
-			'english' => 'en',
-			'chinese' => 'zh'
-		];
-		$code = $map[$langDirName];
-
-		if (isset($this->__languageList[$code])) {
-			return $this->__languageList[$code];
-		}
-
-		return null;
-	}
-
-/**
  * Save Nc2ToNc3Map
  *
  * @param string $modelName Model name
@@ -360,43 +253,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		];
 
 		return $Nc2ToNc3Map->saveMap($data);
-	}
-
-/**
- * Change nc3 current language data
- *
- * @param string $langDirName nc2 lang_dirname.
- * @return void
- */
-	protected function _changeNc3CurrentLanguage($langDirName = null) {
-		$nc3LanguageId = null;
-		if ($langDirName) {
-			$nc3LanguageId = $this->_convertLanguage($langDirName);
-		}
-		if (!$nc3LanguageId) {
-			$nc3LanguageId = $this->_getLanguageIdFromNc2();
-		}
-
-		/* @var $Language Language */
-		$Language = ClassRegistry::init('M17n.Language');
-
-		if (Current::read('Language.id') != $nc3LanguageId) {
-			$this->__nc3CurrentLanguage = Current::read('Language');
-			$language = $Language->findById($nc3LanguageId, null, null, -1);
-			Current::write('Language', $language['Language']);
-		}
-	}
-
-/**
- * Restore nc3 current language data
- *
- * @return void
- */
-	protected function _restoreNc3CurrentLanguage() {
-		if (isset($this->__nc3CurrentLanguage)) {
-			Current::write('Language', $this->__nc3CurrentLanguage);
-			unset($this->__nc3CurrentLanguage);
-		}
 	}
 
 /**
@@ -441,4 +297,5 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 		return $nc2Value;
 	}
+
 }
