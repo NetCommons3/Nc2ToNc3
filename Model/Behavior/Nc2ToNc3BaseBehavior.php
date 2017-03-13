@@ -14,6 +14,7 @@ App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
 /**
  * Nc2ToNc3MigrationBehavior
  *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
@@ -204,6 +205,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function convertTitleIcon(Model $model, $titleIcon) {
 		return $this->_convertTitleIcon($titleIcon);
+	}
+
+/**
+ * Convert nc2 timezone_offset.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $timezoneOffset Nc2 timezone_offset.
+ * @return string converted nc3 timezone.
+ */
+	public function convertTimezone(Model $model, $timezoneOffset) {
+		return $this->_convertTimezone($timezoneOffset);
 	}
 
 /**
@@ -570,6 +582,49 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		$titleIcon = '/net_commons/img/title_icon/' . Hash::get($map, [$titleIcon]);
 
 		return $titleIcon;
+	}
+
+/**
+ * Convert nc2 timezone_offset.
+ *
+ * @param string $timezoneOffset Nc2 timezone_offset.
+ * @return string converted nc3 timezone.
+ */
+	protected function _convertTimezone($timezoneOffset) {
+		$map = [
+			'-12.0' => 'Pacific/Kwajalein',
+			'-11.0' => 'Pacific/Midway',
+			'-10.0' => 'Pacific/Honolulu',
+			'-9.0' => 'America/Anchorage',
+			'-8.0' => 'America/Los_Angeles',
+			'-7.0' => 'America/Denver',
+			'-6.0' => 'America/Chicago',
+			'-5.0' => 'America/New_York',
+			'-4.0' => 'America/Dominica',
+			'-3.5' => 'America/St_Johns',
+			'-3.0' => 'America/Argentina/Buenos_Aires',
+			'-2.0' => 'Atlantic/South_Georgia',
+			'-1.0' => 'Atlantic/Azores',
+			'0.0' => 'UTC',
+			'1.0' => 'Europe/Brussels',
+			'2.0' => 'Europe/Athens',
+			'3.0' => 'Asia/Baghdad',
+			'3.5' => 'Asia/Tehran',
+			'4.0' => 'Asia/Muscat',
+			'4.5' => 'Asia/Kabul',
+			'5.0' => 'Asia/Karachi',
+			'5.5' => 'Asia/Kolkata',
+			'6.0' => 'Asia/Dhaka',
+			'7.0' => 'Asia/Bangkok',
+			'8.0' => 'Asia/Singapore',
+			'9.0' => 'Asia/Tokyo',
+			'9.5' => 'Australia/Darwin',
+			'10.0' => 'Asia/Vladivostok',
+			'11.0' => 'Australia/Sydney',
+			'12.0' => 'Asia/Kamchatka'
+		];
+
+		return Hash::get($map, [$timezoneOffset], 'Asia/Tokyo');
 	}
 
 }

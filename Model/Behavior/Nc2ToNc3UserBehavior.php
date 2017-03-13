@@ -151,40 +151,7 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 		}
 
 		if ($nc2Field == 'timezone_offset') {
-			$timezoneMap = [
-				'-12.0' => 'Pacific/Kwajalein',
-				'-11.0' => 'Pacific/Midway',
-				'-10.0' => 'Pacific/Honolulu',
-				'-9.0' => 'America/Anchorage',
-				'-8.0' => 'America/Los_Angeles',
-				'-7.0' => 'America/Denver',
-				'-6.0' => 'America/Chicago',
-				'-5.0' => 'America/New_York',
-				'-4.0' => 'America/Dominica',
-				'-3.5' => 'America/St_Johns',
-				'-3.0' => 'America/Argentina/Buenos_Aires',
-				'-2.0' => 'Atlantic/South_Georgia',
-				'-1.0' => 'Atlantic/Azores',
-				'0.0' => 'UTC',
-				'1.0' => 'Europe/Brussels',
-				'2.0' => 'Europe/Athens',
-				'3.0' => 'Asia/Baghdad',
-				'3.5' => 'Asia/Tehran',
-				'4.0' => 'Asia/Muscat',
-				'4.5' => 'Asia/Kabul',
-				'5.0' => 'Asia/Karachi',
-				'5.5' => 'Asia/Kolkata',
-				'6.0' => 'Asia/Dhaka',
-				'7.0' => 'Asia/Bangkok',
-				'8.0' => 'Asia/Singapore',
-				'9.0' => 'Asia/Tokyo',
-				'9.5' => 'Australia/Darwin',
-				'10.0' => 'Asia/Vladivostok',
-				'11.0' => 'Australia/Sydney',
-				'12.0' => 'Asia/Kamchatka'
-			];
-
-			return Hash::get($timezoneMap, [$nc2UserValue], 'Asia/Tokyo');
+			return $this->_convertTimezone($nc2UserValue);
 		}
 	}
 
