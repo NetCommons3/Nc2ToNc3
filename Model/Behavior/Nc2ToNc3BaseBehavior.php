@@ -10,14 +10,33 @@
 
 App::uses('ModelBehavior', 'Model');
 App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
-App::uses('Nc2ToNc3DividedBaseLanguageBehavior', 'Nc2ToNc3.Model/Behavior');
-App::uses('Nc2ToNc3DividedBaseConvertBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
  * Nc2ToNc3MigrationBehavior
  *
  */
 class Nc2ToNc3BaseBehavior extends ModelBehavior {
+
+/**
+ * Language id from Nc2.
+ *
+ * @var array
+ */
+	private $__languageIdFromNc2 = null;
+
+/**
+ * Language list.
+ *
+ * @var array
+ */
+	private $__languageList = null;
+
+/**
+ * Nc3Language data.
+ *
+ * @var array
+ */
+	private $__nc3CurrentLanguage = null;
 
 /**
  * Setup this behavior with the specified configuration settings.
@@ -42,21 +61,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 				'file' => 'Nc2ToNc3.log',
 			]
 		);
-
-		// PHPMD ExcessiveClassComplexity になるため
-		// Nc2ToNc3DividedBaseLanguageBehavior
-		// Nc2ToNc3DividedBaseConvertBehavior
-		// へ分割
-		//
-		// 色々試みたが、ここでClassRegistryに登録し、メソッドが呼び出された際に使用する（メソッドはラッパーになる）方法が良いと思った。
-		if (!ClassRegistry::isKeySet('Nc2ToNc3DividedBaseLanguageBehavior')) {
-			ClassRegistry::addObject('Nc2ToNc3DividedBaseLanguageBehavior', new Nc2ToNc3DividedBaseLanguageBehavior());
-			ClassRegistry::addObject('Nc2ToNc3DividedBaseConvertBehavior', new Nc2ToNc3DividedBaseConvertBehavior());
-		}
-
-		// 結果ややこしくなるし、共通処理を追加する際に、このクラスにも定義しないといけないので、効率悪い。
-		// 分割したクラスを呼び出す際にも、Modelの引数を考えないといけないし面倒。
-		// SuppressWarnings(PHPMD ExcessiveClassComplexity) で回避した方が良いと思った。
 	}
 
 /**
@@ -242,19 +246,56 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return string LanguageId from Nc2.
  */
 	protected function _getLanguageIdFromNc2() {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseLanguageBehavior');
-		return $Nc2ToNc3DividedBase->getLanguageIdFromNc2();
+		// Model毎にInstanceが作成されるため、Model毎にNc2Configから読み込まれる
+		// 今のところ、UserAttributeとUserだけなので、Propertyで保持するが、
+		// 増えてきたらstatic等でNc2Configから読み込まないよう変更する
+		if (isset($this->__languageIdFromNc2)) {
+			return $this->__languageIdFromNc2;
+		}
+
+		/* @var $Nc2Config AppModel */
+		$Nc2Config = $this->_getNc2Model('config');
+		$configData = $Nc2Config->findByConfName('language', 'conf_value', null, -1);
+
+		$language = $configData['Nc2Config']['conf_value'];
+		switch ($language) {
+			case 'english':
+				$code = 'en';
+				break;
+
+			default:
+				$code = 'ja';
+
+		}
+
+		/* @var $Language Language */
+		$Language = ClassRegistry::init('M17n.Language');
+		$language = $Language->findByCode($code, 'id', null, -1);
+		$this->__languageIdFromNc2 = $language['Language']['id'];
+
+		return $this->__languageIdFromNc2;
 	}
 
 /**
  * Convert nc3 date.
  *
  * @param string $date Nc2 date.
- * @return string converted date.
+ * @return Model converted date.
  */
 	protected function _convertDate($date) {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseConvertBehavior');
-		return $Nc2ToNc3DividedBase->convertDate(null, $date);
+		if (strlen($date) != 14) {
+			return null;
+		}
+
+		// YmdHis → Y-m-d H:i:s　
+		$date = substr($date, 0, 4) . '-' .
+				substr($date, 4, 2) . '-' .
+				substr($date, 6, 2) . ' ' .
+				substr($date, 8, 2) . ':' .
+				substr($date, 10, 2) . ':' .
+				substr($date, 12, 2);
+
+		return $date;
 	}
 
 /**
@@ -264,8 +305,42 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return string converted nc2 lang_dirname.
  */
 	protected function _convertLanguage($langDirName) {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseLanguageBehavior');
-		return $Nc2ToNc3DividedBase->convertLanguage(null, $langDirName);
+		if (!$langDirName) {
+			return null;
+		}
+
+		// Model毎にInstanceが作成されるため、Model毎にNc3Languageから読み込まれる
+		// 今のところ、RoomとPageだけなので、Propertyで保持するが、
+		// 増えてきたらstatic等でNc3Languageから読み込まないよう変更する
+		// Nc2ToNc3LabuageというModelクラス作った方が良いかも。
+		if (!isset($this->__languageList)) {
+			/* @var $Language Language */
+			$Language = ClassRegistry::init('M17n.Language');
+			$query = [
+				'fields' => [
+					'Language.code',
+					'Language.id'
+				],
+				'conditions' => [
+					'is_active' => true
+				],
+				'recursive' => -1
+			];
+			$this->__languageList = $Language->find('list', $query);
+		}
+
+		$map = [
+			'japanese' => 'ja',
+			'english' => 'en',
+			'chinese' => 'zh'
+		];
+		$code = $map[$langDirName];
+
+		if (isset($this->__languageList[$code])) {
+			return $this->__languageList[$code];
+		}
+
+		return null;
 	}
 
 /**
@@ -294,8 +369,22 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return void
  */
 	protected function _changeNc3CurrentLanguage($langDirName = null) {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseLanguageBehavior');
-		return $Nc2ToNc3DividedBase->changeNc3CurrentLanguage(null, $langDirName);
+		$nc3LanguageId = null;
+		if ($langDirName) {
+			$nc3LanguageId = $this->_convertLanguage($langDirName);
+		}
+		if (!$nc3LanguageId) {
+			$nc3LanguageId = $this->_getLanguageIdFromNc2();
+		}
+
+		/* @var $Language Language */
+		$Language = ClassRegistry::init('M17n.Language');
+
+		if (Current::read('Language.id') != $nc3LanguageId) {
+			$this->__nc3CurrentLanguage = Current::read('Language');
+			$language = $Language->findById($nc3LanguageId, null, null, -1);
+			Current::write('Language', $language['Language']);
+		}
 	}
 
 /**
@@ -304,8 +393,10 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return void
  */
 	protected function _restoreNc3CurrentLanguage() {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseLanguageBehavior');
-		return $Nc2ToNc3DividedBase->restoreNc3CurrentLanguage();
+		if (isset($this->__nc3CurrentLanguage)) {
+			Current::write('Language', $this->__nc3CurrentLanguage);
+			unset($this->__nc3CurrentLanguage);
+		}
 	}
 
 /**
@@ -315,8 +406,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return string converted nc2 display_days.
  */
 	protected function _convertDisplayDays($displayDays) {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseConvertBehavior');
-		return $Nc2ToNc3DividedBase->convertDisplayDays(null, $displayDays);
+		if (!$displayDays) {
+			return null;
+		}
+		$arr = [30, 14, 7, 3, 1];
+		foreach ($arr as $num) {
+			if ($displayDays >= $num) {
+				$displayDays = $num;
+				break;
+			}
+		}
+		return $displayDays;
 	}
 
 /**
@@ -327,8 +427,19 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @return string converted nc3 value.
  */
 	protected function _convertChoiceValue($nc2Value, $nc3Choices) {
-		$Nc2ToNc3DividedBase = ClassRegistry::getObject('Nc2ToNc3DividedBaseConvertBehavior');
-		return $Nc2ToNc3DividedBase->convertChoiceValue(null, $nc2Value, $nc3Choices);
+		if (!$nc2Value) {
+			return null;
+		}
+
+		$nc3Choices = rsort($nc3Choices, SORT_NUMERIC);
+		foreach ($nc3Choices as $nc3Choice) {
+			if ($nc2Value >= $nc3Choice) {
+				$nc2Value = $nc3Choice;
+				break;
+			}
+		}
+
+		return $nc2Value;
 	}
 
 }
