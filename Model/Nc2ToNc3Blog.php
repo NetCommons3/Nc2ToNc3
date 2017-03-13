@@ -26,39 +26,35 @@ App::uses('Current', 'NetCommons.Utility');
  * @method void restoreNc3CurrentLanguage()
  *
  */
-class Nc2ToNc3Blog extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
-	/**
-	 * Custom database table name, or null/false if no table association is desired.
-	 *
-	 * @var string
-	 * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-	 */
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
 	public $useTable = false;
 
-	/**
-	 * List of behaviors to load when the model object is initialized. Settings can be
-	 * passed to behaviors by using the behavior name as index.
-	 *
-	 * @var array
-	 * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-	 */
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Blog'];
 
-	/**
-	 * Migration method.
-	 *
-	 * @return bool True on success.
-	 */
-	public function migrate()
-	{
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
+	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration start.'));
 
 		/* @var $Nc2Blog AppModel */
-
 		/* @var $Nc2JournalBlock AppModel */
-		//var_dump($this->settings);exit;
 		$Nc2JournalBlock = $this->getNc2Model('journal_block');
 		$nc2JournalBlocks = $Nc2JournalBlock->find('all');
 
@@ -70,17 +66,15 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 		return true;
 	}
 
+/**
+ * Save JournalFrameSetting from Nc2.
+ *
+ * @param array $nc2JournalBlocks Nc2JournalBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
 
-	/**
-	 * Save JournalFrameSetting from Nc2.
-	 *
-	 * @param array $nc2JournalBlocks Nc2JournalBlock data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
-
-	private function __saveNc3BlogFromNc2($nc2JournalBlocks)
-	{
+	private function __saveNc3BlogFromNc2($nc2JournalBlocks) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog data Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
