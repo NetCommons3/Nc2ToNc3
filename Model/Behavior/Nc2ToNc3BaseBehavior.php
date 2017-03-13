@@ -184,15 +184,15 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * Convert nc2 display_days.
+ * Convert nc2 choice value
  *
  * @param Model $model Model using this behavior.
  * @param string $nc2Value Nc2 value.
  * @param array $nc3Choices Nc3 array choices
- * @return string converted Nc3 value.
+ * @return string converted nc3 value.
  */
 	public function convertChoiceValue(Model $model, $nc2Value, $nc3Choices) {
-		return $this->_convertDisplayDays($nc2Value, $nc3Choices);
+		return $this->_convertChoiceValue($nc2Value, $nc3Choices);
 	}
 
 /**
@@ -424,7 +424,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  *
  * @param string $nc2Value Nc2 value.
  * @param array $nc3Choices Nc3 array choices
- * @return string converted Nc3 value.
+ * @return string converted nc3 value.
  */
 	protected function _convertChoiceValue($nc2Value, $nc3Choices) {
 		if (!$nc2Value) {
@@ -441,4 +441,5 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 		return $nc2Value;
 	}
+
 }
