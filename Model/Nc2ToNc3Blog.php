@@ -54,75 +54,14 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration start.'));
 
 		/* @var $Nc2Blog AppModel */
-
 		/* @var $Nc2JournalBlock AppModel */
 		$Nc2JournalBlock = $this->getNc2Model('journal_block');
 		$nc2JournalBlocks = $Nc2JournalBlock->find('all');
-		if (!$this->__saveNc3BlogFrameSettingFromNc2($nc2JournalBlocks)) {
+
+		if (!$this->__saveNc3BlogFromNc2($nc2JournalBlocks)) {
 			return false;
 		}
 
-		/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
-		/*
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$Blog = ClassRegistry::init('Blogs.Blog');
-		$Block = ClassRegistry::init('Blocks.Block');
-		$Topic = ClassRegistry::init('Topics.Topic');
-		foreach ($nc2JournalBlocks as $nc2JournalBlock) {
-			$nc2JournalBlockBlockld = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
-			$nc3Frame = $Nc2ToNc3Frame->getMap($nc2JournalBlockBlockld);
-
-			if (!$nc3Frame) {
-				continue;
-			}
-
-			$nc3RoomId = $nc3Frame['Frame']['room_id'];
-			$data = [
-				'Blog' => [
-					'status' => '1',
-					'content' => $nc2Blog['Nc2Blog']['content']
-				],
-				'Block' => [
-					'room_id' => $nc3RoomId,
-					'plugin_key' => 'Blogs'
-				],
-				'Frame' => [
-					'id' => $nc3Frame['Frame']['id']
-				],
-				'Topic' => [
-					'plugin_key' => 'Blogs'
-				]
-			];
-
-			//Blog テーブルの移行を実施
-			//SAVE前にCurrentのデータを書き換えが必要なため
-			Current::write('Plugin.key', 'Blogs');
-			Current::write('Room.id', $nc3RoomId);
-
-			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
-
-			$Blog->create();
-			$Block->create();
-			$Topic->create();
-
-			if (!$Blog->saveBlog($data)) {
-				// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
-				// ここでrollback
-				$Blog->rollback();
-
-				$message = $this->getLogArgument($nc2Blog) . "\n" .
-					var_export($Blog->validationErrors, true);
-				$this->writeMigrationLog($message);
-
-				continue;
-			}
-
-			unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-			Current::remove('Room.id', $nc3RoomId);
-			Current::remove('Plugin.key', 'Blogs');
-
-		}
-		*/
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration end.'));
 		return true;
 	}
@@ -134,27 +73,38 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveNc3BlogFrameSettingFromNc2($nc2JournalBlocks) {
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  BlogFrameSetting data Migration start.'));
+	private function __saveNc3BlogFromNc2($nc2JournalBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog data Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
-		$BlogFrameSetting = ClassRegistry::init('Blogs.BlogFrameSetting');
+		$Blog = ClassRegistry::init('Blogs.Blog');
+
+		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
+		$Blog->Behaviors->Block->settings['nameHtml'] = false;
+
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
+
+		$Nc2Journal = $this->getNc2Model('journal');
+
 		foreach ($nc2JournalBlocks as $nc2JournalBlock) {
-			$BlogFrameSetting->begin();
+			$nc2Journal = $Nc2Journal->findByJournalId($nc2JournalBlock['Nc2JournalBlock']['journal_id'], null, null, -1);
+
+			$Blog->begin();
 			try {
-				$data = $this->generateNc3FrameSettingData($nc2JournalBlock);
+				$data = $this->generateNc3BlogData($nc2JournalBlock, $nc2Journal);
 				if (!$data) {
 					continue;
 				}
-
-				if (!$BlogFrameSetting->saveBlogFrameSetting($data)) {
-					var_dump('shippai');exit;
+				if (!$Blog->saveBlog($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2JournalBlocks) . "\n" .
-						var_export($BlogFrameSetting->validationErrors, true);
+
+					$message = $this->getLogArgument($nc2JournalBlock) . "\n" .
+						var_export($Blog->validationErrors, true);
 					$this->writeMigrationLog($message);
 
 					continue;
@@ -162,22 +112,20 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
 				$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
 				$idMap = [
-					$nc2BlockId => $BlogFrameSetting->id
+					$nc2BlockId => $Blog->id
 				];
-				$this->saveMap('BlogFrameSetting', $idMap);
+				$this->saveMap('Blog', $idMap);
 
-				$BlogFrameSetting->commit();
+				$Blog->commit();
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$BlogFrameSetting->saveBlogFrameSetting($ex);
+				$Blog->saveBlog($ex);
 				throw $ex;
 			}
 		}
-
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  BlogFrameSetting data Migration end.'));
-
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog data Migration end.'));
 		return true;
 	}
 
@@ -193,4 +141,3 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 	}
 
 }
-
