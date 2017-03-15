@@ -578,8 +578,11 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			'titleicon/icon-mail.gif' => '30_054_email.svg',
 		];
 
-		// @see https://github.com/NetCommons3/NetCommons/blob/3.1.0/View/Helper/TitleIconHelper.php#L211
-		$titleIcon = '/net_commons/img/title_icon/' . Hash::get($map, [$titleIcon]);
+		$titleIcon = Hash::get($map, [$titleIcon]);
+		if ($titleIcon) {
+			// @see https://github.com/NetCommons3/NetCommons/blob/3.1.0/View/Helper/TitleIconHelper.php#L211
+			$titleIcon = '/net_commons/img/title_icon/' . $titleIcon;
+		}
 
 		return $titleIcon;
 	}
