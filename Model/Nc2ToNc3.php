@@ -220,7 +220,8 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Page',
 			'Nc2ToNc3Frame',
 			'Nc2ToNc3Announcement',
-			'Nc2ToNc3Blog'
+			'Nc2ToNc3Blog',
+			'Nc2ToNc3Calendar',
 		];
 
 		foreach ($migrationModelNames as $migrationModelName) {

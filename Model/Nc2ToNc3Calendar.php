@@ -9,6 +9,9 @@
  */
 
 App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
+App::uses('CalendarPermissiveRooms', 'Calendars.Utility');
+App::uses('WorkflowComponent', 'Workflow.Controller/Component');
+App::uses('ComponentCollection', 'Controller');
 
 /**
  * Nc2ToNc3Calendar
@@ -70,9 +73,27 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		// CalendarPermissionがCalendarのaliasで登録されるため、正しいModelが取得できなくなる。
+		// ここで、一旦登録解除しとく。
+		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarPermission.php#L38
+		ClassRegistry::removeObject('Calendar');
+
+		// MailQueueUserがAppModelで登録されてしまってる場合があるので登録し直し。
+		// @see https://github.com/NetCommons3/Mails/blob/3.1.0/Model/MailQueue.php#L94
+		// @see https://github.com/NetCommons3/Mails/blob/3.1.0/Model/MailQueueUser.php#L96-L110
+		ClassRegistry::removeObject('MailQueueUser');
+		ClassRegistry::init('Mails.MailQueueUser');
+		ClassRegistry::removeObject('MailQueue');
+		ClassRegistry::init('Mails.MailQueue');
+
 		/* @var $Nc2CalendarPlan AppModel */
 		$Nc2CalendarPlan = $this->getNc2Model('calendar_plan');
-		$nc2CalendarPlans = $Nc2CalendarPlan->find('all');
+		$query = [
+			'order' => [
+				'Nc2CalendarPlan.calendar_id',
+			],
+		];
+		$nc2CalendarPlans = $Nc2CalendarPlan->find('all', $query);
 		if (!$this->__saveCalendarEventFromNc2($nc2CalendarPlans)) {
 			return false;
 		}
@@ -199,10 +220,28 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 	private function __saveCalendarEventFromNc2($nc2CalendarPlans) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  CalendarEvent data Migration start.'));
 
-		/* @var $CalendarActionPlan CalendarActionPlan */
 		/* @var $CalendarEvent CalendarEvent */
-		$CalendarActionPlan = ClassRegistry::init('Calendars.CalendarActionPlan');
 		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
+
+		// CalendarPermissiveRooms.php#L195 でNotice Error: Undefined index が発生するための前処理
+		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Utility/CalendarPermissiveRooms.php#L195
+		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Controller/CalendarPlansController.php#L145-L147
+		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarEvent.php#L313
+		$CalendarEvent->initSetting(new WorkflowComponent(new ComponentCollection()));
+		CalendarPermissiveRooms::setRoomPermRoles($CalendarEvent->prepareCalRoleAndPerm());
+
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', 'calendars');
+
+		/* @var $CalendarActionPlan CalendarActionPlan */
+		$CalendarActionPlan = ClassRegistry::init('Calendars.CalendarActionPlan');
+
+		// コード補完のため、@var宣言すると、PHPMDで coupling between objects に引っかかる（1クラスにオブジェクト参照は13個までらしい）。
+		// PHPMDのどのルールかは不明。なので、コメントにしとく
+		///* @var $Frame Frame */
+		///* @var $Block Block */
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
 		foreach ($nc2CalendarPlans as $nc2CalendarPlan) {
 			$CalendarActionPlan->begin();
 			try {
@@ -212,8 +251,30 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// 予定登録処理で使用しているデータをセット
+				// データの有無しか使ってないっっぽいけど、一応予定のroom_idから取得したblock_idをセット
+				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L545
+				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Calendar.php#L153-L155
+				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Behavior/CalendarInsertPlanBehavior.php#L97
+				$nc3Frame = $Frame->findByRoomIdAndPluginKey(
+					$data['CalendarActionPlan']['plan_room_id'],
+					'calendars',
+					[
+						'room_id',
+						'block_id',
+					],
+					null,
+					-1
+				);
+				Current::write('Frame.block_id', $nc3Frame['Frame']['block_id']);
+				Current::write('Room.id', $nc3Frame['Frame']['room_id']);
+
+				// Block.keyは、配置してあるルームのブロックっぽいが、Nc2CalendarPlanから配置場所がたどれないため、予定のroom_idのブロックを設定しとく
+				$nc3Block = $Block->findById($nc3Frame['Frame']['block_id'], 'key', null, -1);
+				$data['Block']['key'] = $nc3Block['Block']['key'];
+
 				if (!$this->__saveCalendarEventFromGeneratedData($nc2CalendarPlan, $data)) {
-					$CalendarActionPlan->rollback($ex);
+					$CalendarActionPlan->rollback();
 					continue;
 				}
 
@@ -234,6 +295,11 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
+
+		// 予定登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.block_id');
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  CalendarEvent data Migration end.'));
 
@@ -260,12 +326,24 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		// origin_event_idは更新前のCalendarEvent.id
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/View/Elements/CalendarPlans/detail_edit_hiddens.ctp#L16
 		$nc3EventId = $nc3ActionPlan['CalendarActionPlan']['origin_event_id'];
-		$nc3Event = $CalendarEvent->getEventById($nc3EventId);
+		// ない場合メッセージを出力しているので、呼び出す前に存在チェック
+		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarEvent.php#L403-L404
+		$nc3Event = [];
+		$query = [
+			'conditions' => [
+				'CalendarEvent.id' => $nc3EventId,
+			],
+			'recursive' => -1
+		];
+		$nc3EventCount = $CalendarEvent->find('count', $query);
+		if ($nc3EventCount) {
+			$nc3Event = $CalendarEvent->getEventById($nc3EventId);
+		}
 
 		// 更新処理でしか使われてなさげだが、同じような処理にしとく
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L573-L598
 		$saveParameters = $CalendarActionPlan->getProcModeOriginRepeatAndModType($nc3ActionPlan, $nc3Event);
-		list($addOrEdit, $isRepeatEvent, $isChangedDteTime, $isChangedRepetition) = each($saveParameters);
+		list($addOrEdit, $isRepeatEvent, $isChangedDteTime, $isChangedRepetition) = $saveParameters;
 
 		// Nc2CalendarPlan.insert_user_idに対応するNc3User.idで良い？
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Behavior/CalendarInsertPlanBehavior.php#L165-L171
@@ -280,6 +358,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		$nc3PivateRoomId = null;
 
 		$nc3EventId = $CalendarActionPlan->saveCalendarPlan(
+			$nc3ActionPlan,
 			$addOrEdit,
 			$isRepeatEvent,
 			$isChangedDteTime,
