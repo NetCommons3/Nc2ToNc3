@@ -96,6 +96,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 			try {
 				$data = $this->generateNc3BlogData($nc2JournalBlock, $nc2Journal);
 				if (!$data) {
+					$Blog->rollback();
 					continue;
 				}
 				if (!$Blog->saveBlog($data)) {
@@ -121,7 +122,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$Blog->saveBlog($ex);
+				$Blog->rollback($ex);
 				throw $ex;
 			}
 		}
