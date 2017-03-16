@@ -441,7 +441,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
 
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('Frame', $nc2CalendarIds);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('CalendarActionPlan', $nc2CalendarIds);
 		$query = [
 			'fields' => [
 				'CalendarEvent.id',
