@@ -26,10 +26,15 @@ App::uses('ComponentCollection', 'Controller');
  * @method array getMap($nc2Id)
  * @method void changeNc3CurrentLanguage($langDirName = null)
  * @method void restoreNc3CurrentLanguage()
+ * @method string convertChoiceValue($nc2Value, $nc3Choices)
+ * @method string convertTitleIcon($titleIcon)
+ * @method string convertTimezone($timezoneOffset)
  *
  * @see Nc2ToNc3CalendarBehavior
  * @method string getLogArgument($nc2Calendar)
- * @method string generateNc3CalendarFrameSettingData($nc2CalendarBlock)
+ * @method array generateNc3CalendarPermissionData($nc2CalendarManage)
+ * @method array generateNc3CalendarFrameSettingData($nc2CalendarBlock)
+ * @method array generateNc3CalendarActionPlanData($nc2CalendarPlan)
  *
  */
 class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
