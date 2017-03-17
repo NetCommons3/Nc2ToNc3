@@ -404,7 +404,6 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		*/
 
 		return $nc3ActionPlan;
-
 	}
 
 /**
