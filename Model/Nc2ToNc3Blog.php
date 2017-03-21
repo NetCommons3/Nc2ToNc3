@@ -26,39 +26,36 @@ App::uses('Current', 'NetCommons.Utility');
  * @method void restoreNc3CurrentLanguage()
  *
  */
-class Nc2ToNc3Blog extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
-	/**
-	 * Custom database table name, or null/false if no table association is desired.
-	 *
-	 * @var string
-	 * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-	 */
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
 	public $useTable = false;
 
-	/**
-	 * List of behaviors to load when the model object is initialized. Settings can be
-	 * passed to behaviors by using the behavior name as index.
-	 *
-	 * @var array
-	 * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-	 */
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Blog'];
 
-	/**
-	 * Migration method.
-	 *
-	 * @return bool True on success.
-	 */
-	public function migrate()
-	{
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
+	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration start.'));
 
 		/* @var $Nc2Blog AppModel */
 
 		/* @var $Nc2JournalBlock AppModel */
-		//var_dump($this->settings);exit;
 		$Nc2Journal = $this->getNc2Model('journal');
 		$nc2Journals = $Nc2Journal->find('all');
 
@@ -69,25 +66,23 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 		$Nc2JournalPost = $this->getNc2Model('journal_post');
 		$nc2JournalPosts = $Nc2JournalPost->find('all');
 
-        if (!$this->__saveNc3BlogEntryFromNc2($nc2JournalPosts)) {
-            return false;
+		if (!$this->__saveNc3BlogEntryFromNc2($nc2JournalPosts)) {
+			return false;
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration end.'));
 		return true;
 	}
 
+/**
+ * Save JournalFrameSetting from Nc2.
+ *
+ * @param array $nc2Journals Nc2Journal data.
+ * @return bool True on success
+ * @throws Exception
+ */
 
-	/**
-	 * Save JournalFrameSetting from Nc2.
-	 *
-	 * @param array $nc2Journals Nc2Journal data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
-
-	private function __saveNc3BlogFromNc2($nc2Journals)
-	{
+	private function __saveNc3BlogFromNc2($nc2Journals) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog data Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
@@ -112,12 +107,12 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 			//var_dump($Nc2JournalBlock);exit;
 			//var_dump($nc2Journal['Nc2Journal']['journal_id']);exit;
 			$nc2JournalBlock = $Nc2JournalBlock->findByJournalId($nc2Journal['Nc2Journal']['journal_id'], null, null, -1);
-			if (!$nc2JournalBlock){
+			if (!$nc2JournalBlock) {
 				continue;
 			}
 			$Blog->begin();
 			try {
-				$data = $this->generateNc3BlogData($nc2Journal,$nc2JournalBlock);
+				$data = $this->generateNc3BlogData($nc2Journal, $nc2JournalBlock);
 				if (!$data) {
 					$Blog->rollback();
 					continue;
@@ -139,7 +134,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 
-					$message = $this->getLogArgument($nc2JournalBlock) . "\n" .
+					$message = $this->getLogArgument($nc2Journal) . "\n" .
 						var_export($Blog->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -147,7 +142,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 				}
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);Current::remove('Plugin.key', 'blogs');
 
 				$nc2JournalId = $nc2Journal['Nc2Journal']['journal_id'];
 				$idMap = [
@@ -163,20 +157,22 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 				throw $ex;
 			}
 		}
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog data Migration end.'));
 		return true;
 	}
 
-	/**
-	 * Save JournalPost from Nc2.
-	 *
-	 * @param array $nc2JournalPosts Nc2JournalPost data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
+/**
+ * Save JournalPost from Nc2.
+ *
+ * @param array $nc2JournalPosts Nc2JournalPost data.
+ * @return bool True on success
+ * @throws Exception
+ */
 
-	private function __saveNc3BlogEntryFromNc2($nc2JournalPosts)
-	{
+	private function __saveNc3BlogEntryFromNc2($nc2JournalPosts) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
@@ -196,7 +192,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 		$Topic = ClassRegistry::init('Topics.Topic');
 
 		foreach ($nc2JournalPosts as $nc2JournalPost) {
-			//$nc2Journal = $Nc2Journal->findByJournalId($nc2JournalBlock['Nc2JournalBlock']['journal_id'], null, null, -1);
 
 			$BlogEntry->begin();
 			try {
@@ -209,10 +204,8 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 				$Block = ClassRegistry::init('Blocks.Block');
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
-//				var_dump($nc3RoomId );exit;
 
 				Current::write('Room.id', $nc3RoomId);
-				Current::write('Frame.block_id', $data['Block']['id']);
 
 				$BlocksLanguage->create();
 				$BlogEntry->create();
@@ -222,7 +215,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				if (!$BlogEntry->saveEntry($data)) {
-					var_dump('SHIPPAI');exit;
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -233,10 +225,12 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 					continue;
 				}
 
+				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
+				// ['datetime','datetime'] になってしまうので初期化
+				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
+				$BlogEntry->validate = [];
+
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);
-				Current::remove('Plugin.key', 'blogs');
-				Current::remove('Frame.block_id');
 
 				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
 				$idMap = [
@@ -252,6 +246,10 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel
 				throw $ex;
 			}
 		}
+
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration end.'));
 		return true;
 	}

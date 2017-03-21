@@ -55,15 +55,12 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2Cabinet AppModel */
 		/* @var $Nc2CabinetBlock AppModel */
-
-
 		$Nc2CabinetManage = $this->getNc2Model('cabinet_manage');
 		$nc2CabinetManages = $Nc2CabinetManage->find('all');
 
 		if (!$this->__saveNc3CabinetFromNc2($nc2CabinetManages)) {
 			return false;
 		}
-
 		//親子関係を維持するため、File ID順に取得
 		$query = [
 			'order' => [
@@ -72,7 +69,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		];
 
 		$Nc2CabinetFile = $this->getNc2Model('cabinet_file');
-		$nc2CabinetFiles = $Nc2CabinetFile->find('all',$query);
+		$nc2CabinetFiles = $Nc2CabinetFile->find('all', $query);
 
 		if (!$this->__saveNc3CabinetFileNc2($nc2CabinetFiles)) {
 			return false;
@@ -85,7 +82,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 /**
  * Save JournalFrameSetting from Nc2.
  *
- * @param array $nc2CabinetBlocks Nc2CabinetBlock data.
+ * @param array $nc2CabinetManages Nc2CabinetManage data.
  * @return bool True on success
  * @throws Exception
  */
@@ -103,13 +100,8 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
 		$Cabinet->Behaviors->Block->settings = $Cabinet->actsAs['Blocks.Block'];
 
-		$Nc2CabinetManage = $this->getNc2Model('cabinet_manage');
-
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
-		$BlocksLanguage->create();
-		$Cabinet->create();
-		$Block->create();
 
 		foreach ($nc2CabinetManages as $nc2CabinetManage) {
 
@@ -117,7 +109,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 			//$nc2CabinetBlock = $Nc2CabinetBlock->find('all');
 
 			$nc2CabinetBlock = $Nc2CabinetBlock->findByRoomId($nc2CabinetManage['Nc2CabinetManage']['room_id'], null, null, -1);
-			if(!$nc2CabinetBlock ){
+			if (!$nc2CabinetBlock) {
 				$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2CabinetBlock));
 				$this->_writeMigrationLog($message);
 				continue;
@@ -134,7 +126,13 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 				$nc3Room = $Nc2ToNc3Room->getMap($nc2CabinetManage['Nc2CabinetManage']['room_id']);
 				$nc3RoomId = $nc3Room['Room']['id'];
+
 				Current::write('Room.id', $nc3RoomId);
+
+				$BlocksLanguage->create();
+				$Cabinet->create();
+				$Block->create();
+
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				//error_log(print_r($data, true)."\n\n", 3, LOGS."/debug.log");
@@ -150,7 +148,6 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				}
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);
 
 				$nc2CabinetId = $nc2CabinetManage['Nc2CabinetManage']['cabinet_id'];
 
@@ -167,6 +164,8 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
+		Current::remove('Room.id');
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Cabinet data Migration end.'));
 		return true;
 	}
@@ -179,8 +178,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
  * @throws Exception
  */
 
-	private function __saveNc3CabinetFileNc2($nc2CabinetFiles)
-	{
+	private function __saveNc3CabinetFileNc2($nc2CabinetFiles) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Cabinet file Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
@@ -206,7 +204,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					$CabinetFile->rollback();
 					continue;
 				}
-				
+
 				$Block = ClassRegistry::init('Blocks.Block');
 
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
@@ -229,7 +227,6 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					continue;
 				}
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);
 
 				$nc2CabinetFileId = $nc2CabinetFile['Nc2CabinetFile']['file_id'];
 
@@ -246,19 +243,9 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
+		Current::remove('Room.id');
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Cabinet Migration end.'));
 		return true;
 	}
-
-/**
- * Get Log argument.
- *
- * @param array $nc2CabinetBlock Nc2CabinetBlock data
- * @return string Log argument
- */
-	public function getLogArgument($nc2CabinetBlock) {
-		return 'Nc2CabinetBlock ' .
-			'block_id:' . $nc2CabinetBlock['Nc2CabinetBlock']['block_id'];
-	}
-
 }
