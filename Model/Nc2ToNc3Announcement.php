@@ -54,7 +54,6 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Announcement Migration start.'));
 
 		/* @var $Nc2Announcement AppModel */
-
 		$Nc2Announcement = $this->getNc2Model('announcement');
 		$nc2Announcements = $Nc2Announcement->find('all');
 
@@ -67,11 +66,22 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$Announcement->Behaviors->Block->settings = $Announcement->actsAs['Blocks.Block'];
 
 		$Block = ClassRegistry::init('Blocks.Block');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Topic = ClassRegistry::init('Topics.Topic');
 		foreach ($nc2Announcements as $nc2Announcement) {
-			$nc2AnnounceBlockld = $nc2Announcement['Nc2Announcement']['block_id'];
-			$nc3Frame = $Nc2ToNc3Frame->getMap($nc2AnnounceBlockld);
+			$Announcement->begin();
+
+			$nc2Blockld = $nc2Announcement['Nc2Announcement']['block_id'];
+			$nc3Frame = $Nc2ToNc3Frame->getMap($nc2Blockld);
 			if (!$nc3Frame) {
+				$Announcement->rollback();
+				continue;
+			}
+
+			$AnnouncementMap = $this->__getMap($nc2Blockld);
+			if ($AnnouncementMap) {
+				// 移行済み
+				$Announcement->rollback();
 				continue;
 			}
 
@@ -93,6 +103,16 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				]
 			];
 
+			if ($AnnouncementMap) {
+				$data['Announcement']['id'] = $AnnouncementMap['Announcement']['id'];
+				$data['Announcement']['block_id'] = $AnnouncementMap['Announcement']['block_id'];
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L345
+				$data['Announcement']['key'] = $AnnouncementMap['Announcement']['key'];
+
+				$data['Block']['id'] = $AnnouncementMap['Announcement']['block_id'];
+				$data['Block']['key'] = $AnnouncementMap['Block']['key'];
+			}
+
 			//Announcement テーブルの移行を実施
 			//SAVE前にCurrentのデータを書き換えが必要なため
 			Current::write('Plugin.key', 'announcements');
@@ -100,8 +120,10 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 
 			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
+			// Model::idを初期化しないとUpdateになってしまう。
 			$Announcement->create();
 			$Block->create();
+			$BlocksLanguage->create();
 			$Topic->create();
 
 			if (!$Announcement->saveAnnouncement($data)) {
@@ -113,14 +135,23 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 					var_export($Announcement->validationErrors, true);
 				$this->writeMigrationLog($message);
 
+				$Announcement->rollback();
 				continue;
 			}
 
 			unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-			Current::remove('Room.id', $nc3RoomId);
-			Current::remove('Plugin.key', 'announcements');
 
+			$idMap = [
+				$nc2Blockld => $Announcement->id
+			];
+			$this->saveMap('Announcement', $idMap);
+
+			$Announcement->commit();
 		}
+
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Announcement Migration end.'));
 		return true;
 	}
@@ -134,6 +165,49 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 	public function getLogArgument($nc2Announcement) {
 		return 'Nc2Announcement ' .
 			'block_id:' . $nc2Announcement['Nc2Announcement']['block_id'];
+	}
+
+/**
+ * Get map
+ *
+ * @param array|string $nc2Blocklds Nc2Announcement block_id.
+ * @return array Map data with Nc2Announcement block_id as key.
+ */
+	private function __getMap($nc2Blocklds) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $Announcement Announcement */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Announcement = ClassRegistry::init('Announcements.Announcement');
+
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Announcement', $nc2Blocklds);
+		$query = [
+			'fields' => [
+				'Announcement.id',
+				'Announcement.block_id',
+				'Announcement.key',
+				'Block.key',
+			],
+			'conditions' => [
+				'Announcement.id' => $mapIdList
+			],
+			'recursive' => 0,
+		];
+		$nc3Announcements = $Announcement->find('all', $query);
+		if (!$nc3Announcements) {
+			return $nc3Announcements;
+		}
+
+		$map = [];
+		foreach ($nc3Announcements as $nc3Announcement) {
+			$nc2Id = array_search($nc3Announcement['Announcement']['id'], $mapIdList);
+			$map[$nc2Id] = $nc3Announcement;
+		}
+
+		if (is_string($nc2Blocklds)) {
+			$map = $map[$nc2Blocklds];
+		}
+
+		return $map;
 	}
 
 }
