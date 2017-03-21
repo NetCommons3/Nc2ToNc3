@@ -32,6 +32,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  *
  * @see Nc2ToNc3QuestionnaireBehavior
  * @method string getLogArgument($nc2Questionnaire)
+ * @method array generateNc3QuestionnaireData($nc2Questionnaire)
+ * @method array generateNc3QuestionnaireFrameSettingData($nc2QBlock)
  *
  */
 class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
@@ -68,6 +70,13 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* @var $Nc2QBlock AppModel */
+		$Nc2QBlock = $this->getNc2Model('questionnaire_block');
+		$nc2QBlocks = $Nc2QBlock->find('all');
+		if (!$this->__saveQuestionnaireFrameSettingFromNc2($nc2QBlocks)) {
+			return false;
+		}
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Questionnaire Migration end.'));
 		return true;
 	}
@@ -85,9 +94,11 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		/* @var $Questionnaire Questionnaire */
 		/* @var $Nc2Questionnaire AppModel */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Frame Frame */
 		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
 		$Nc2QBlock = $this->getNc2Model('questionnaire_block');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Frame = ClassRegistry::init('Frames.Frame');
 		foreach ($nc2Questionnaires as $nc2Questionnaire) {
 			$Questionnaire->begin();
 			try {
@@ -106,7 +117,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					continue;
 				}
 				// QuestionnaireFrameDisplayQuestionnaire::saveDisplayQuestionnaire でFrameに割り当てられてしまうが、
-				// Nc2ToNc3Questionnaire::saveQuestionnaireFrameDisplayFromNc2で再登録を行うことで調整
+				// Nc2ToNc3Questionnaire::__saveQuestionnaireFrameSettingFromNc2で再登録を行うことで調整
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L577-L578
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L631-L634
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2QBlock['Nc2QuestionnaireBlock']['block_id']);
@@ -121,6 +132,11 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+				// Model::idを初期化しないとUpdateになってしまう。
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireSetting.php#L129-L149
+				$Frame->create();
 
 				if (!$Questionnaire->saveQuestionnaire($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
@@ -163,6 +179,89 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		//unset(CurrentBase::$permission);
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Questionnaire data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Save QuestionnaireFrameSetting from Nc2.
+ *
+ * @param array $nc2QBlocks Nc2QuestionnaireBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveQuestionnaireFrameSettingFromNc2($nc2QBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireFrameSetting data Migration start.'));
+
+		/* @var $QFrameSetting QuestionnaireFrameSetting */
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Block Block */
+		$QFrameSetting = ClassRegistry::init('Questionnaires.QuestionnaireFrameSetting');
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
+		foreach ($nc2QBlocks as $nc2QBlock) {
+			$QFrameSetting->begin();
+			try {
+				$data = $this->generateNc3QuestionnaireFrameSettingData($nc2QBlock);
+				if (!$data) {
+					$QFrameSetting->rollback();
+					continue;
+				}
+
+				$nc2BlockId = $nc2QBlock['Nc2QuestionnaireBlock']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2QBlock));
+					$this->writeMigrationLog($message);
+					$QFrameSetting->rollback();
+					continue;
+				}
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameDisplayQuestionnaire.php#L221
+				Current::write('Frame.key', $frameMap['Frame']['key']);
+
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameSetting.php#L165-L167
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L464
+				$nc3Block = $Block->findByRoomIdAndPluginKey(
+					$frameMap['Frame']['room_id'],
+					'questionnaires',
+					'id',
+					null,
+					-1
+				);
+				Current::write('Block.id', $nc3Block['Block']['id']);
+
+				if (!$QFrameSetting->saveFrameSettings($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2QBlock) . "\n" .
+						var_export($QFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$QFrameSetting->rollback();
+					continue;
+				}
+
+				$idMap = [
+					$nc2BlockId => $QFrameSetting->id
+				];
+				$this->saveMap('QuestionnaireFrameSetting', $idMap);
+
+				$QFrameSetting->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$QFrameSetting->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Block.id');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireFrameSetting data Migration end.'));
 
 		return true;
 	}

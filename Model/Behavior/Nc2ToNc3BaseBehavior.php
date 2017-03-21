@@ -630,4 +630,14 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		return Hash::get($map, [$timezoneOffset], 'Asia/Tokyo');
 	}
 
+/**
+ * Convert nc2 content.
+ *
+ * @param string $content Nc2 content.
+ * @return string converted nc3 body.
+ */
+	protected function _convertWYSIWYG($content) {
+		$body = $content;
+		return $body;
+	}
 }
