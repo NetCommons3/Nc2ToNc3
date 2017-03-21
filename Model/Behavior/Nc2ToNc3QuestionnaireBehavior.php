@@ -83,7 +83,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		$questionnaireMap = $this->_getMap($nc2QuestionnaireId);
 		if ($questionnaireMap) {
 			// 既存の場合
-			//return [];
+			return [];
 		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
@@ -138,6 +138,51 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 	}
 
 /**
+ * Generate Nc3QuestionnaireFrameSetting data.
+ *
+ * Data sample
+ * data[QuestionnaireFrameSetting][id]:
+ * data[QuestionnaireFrameSetting][frame_key]:4a5733f403efb04b89149453b2c3ead1
+ * data[QuestionnaireFrameSetting][display_type]:1
+ * data[QuestionnaireFrameSetting][display_num_per_page]:10
+ * data[QuestionnaireFrameSetting][sort_type]:Questionnaire.modified DESC
+ * data[Single][QuestionnaireFrameDisplayQuestionnaire][questionnaire_key]:0ba02955abaf89e75abd5308e518db21
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2QBlock Nc2QuestionnaireBlock data.
+ * @return array Nc3QuestionnaireFrameSetting data.
+ */
+	public function generateNc3QuestionnaireFrameSettingData(Model $model, $nc2QBlock) {
+		$nc2QuestionnaireId = $nc2QBlock['Nc2QuestionnaireBlock']['questionnaire_id'];
+		$questionnaireMap = $this->_getMap($nc2QuestionnaireId);
+		if (!$questionnaireMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2QBlock));
+			$this->writeMigrationLog($message);
+			return [];
+		}
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$nc2BlockId = $nc2QBlock['Nc2QuestionnaireBlock']['block_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('QuestionnaireFrameSetting', $nc2BlockId);
+		if ($mapIdList) {
+			// 移行済み
+			//return [];
+		}
+
+		/* @var $QFrameSetting QuestionnaireFrameSetting */
+		$QFrameSetting = ClassRegistry::init('Questionnaires.QuestionnaireFrameSetting');
+		$data = $QFrameSetting->getDefaultFrameSetting();
+		$data['QuestionnaireFrameSetting']['id'] = Hash::get($mapIdList, [$nc2BlockId]);
+		$data['QuestionnaireFrameSetting']['display_type'] = '0';
+		$data['Single']['QuestionnaireFrameDisplayQuestionnaire'] = [
+			'questionnaire_key' => $questionnaireMap['Questionnaire']['key']
+		];
+
+		return $data;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2Questionnaire Array data of Nc2Questionnaire, Nc2CalendarBlock and Nc2CalendarPlan.
@@ -147,6 +192,11 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		if (isset($nc2Questionnaire['Nc2Questionnaire'])) {
 			return 'Nc2Questionnaire ' .
 				'questionnaire_id:' . $nc2Questionnaire['Nc2Questionnaire']['questionnaire_id'];
+		}
+
+		if (isset($nc2Questionnaire['Nc2QuestionnaireBlock'])) {
+			return 'Nc2QuestionnaireBlock ' .
+				'block_id:' . $nc2Questionnaire['Nc2QuestionnaireBlock']['block_id'];
 		}
 	}
 
