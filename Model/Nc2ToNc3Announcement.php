@@ -78,13 +78,6 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			$AnnouncementMap = $this->__getMap($nc2Blockld);
-			if ($AnnouncementMap) {
-				// 移行済み
-				$Announcement->rollback();
-				continue;
-			}
-
 			$nc3RoomId = $nc3Frame['Frame']['room_id'];
 			$data = [
 				'Announcement' => [
@@ -103,14 +96,10 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				]
 			];
 
-			if ($AnnouncementMap) {
-				$data['Announcement']['id'] = $AnnouncementMap['Announcement']['id'];
-				$data['Announcement']['block_id'] = $AnnouncementMap['Announcement']['block_id'];
-				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L345
-				$data['Announcement']['key'] = $AnnouncementMap['Announcement']['key'];
-
-				$data['Block']['id'] = $AnnouncementMap['Announcement']['block_id'];
-				$data['Block']['key'] = $AnnouncementMap['Block']['key'];
+			$data = $this->__mergeExistData($nc2Announcement, $data);
+			if (!$data) {
+				$Announcement->rollback();
+				continue;
 			}
 
 			//Announcement テーブルの移行を実施
@@ -165,6 +154,31 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 	public function getLogArgument($nc2Announcement) {
 		return 'Nc2Announcement ' .
 			'block_id:' . $nc2Announcement['Nc2Announcement']['block_id'];
+	}
+
+/**
+ * Merge exist data
+ *
+ * @param array $nc2Announcement Nc2Announcement data.
+ * @param array $nc3Announcement Nc3Announcement data.
+ * @return array Merge exist data.
+ */
+	private function __mergeExistData($nc2Announcement, $nc3Announcement) {
+		$AnnouncementMap = $this->__getMap($nc2Announcement['Nc2Announcement']['block_id']);
+		if ($AnnouncementMap) {
+			// 移行済み
+			return [];
+
+			/*$nc3Announcement['Announcement']['id'] = $AnnouncementMap['Announcement']['id'];
+			$nc3Announcement['Announcement']['block_id'] = $AnnouncementMap['Announcement']['block_id'];
+			// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L345
+			$nc3Announcement['Announcement']['key'] = $AnnouncementMap['Announcement']['key'];
+
+			$nc3Announcement['Block']['id'] = $AnnouncementMap['Announcement']['block_id'];
+			$nc3Announcement['Block']['key'] = $AnnouncementMap['Block']['key'];*/
+		}
+
+		return $nc3Announcement;
 	}
 
 /**
