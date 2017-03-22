@@ -167,7 +167,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('QuestionnaireFrameSetting', $nc2BlockId);
 		if ($mapIdList) {
 			// 移行済み
-			//return [];
+			return [];
 		}
 
 		/* @var $QFrameSetting QuestionnaireFrameSetting */
@@ -177,6 +177,200 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		$data['QuestionnaireFrameSetting']['display_type'] = '0';
 		$data['Single']['QuestionnaireFrameDisplayQuestionnaire'] = [
 			'questionnaire_key' => $questionnaireMap['Questionnaire']['key']
+		];
+
+		return $data;
+	}
+
+/**
+ * Generate Nc3QuestionnaireAnswerSummary data.
+ *
+ * Data sample
+ * data[QuestionnaireAnswerSummary][answer_number]:1
+ * data[QuestionnaireAnswerSummary][questionnaire_key]:10
+ * data[QuestionnaireAnswerSummary][user_id]:
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2QSummary Nc2QuestionnaireSummary data.
+ * @return array Nc3QuestionnaireAnswerSummary data.
+ */
+	public function generateNc3QuestionnaireAnswerSummaryData(Model $model, $nc2QSummary) {
+		$nc2QuestionnaireId = $nc2QSummary['Nc2QuestionnaireSummary']['questionnaire_id'];
+		$questionnaireMap = $this->_getMap($nc2QuestionnaireId);
+		if (!$questionnaireMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2QBlock));
+			$this->writeMigrationLog($message);
+			return [];
+		}
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$nc2SummaryId = $nc2QSummary['Nc2QuestionnaireSummary']['summary_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('QuestionnaireAnswerSummary', $nc2SummaryId);
+		if ($mapIdList) {
+			// 移行済み
+			// 更新すると回答数とかおかしくなるので移行できない。いけるのか？
+			return [];
+		}
+
+		$nc3AnswerStatus = '0';
+		if ($nc2QSummary['Nc2QuestionnaireSummary']['answer_flag'] == '1') {
+			$nc3AnswerStatus = '2';
+		}
+
+		$nc3AnswerNumber = '1';
+		$nc3UserId = null;
+		if ($nc2QSummary['Nc2QuestionnaireSummary']['insert_user_id'] != '0') {
+			/* @var $Nc2ToNc3User Nc2ToNc3User */
+			$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+			$nc3AnswerNumber = $nc2QSummary['Nc2QuestionnaireSummary']['answer_number'];
+			$nc3UserId = $Nc2ToNc3User->getCreatedUser($nc2QSummary['Nc2QuestionnaireSummary']);
+		}
+
+		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireAnswerSummary.php#L213-L222
+		$data['QuestionnaireAnswerSummary'] = [
+			'answer_status' => $nc3AnswerStatus,
+			'answer_number' => $nc3AnswerNumber,
+			'questionnaire_key' => $questionnaireMap['Questionnaire']['key'],
+			'user_id' => $nc3UserId,
+			'created_user' => $nc3UserId,
+		];
+
+		return $data;
+	}
+
+/**
+ * Get question map
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2QuestionnaireId Nc2Questionnaire questionnaire_id.
+ * @param array $nc3Questionnaire Nc3Questionnaire data.
+ * @return array Map data with Nc2CQuestionnaire questionnaire_id as key.
+ */
+	public function getQuestionMap(Model $model, $nc2QuestionnaireId, $nc3Questionnaire) {
+		/* @var $Nc2Question AppModel */
+		$Nc2Question = $this->_getNc2Model('questionnaire_question');
+		$Nc2Question
+		$query = [
+			'fields' => [
+				'Questionnaire.id',
+				'Questionnaire.key',
+			],
+			'conditions' => [
+				'Questionnaire.id' => $mapIdList
+			],
+			'recursive' => -1,
+			'callbacks' => false,
+		];
+
+		$nc2Questions = $Nc2Question->findAllByQuestionnaireId(
+			$nc2QuestionnaireId,
+			[
+				'question_id',
+				'question_sequence',
+			],
+			'question_sequence',
+			null,
+			null,
+			-1
+		);
+
+		$questionnaireMap = $this->_getMap($nc2QuestionnaireId);
+		if (!$questionnaireMap) {
+			return [];
+		}
+
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $Questionnaire Questionnaire */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
+
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Questionnaire', $nc2QuestionnaireIds);
+		$query = [
+			'fields' => [
+				'Questionnaire.id',
+				'Questionnaire.key',
+			],
+			'conditions' => [
+				'Questionnaire.id' => $mapIdList
+			],
+			'recursive' => -1,
+			'callbacks' => false,
+		];
+		$nc3Questionnaires = $Questionnaire->find('all', $query);
+		if (!$nc3Questionnaires) {
+			return $nc3Questionnaires;
+		}
+
+		$map = [];
+		foreach ($nc3Questionnaires as $nc3Questionnaire) {
+			$nc2Id = array_search($nc3Questionnaire['Questionnaire']['id'], $mapIdList);
+			$map[$nc2Id] = $nc3Questionnaire;
+		}
+
+		if (is_string($nc2QuestionnaireIds)) {
+			$map = $map[$nc2QuestionnaireIds];
+		}
+
+		return $map;
+	}
+
+/**
+ * Generate Nc3QuestionnaireAnswerSummary data.
+ *
+ * Data sample
+ * data[QuestionnaireAnswerSummary][answer_number]:1
+ * data[QuestionnaireAnswerSummary][questionnaire_key]:10
+ * data[QuestionnaireAnswerSummary][user_id]:
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2QAnswers Nc2QuestionnaireAnswer data.
+ * @param array $questionMap QuestionnaireQuestion map data.
+ * @return array Nc3QuestionnaireAnswer data.
+ */
+	public function generateNc3QuestionnaireAnswerData(Model $model, $nc2QAnswers, $questionMap) {
+		// Nc2ToNc3QuestionnaireBehavior::generateNc3QuestionnaireAnswerSummaryData でチェック済
+		/*
+		$nc2QuestionnaireId = $nc2QSummary['Nc2QuestionnaireSummary']['questionnaire_id'];
+		$questionnaireMap = $this->_getMap($nc2QuestionnaireId);
+		if (!$questionnaireMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2QBlock));
+			$this->writeMigrationLog($message);
+			return [];
+		}
+
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$nc2SummaryId = $nc2QSummary['Nc2QuestionnaireSummary']['summary_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('QuestionnaireAnswerSummary', $nc2SummaryId);
+		if ($mapIdList) {
+			// 移行済み
+			// 更新すると回答数とかおかしくなるので移行できない。いけるのか？
+			return [];
+		}*/
+
+		$questionMap =
+		$nc3AnswerStatus = '0';
+		if ($nc2QSummary['Nc2QuestionnaireSummary']['answer_flag'] == '1') {
+			$nc3AnswerStatus = '2';
+		}
+
+		$nc3AnswerNumber = '1';
+		$nc3UserId = null;
+		if ($nc2QSummary['Nc2QuestionnaireSummary']['insert_user_id'] != '0') {
+			/* @var $Nc2ToNc3User Nc2ToNc3User */
+			$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+			$nc3AnswerNumber = $nc2QSummary['Nc2QuestionnaireSummary']['answer_number'];
+			$nc3UserId = $Nc2ToNc3User->getCreatedUser($nc2QSummary['Nc2QuestionnaireSummary']);
+		}
+
+		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireAnswerSummary.php#L213-L222
+		$data['QuestionnaireAnswerSummary'] = [
+			'answer_status' => $nc3AnswerStatus,
+			'answer_number' => $nc3AnswerNumber,
+			'questionnaire_key' => $questionnaireMap['Questionnaire']['key'],
+			'user_id' => $nc3UserId,
+			'created_user' => $nc3UserId,
 		];
 
 		return $data;
@@ -298,7 +492,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
  * Get map
  *
  * @param array|string $nc2QuestionnaireIds Nc2CQuestionnaire questionnaire_id.
- * @return array Map data with Nc2Block block_id as key.
+ * @return array Map data with Nc2CQuestionnaire questionnaire_id as key.
  */
 	protected function _getMap($nc2QuestionnaireIds) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */

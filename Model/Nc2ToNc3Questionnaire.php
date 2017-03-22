@@ -34,6 +34,9 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string getLogArgument($nc2Questionnaire)
  * @method array generateNc3QuestionnaireData($nc2Questionnaire)
  * @method array generateNc3QuestionnaireFrameSettingData($nc2QBlock)
+ * @method array generateNc3QuestionnaireAnswerSummaryData($nc2QSummary)
+ * @method array getQuestionMap($nc2QuestionnaireId, $nc3QuestionnaireKey)
+ * @method array generateNc3QuestionnaireAnswerData($nc2QAnswers)
  *
  */
 class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
@@ -74,6 +77,20 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$Nc2QBlock = $this->getNc2Model('questionnaire_block');
 		$nc2QBlocks = $Nc2QBlock->find('all');
 		if (!$this->__saveQuestionnaireFrameSettingFromNc2($nc2QBlocks)) {
+			return false;
+		}
+
+		/* @var $Nc2QSummary AppModel */
+		$Nc2QSummary = $this->getNc2Model('questionnaire_summary');
+		$query = [
+			'order' => [
+				'questionnaire_id',
+				'answer_number',
+			],
+			'recursive' => -1,
+		];
+		$nc2QSummaries = $Nc2QSummary->find('all', $query);
+		if (!$this->__saveQuestionnaireAnswerSummaryFromNc2($nc2QSummaries)) {
 			return false;
 		}
 
@@ -262,6 +279,135 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		Current::remove('Block.id');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireFrameSetting data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Save QuestionnaireAnswerSummary from Nc2.
+ *
+ * @param array $nc2QSummaries Nc2QuestionnaireSummary data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveQuestionnaireAnswerSummaryFromNc2($nc2QSummaries) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireAnswerSummary data Migration start.'));
+
+		/* @var $QAnswerSummary QuestionnaireAnswerSummary */
+		/* @var $Questionnaire Questionnaire */
+		$QAnswerSummary = ClassRegistry::init('Questionnaires.QuestionnaireAnswerSummary');
+		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
+		$nc2PreviousQId = null;
+		foreach ($nc2QSummaries as $key => $nc2QSummary) {
+			$QAnswerSummary->begin();
+			try {
+				$data = $this->generateNc3QuestionnaireAnswerSummaryData($nc2QSummary);
+				if (!$data) {
+					$QAnswerSummary->rollback();
+					continue;
+				}
+
+				if (!($data = $QAnswerSummary->save($data))) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2QSummary) . "\n" .
+						var_export($QAnswerSummary->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$QAnswerSummary->rollback();
+					continue;
+				}
+
+				$nc2QSummaryId = $nc2QSummary['Nc2QuestionnaireSummary']['summary_id'];
+				$idMap = [
+					$nc2QSummaryId => $QAnswerSummary->id
+				];
+				$this->saveMap('QuestionnaireAnswerSummary', $idMap);
+
+				// Nc2QuestionnaireSummary.questionnaire_id 毎に
+				// 対応するQuestionnaireQuestion,QuestionnaireChoiceをまとめて取得する
+				$nc2CurrentQId = $nc2QSummary['Nc2QuestionnaireSummary']['questionnaire_id'];
+				if ($nc2CurrentQId != $nc2PreviousQId) {
+					$questionnaireMap = $this->getMap($nc2CurrentQId);
+					// 移行後に修正されることを考慮し、対応するidでQuestionnaireデータを取得
+					// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Controller/QuestionnaireAnswersController.php#L111-L114
+					// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Controller/QuestionnaireAnswersController.php#L286
+					$nc3Questionnaire = $Questionnaire->findById($questionnaireMap['Questionnaire']['id'], null, null, 1);
+					$questionMap = $this->getQuestionMap($nc2CurrentQId, $nc3Questionnaire);
+
+					$nc2PreviousQId = $nc2CurrentQId;
+				}
+				if (!$this->__saveQuestionnaireAnswerFromNc2($nc2QSummary, $data, $questionMap)) {
+					$QAnswerSummary->rollback();
+					continue;
+				}
+
+				$QAnswerSummary->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$QAnswerSummary->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireAnswerSummary data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Save QuestionnaireAnswerSummary from Nc2.
+ *
+ * @param array $nc2QSummary Nc2QuestionnaireSummary data.
+ * @param array $nc3QAnswerSummary Nc3QuestionnaireAnswerSummary data.
+ * @param array $questionMap QuestionnaireQuestion map data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveQuestionnaireAnswerFromNc2($nc2QSummary, $nc3QAnswerSummary, $questionMap) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireAnswer data Migration start.'));
+
+		/* @var $Nc2QAnswer AppModel */
+		$Nc2QAnswer = $this->getNc2Model('questionnaire_answer');
+		$nc2QSummaryId = $nc2QSummary['Nc2QuestionnaireSummary']['summary_id'];
+		$nc2QAnswers = $Nc2QAnswer->findAllBySummaryId($nc2QSummaryId, null, null, null, null, -1);
+
+		/* @var $QuestionnaireAnswer QuestionnaireAnswer */
+		$QuestionnaireAnswer = ClassRegistry::init('Questionnaires.QuestionnaireAnswer');
+		// Nc2ToNc3Questionnaire::__saveQuestionnaireAnswerSummaryFromNc2 で発行済み
+		//$QuestionnaireAnswer->begin();
+		try {
+			$data = $this->generateNc3QuestionnaireAnswerData($nc2QAnswers, $questionMap);
+			if (!$data) {
+				//$QuestionnaireAnswer->rollback();
+				continue;
+			}
+
+			if (!$QuestionnaireAnswer->saveAnswer($data, $nc3Questionnaire, $nc3QAnswerSummary)) {
+				// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+				// var_exportは大丈夫らしい。。。
+				// @see https://phpmd.org/rules/design.html
+				$message = $this->getLogArgument($nc2QSummary) . "\n" .
+					var_export($QuestionnaireAnswer->validationErrors, true);
+				$this->writeMigrationLog($message);
+
+				//$QuestionnaireAnswer->rollback();
+				continue;
+			}
+
+			//$QuestionnaireAnswer->commit();
+
+		} catch (Exception $ex) {
+			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+			// $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+			//$QuestionnaireAnswer->rollback($ex);
+			throw $ex;
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireAnswer data Migration end.'));
 
 		return true;
 	}
