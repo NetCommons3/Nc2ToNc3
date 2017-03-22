@@ -191,6 +191,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel
 
         $this->writeMigrationLog(__d('nc2_to_nc3', '  FaqBlock data Migration end.'));
 
+        return true;
     }
 }
 
