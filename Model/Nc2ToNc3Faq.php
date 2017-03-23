@@ -89,6 +89,11 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel
         /* @var $Nc2FaqQuestion AppModel */
         /* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
         $Faq = ClassRegistry::init('Faqs.Faq');
+
+        //BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+        //@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+        $Faq->Behaviors->Block->settings = $Faq->actsAs['Blocks.Block'];
+
         $FaqFrameSetting = ClassRegistry::init('Faqs.FaqFrameSetting');
         $FaqQuestion = ClassRegistry::init('Faqs.FaqQuestion');
         $Nc2FaqCategory = $this->getNc2Model('faq_category');
