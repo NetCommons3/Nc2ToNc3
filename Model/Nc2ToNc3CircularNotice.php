@@ -26,99 +26,102 @@ App::uses('Current', 'NetCommons.Utility');
  * @method void restoreNc3CurrentLanguage()
  *
  */
-class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 
-	/**
-	 * Custom database table name, or null/false if no table association is desired.
-	 *
-	 * @var string
-	 * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-	 */
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
 	public $useTable = false;
 
-	/**
-	 * List of behaviors to load when the model object is initialized. Settings can be
-	 * passed to behaviors by using the behavior name as index.
-	 *
-	 * @var array
-	 * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-	 */
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3CircularNotice'];
 
-	/**
-	 * Migration method.
-	 *
-	 * @return bool True on success.
-	 */
-	public function migrate()
-	{
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
+	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'CircularNotice Migration start.'));
 
-		/* @var $Nc2CircularNotice AppModel */
-
-		/* @var $Nc2JournalBlock AppModel */
-		//var_dump($this->settings);exit;
+		/* @var $Nc2CircularBlock AppModel */
 		$Nc2CircularBlock = $this->getNc2Model('circular_block');
 		$nc2CircularBlocks = $Nc2CircularBlock->find('all');
 
 		if (!$this->__saveNc3CircularNoticeFrameSettingFromNc2($nc2CircularBlocks)) {
 			return false;
 		}
-/*
-		$Nc2JournalPost = $this->getNc2Model('journal_post');
-		$nc2JournalPosts = $Nc2JournalPost->find('all');
 
-        if (!$this->__saveNc3CircularNoticeEntryFromNc2($nc2JournalPosts)) {
-            return false;
+		$Nc2Circular = $this->getNc2Model('circular');
+		$nc2Circulars = $Nc2Circular->find('all');
+
+		if (!$this->__saveNc3CircularNoticeContentFromNc2($nc2Circulars)) {
+			return false;
 		}
-*/
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'CircularNotice Migration end.'));
 		return true;
 	}
 
-	/**
-	 * Save JournalFrameSetting from Nc2.
-	 *
-	 * @param array $nc2Journals Nc2Journal data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
+/**
+ * Save CircularNoticeFrameSetting from Nc2.
+ *
+ * @param array $nc2CircularBlocks Nc2CircularBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
 
-	private function __saveNc3CircularNoticeFrameSettingFromNc2($nc2CircularBlocks)
-	{
+	private function __saveNc3CircularNoticeFrameSettingFromNc2($nc2CircularBlocks) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  CircularNoticeFrameSetting data Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
-		$CircularNoticeFrameSetting = ClassRegistry::init('CircularNotices.CircularNoticeFrameSetting');
+		$CircularNoticeFrame = ClassRegistry::init('CircularNotices.CircularNoticeFrameSetting');
 
 		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
-		//$CircularNoticeFrameSetting->Behaviors->Block->settings['nameHtml'] = false;
+		//$CircularNoticeFrame->Behaviors->Block->settings['nameHtml'] = false;
 
 		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
-		//$CircularNoticeFrameSetting->Behaviors->Block->settings = $CircularNoticeFrameSetting->actsAs['Blocks.Block'];
+		//$CircularNoticeFrame->Behaviors->Block->settings = $CircularNoticeFrame->actsAs['Blocks.Block'];
 
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$CircularNoticeSet = ClassRegistry::init('CircularNotices.CircularNoticeSetting');
 
 		foreach ($nc2CircularBlocks as $nc2CircularBlock) {
 			/** @var array $nc2CircularBlock */
-			//var_dump($Nc2JournalBlock);exit;
-			//var_dump($nc2Journal['Nc2Journal']['journal_id']);exit;
-			if (!$nc2CircularBlock){
+			if (!$nc2CircularBlock) {
 				continue;
 			}
-			$CircularNoticeFrameSetting->begin();
+
+			//saveCircularNoticeFrameSettingではblock_idが追加されないため、setCircularNoticeSettingを実行、
+			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+			$nc2BlockId = $nc2CircularBlock['Nc2CircularBlock']['block_id'];
+			$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+
+			if (!$CircularNoticeSet->setCircularNoticeSetting($frameMap['Frame']['id'])) {
+				return false;
+			}
+
+			$CircularNoticeFrame->begin();
 			try {
 				$data = $this->generateNc3CircularNoticeFrameSettingData($nc2CircularBlock);
 				if (!$data) {
-					$CircularNoticeFrameSetting->rollback();
+					$CircularNoticeFrame->rollback();
 					continue;
 				}
 
-				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+				//$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 				$nc3RoomId = $data['Block']['room_id'];
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
@@ -126,58 +129,67 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel
 				Current::write('Plugin.key', 'circular_notices');
 
 				$BlocksLanguage->create();
-				$CircularNoticeFrameSetting->create();
+				$CircularNoticeFrame->create();
 				$Block->create();
 				$Topic->create();
 
-				if (!$CircularNoticeFrameSetting->saveCircularNoticeFrameSetting($data)) {
+				if (!$CircularNoticeFrame->saveCircularNoticeFrameSetting($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 
 					$message = $this->getLogArgument($nc2CircularBlock) . "\n" .
-						var_export($CircularNoticeFrameSetting->validationErrors, true);
+						var_export($CircularNoticeFrame->validationErrors, true);
 					$this->writeMigrationLog($message);
 
 					continue;
 				}
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);
-				Current::remove('Plugin.key', 'circular_notices');
 
 				$nc2CircularBlockId = $nc2CircularBlock['Nc2CircularBlock']['block_id'];
+				$idMap = [];
 				$idMap = [
-					$nc2CircularBlockId => $CircularNoticeFrameSetting->id
+					$nc2CircularBlockId => $CircularNoticeFrame->id
 				];
 				$this->saveMap('CircularNoticeFrameSetting', $idMap);
-				$CircularNoticeFrameSetting->commit();
+
+				$nc2CircularRoomId = $nc2CircularBlock['Nc2CircularBlock']['room_id'];
+				$idMap = [];
+				$idMap = [
+					$nc2CircularRoomId => $data['Block']['room_id']
+				];
+				$this->saveMap('Room', $idMap);
+
+				$CircularNoticeFrame->commit();
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $CircularNoticeFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$CircularNoticeFrameSetting->rollback($ex);
+				// $CircularNoticeFrame::savePage()でthrowされるとこの処理に入ってこない
+				$CircularNoticeFrame->rollback($ex);
 				throw $ex;
 			}
 		}
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  CircularNoticeFrameSetting data Migration end.'));
 		return true;
 	}
 
-	/**
-	 * Save JournalPost from Nc2.
-	 *
-	 * @param array $nc2JournalPosts Nc2JournalPost data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
+/**
+ * Save Circular from Nc2.
+ *
+ * @param array $nc2Circulars Nc2Circular data.
+ * @return bool True on success
+ * @throws Exception
+ */
 
-	private function __saveNc3CircularNoticeEntryFromNc2($nc2JournalPosts)
-	{
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  CircularNotice Entry data Migration start.'));
+	private function __saveNc3CircularNoticeContentFromNc2($nc2Circulars) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  CircularNoticeContent data Migration start.'));
 
-		/* @var $JournalFrameSetting JournalFrameSetting */
-		$CircularNoticeEntry = ClassRegistry::init('CircularNotices.CircularNoticeEntry');
+		/* @var $CircularNoticeCont CircularNoticeContent */
+		$CircularNoticeCont = ClassRegistry::init('CircularNotices.CircularNoticeContent');
 
 		//Announcement モデルで	BlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
 		//$CircularNoticeEntry->Behaviors->Block->settings['nameHtml'] = false;
@@ -186,80 +198,73 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
 		//$CircularNoticeEntry->Behaviors->Block->settings = $CircularNoticeEntry->actsAs['Blocks.Block'];
 
-		//$Nc2Journal = $this->getNc2Model('journal');
+		//$Nc2CircularChoice = $this->getNc2Model('circular_choice');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
 
-		foreach ($nc2JournalPosts as $nc2JournalPost) {
-			//$nc2Journal = $Nc2Journal->findByJournalId($nc2JournalBlock['Nc2JournalBlock']['journal_id'], null, null, -1);
+		foreach ($nc2Circulars as $nc2Circular) {
+			//$nc2CircularChoice = $Nc2CircularChoice->findByCircularId($nc2Circular['Nc2Circular']['circular_id'], null, null, -1);
 
-			$CircularNoticeEntry->begin();
+			$CircularNoticeCont->begin();
 			try {
-				$data = $this->generateNc3CircularNoticeEntryData($nc2JournalPost);
+				$data = $this->generateNc3CircularNoticeContentData($nc2Circular);
 				if (!$data) {
-					$CircularNoticeEntry->rollback();
+					$CircularNoticeCont->rollback();
 					continue;
 				}
 
 				$Block = ClassRegistry::init('Blocks.Block');
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
-//				var_dump($nc3RoomId );exit;
 
 				Current::write('Room.id', $nc3RoomId);
-				Current::write('Plugin.key', 'CircularNotices');
+				Current::write('Plugin.key', 'circular_notices');
 
 				$BlocksLanguage->create();
-				$CircularNoticeEntry->create();
+				$CircularNoticeCont->create();
 				$Block->create();
 				$Topic->create();
 
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-				if (!$CircularNoticeEntry->saveEntry($data)) {
-					var_dump('SHIPPAI');exit;
+				if (!$CircularNoticeCont->saveCircularNoticeContent($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 
-					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
-						var_export($CircularNoticeEntry->validationErrors, true);
+					$message = $this->getLogArgument($nc2Circular) . "\n" .
+						var_export($CircularNoticeCont->validationErrors, true);
 					$this->writeMigrationLog($message);
-
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				Current::remove('Room.id', $nc3RoomId);
-				Current::remove('Plugin.key', 'CircularNotices');
+				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
+				// ['datetime','datetime'] になってしまうので初期化
+				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
+				$CircularNoticeCont->validate = [];
 
-				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2CircularId = $nc2Circular['Nc2Circular']['circular_id'];
 				$idMap = [
-					$nc2PostId => $CircularNoticeEntry->id
+					$nc2CircularId => $CircularNoticeCont->id
 				];
-				$this->saveMap('CircularNoticeEntry', $idMap);
-				$CircularNoticeEntry->commit();
+				$this->saveMap('CircularNoticeContent', $idMap);
+				$CircularNoticeCont->commit();
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $CircularNoticeFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$CircularNoticeEntry->rollback($ex);
+				// $CircularNoticeFrame::savePage()でthrowされるとこの処理に入ってこない
+				$CircularNoticeCont->rollback($ex);
 				throw $ex;
 			}
 		}
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  CircularNotice Entry data Migration end.'));
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  CircularNoticeContent data Migration end.'));
 		return true;
-	}
-/**
- * Get Log argument.
- *
- * @param array $nc2JournalBlock Nc2JournalBlock data
- * @return string Log argument
- */
-	public function getLogArgument($nc2JournalBlock) {
-		return 'Nc2JournalBlock ' .
-			'block_id:' . $nc2JournalBlock['Nc2JournalBlock']['block_id'];
 	}
 
 }

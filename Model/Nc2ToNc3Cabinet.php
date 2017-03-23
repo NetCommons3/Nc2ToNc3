@@ -193,13 +193,16 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 		$Nc2CabinetComment = $this->getNc2Model('cabinet_comment');
 
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$Topic = ClassRegistry::init('Topics.Topic');
+
 		foreach ($nc2CabinetFiles as $nc2CabinetFile) {
 
 			$nc2CabinetComment = $Nc2CabinetComment->findByFileId($nc2CabinetFile['Nc2CabinetFile']['file_id'], null, null, -1);
 			$CabinetFile->begin();
 			try{
 				$data = $this->generateNc3CabinetFileData($nc2CabinetFile, $nc2CabinetComment);
-
 				if (!$data) {
 					$CabinetFile->rollback();
 					continue;
@@ -210,9 +213,14 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 
 				$nc3RoomId = $Blocks['Block']['room_id'];
-
+				Current::write('Plugin.key', 'cabinet');
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+				$BlocksLanguage->create();
+				$CabinetFile->create();
+				$Block->create();
+				$Topic->create();
 
 				//error_log(print_r($data, true)."\n\n", 3, LOGS."/debug.log");
 				if (!$CabinetFile->saveFile($data)) {
@@ -226,6 +234,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 					continue;
 				}
+
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2CabinetFileId = $nc2CabinetFile['Nc2CabinetFile']['file_id'];
@@ -244,6 +253,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 			}
 		}
 		Current::remove('Room.id');
+		Current::remove('Plugin.key');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Cabinet Migration end.'));
 		return true;
