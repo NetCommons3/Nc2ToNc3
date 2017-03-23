@@ -193,6 +193,9 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// User::beforeValidateでValidationを設定しているが、残ってしまうので1行ごとにクリア
+				$User->validate = [];
+
 				if (!($data = $User->saveUser($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
@@ -216,9 +219,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 					$User->rollback();
 					continue;
 				}
-
-				// User::beforeValidateでValidationを設定しているが、残ってしまうので1行ごとにクリア
-				$User->validate = [];
 
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
 				if ($this->getMap($nc2UserId)) {
