@@ -198,7 +198,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		$nc2QuestionnaireId = $nc2QSummary['Nc2QuestionnaireSummary']['questionnaire_id'];
 		$questionnaireMap = $this->_getMap($nc2QuestionnaireId);
 		if (!$questionnaireMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2QBlock));
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2QSummary));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -230,6 +230,8 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireAnswerSummary.php#L213-L222
 		$data['QuestionnaireAnswerSummary'] = [
 			'answer_status' => $nc3AnswerStatus,
+			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireAnswerSummary.php#L252-L253
+			'test_status' => '0',
 			'answer_number' => $nc3AnswerNumber,
 			'questionnaire_key' => $questionnaireMap['Questionnaire']['key'],
 			'user_id' => $nc3UserId,
@@ -487,7 +489,6 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			[
 				'question_id',
 				'question_sequence',
-				'question_type',
 			],
 			'question_sequence',
 			null,
@@ -511,10 +512,11 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		];
 		$nc2ChoiceList = $Nc2Choice->find('list', $query);
 
-		// $nc3QuestionnaireのQuestionnairePage階層を除去
+		// $nc3QuestionnaireのQuestionnairePage階層を除去QuestionnaireQuestion
 		$nc3Questions = [];
 		foreach ($nc3Questionnaire['QuestionnairePage'] as $nc3QuestionsEachPage) {
-			$nc3Questions += $nc3QuestionsEachPage;
+			// 数値添字なのでarray_mergeで追加される
+			$nc3Questions = array_merge($nc3Questions, $nc3QuestionsEachPage['QuestionnaireQuestion']);
 		}
 
 		// 対応チェック（あり得ない気がするが一応）
@@ -531,6 +533,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$map[$nc2QuestionId]['QuestionnaireQuestion'] = [
 				'id' => $nc3Questions[$key]['id'],
 				'key' => $nc3Questions[$key]['key'],
+				'question_type' => $nc3Questions[$key]['question_type'],
 			];
 
 			if (!isset($nc2ChoiceList[$nc2QuestionId])) {
@@ -548,6 +551,12 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			}
 
 			$map[$nc2QuestionId]['QuestionnaireChoice'] = $this->__getChoiceMap($nc2ChoiceSeqList, $nc3Choices);
+			if (!$map[$nc2QuestionId]['QuestionnaireChoice']) {
+				$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2QSummary));
+				$this->_writeMigrationLog($message);
+
+				return [];
+			}
 		}
 
 		return $map;
@@ -557,14 +566,23 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
  * Get choice map
  *
  * @param array $nc2ChoiceSeqList Nc2QuestionnaireChoice list data.
- * @param array $nc3Questionnaire Nc3Questionnaire data.
+ * @param array $nc3Choices Nc3QuestionnaireChoice data.
  * @return array Map data with Nc2CQuestionnaire questionnaire_id as key.
  */
 	private function __getChoiceMap($nc2ChoiceSeqList, $nc3Choices) {
 		$map = [];
 		foreach ($nc2ChoiceSeqList as $nc2ChoiceSequence) {
 			$nc3Choice = current($nc3Choices);
-			$map[$nc2ChoiceSequence] = [
+
+			// 対応チェック（あり得ない気がするが一応）
+			// PHPMDでAvoid unused local variables such as '$nc2ChoiceSequence'.といわれることもあるため無理やり
+			// そもそも、$nc3Choicesそのままでよい気もする
+			if ((int)$nc2ChoiceSequence - 1 != $nc3Choice['choice_sequence']) {
+				return [];
+			}
+
+			// $nc2ChoiceSequence順に0からの連番
+			$map[] = [
 				'id' => $nc3Choice['id'],
 				'key' => $nc3Choice['key'],
 				'choice_label' => $nc3Choice['choice_label'],

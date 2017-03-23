@@ -298,7 +298,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$QAnswerSummary = ClassRegistry::init('Questionnaires.QuestionnaireAnswerSummary');
 		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
 		$nc2PreviousQId = null;
-		foreach ($nc2QSummaries as $key => $nc2QSummary) {
+		foreach ($nc2QSummaries as $nc2QSummary) {
 			$QAnswerSummary->begin();
 			try {
 				$data = $this->generateNc3QuestionnaireAnswerSummaryData($nc2QSummary);
@@ -306,6 +306,12 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					$QAnswerSummary->rollback();
 					continue;
 				}
+
+				// Model::idを初期化しないと$QAnswerSummary::data[id]がセットされず、MailQueueBehaviorでNotice Errorになってしまう。
+				// @see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/Model.php#L1962-L1964
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireAnswerSummary.php#L35
+				// @see https://github.com/NetCommons3/Mails/blob/3.1.0/Model/Behavior/MailQueueBehavior.php#L409
+				$QAnswerSummary->create();
 
 				if (!($data = $QAnswerSummary->save($data))) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
@@ -329,6 +335,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				// 対応するQuestionnaireQuestion,QuestionnaireChoiceをまとめて取得する
 				$nc2CurrentQId = $nc2QSummary['Nc2QuestionnaireSummary']['questionnaire_id'];
 				if ($nc2CurrentQId != $nc2PreviousQId) {
+
 					$questionnaireMap = $this->getMap($nc2CurrentQId);
 					// 移行後に修正されることを考慮し、対応するidでQuestionnaireデータを取得
 					// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Controller/QuestionnaireAnswersController.php#L111-L114
@@ -343,7 +350,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				if (!$this->__saveQuestionnaireAnswerFromNc2($nc2QSummary, $data, $questionMap)) {
+				if (!$this->__saveQuestionnaireAnswerFromNc2($nc2QSummary, $data, $nc3Questionnaire, $questionMap)) {
 					$QAnswerSummary->rollback();
 					continue;
 				}
@@ -368,12 +375,13 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
  *
  * @param array $nc2QSummary Nc2QuestionnaireSummary data.
  * @param array $nc3QAnswerSummary Nc3QuestionnaireAnswerSummary data.
+ * @param array $nc3Questionnaire Nc3Questionnaire data.
  * @param array $questionMap QuestionnaireQuestion map data.
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveQuestionnaireAnswerFromNc2($nc2QSummary, $nc3QAnswerSummary, $questionMap) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireAnswer data Migration start.'));
+	private function __saveQuestionnaireAnswerFromNc2($nc2QSummary, $nc3QAnswerSummary, $nc3Questionnaire, $questionMap) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '    QuestionnaireAnswer data Migration start.'));
 
 		/* @var $Nc2QAnswer AppModel */
 		$Nc2QAnswer = $this->getNc2Model('questionnaire_answer');
@@ -412,7 +420,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 			throw $ex;
 		}
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  QuestionnaireAnswer data Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '    QuestionnaireAnswer data Migration end.'));
 
 		return true;
 	}

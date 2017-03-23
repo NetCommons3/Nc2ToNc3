@@ -103,26 +103,25 @@ class Nc2ToNc3QuestionBaseBehavior extends Nc2ToNc3BaseBehavior {
  * @return string graph_color code
  */
 	protected function _convertAnswerValue($nc2AnswerValue, $questionMap) {
-		if (!$questionMap['QuestionnaireChoice']) {
+		if (!isset($questionMap['QuestionnaireChoice'])) {
 			return $nc2AnswerValue;
 		}
 
 		$nc2ChoiceSequences = explode('|', $nc2AnswerValue);
-		$nc3AnswerValues = '';
+		$nc3AnswerValue = '';
 		$nc3AnswerArray = [];
-		foreach ($nc2ChoiceSequences as $nc2ChoiceSequence) {
+		foreach ($nc2ChoiceSequences as $key => $nc2ChoiceSequence) {
 			if ($nc2ChoiceSequence == '0') {
 				continue;
 			}
 
-			$nc3Sequence = (int)$nc2ChoiceSequence - 1;
-			$nc3Choice = $nc3Choices[$nc3Sequence];
+			$nc3Choice = $questionMap['QuestionnaireChoice'][$key];
 
 			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/View/Helper/QuestionnaireAnswerHelper.php#L421-L428
 			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Behavior/QuestionnaireAnswerMultipleChoiceBehavior.php#L65
 			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Behavior/QuestionnaireAnswerBehavior.php#L68-L71
 			$nc3AnswerValue = '|' . $nc3Choice['key'] . ':' . $nc3Choice['choice_label'];
-			if ($questionMap['Nc2QuestionnaireQuestion']['question_type'] == '2') {
+			if ($questionMap['QuestionnaireQuestion']['question_type'] == '2') {
 				$nc3AnswerArray[] = $nc3AnswerValue;
 			}
 		}
