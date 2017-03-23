@@ -22,8 +22,6 @@ App::uses('Current', 'NetCommons.Utility');
  * @method string convertLanguage($langDirName)
  * @method array saveMap($modelName, $idMap)
  * @method array getMap($nc2Id)
- * @method void changeNc3CurrentLanguage()
- * @method void restoreNc3CurrentLanguage()
  * @method void changeNc3CurrentLanguage($langDirName = null)
  * @method void restoreNc3CurrentLanguage()
  *
