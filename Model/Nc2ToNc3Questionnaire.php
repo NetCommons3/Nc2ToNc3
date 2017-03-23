@@ -35,8 +35,8 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method array generateNc3QuestionnaireData($nc2Questionnaire)
  * @method array generateNc3QuestionnaireFrameSettingData($nc2QBlock)
  * @method array generateNc3QuestionnaireAnswerSummaryData($nc2QSummary)
- * @method array getQuestionMap($nc2QuestionnaireId, $nc3QuestionnaireKey)
  * @method array generateNc3QuestionnaireAnswerData($nc2QAnswers)
+ * @method array getQuestionMap($nc2QuestionnaireId, $nc3QuestionnaireKey)
  *
  */
 class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
@@ -334,10 +334,15 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Controller/QuestionnaireAnswersController.php#L111-L114
 					// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Controller/QuestionnaireAnswersController.php#L286
 					$nc3Questionnaire = $Questionnaire->findById($questionnaireMap['Questionnaire']['id'], null, null, 1);
-					$questionMap = $this->getQuestionMap($nc2CurrentQId, $nc3Questionnaire);
+					$questionMap = $this->getQuestionMap($nc2QSummary, $nc3Questionnaire);
 
 					$nc2PreviousQId = $nc2CurrentQId;
 				}
+				if (!$questionMap) {
+					$QAnswerSummary->rollback();
+					continue;
+				}
+
 				if (!$this->__saveQuestionnaireAnswerFromNc2($nc2QSummary, $data, $questionMap)) {
 					$QAnswerSummary->rollback();
 					continue;
@@ -383,7 +388,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 			$data = $this->generateNc3QuestionnaireAnswerData($nc2QAnswers, $questionMap);
 			if (!$data) {
 				//$QuestionnaireAnswer->rollback();
-				continue;
+				return false;
 			}
 
 			if (!$QuestionnaireAnswer->saveAnswer($data, $nc3Questionnaire, $nc3QAnswerSummary)) {
@@ -395,7 +400,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				$this->writeMigrationLog($message);
 
 				//$QuestionnaireAnswer->rollback();
-				continue;
+				return false;
 			}
 
 			//$QuestionnaireAnswer->commit();

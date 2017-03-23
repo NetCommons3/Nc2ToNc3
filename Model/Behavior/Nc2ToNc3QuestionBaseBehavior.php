@@ -39,6 +39,18 @@ class Nc2ToNc3QuestionBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Convert answer value.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2AnswerValue Nc2 answer value.
+ * @param array $nc3Choices Nc3QuestionnaireChoice data.
+ * @return string graph_color code
+ */
+	public function convertAnswerValue(Model $model, $nc2AnswerValue, $nc3Choices) {
+		return $this->_convertAnswerValue($nc2AnswerValue, $nc3Choices);
+	}
+
+/**
  * Convert nc2 question_type.
  *
  * @param string $questionType Nc2 question_type.
@@ -81,6 +93,45 @@ class Nc2ToNc3QuestionBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$choiceSequence = (int)$choiceSequence;
 
 		return $colors[$choiceSequence];
+	}
+
+/**
+ * Convert answer value.
+ *
+ * @param string $nc2AnswerValue Nc2 answer value.
+ * @param array $questionMap questionMap data.
+ * @return string graph_color code
+ */
+	protected function _convertAnswerValue($nc2AnswerValue, $questionMap) {
+		if (!$questionMap['QuestionnaireChoice']) {
+			return $nc2AnswerValue;
+		}
+
+		$nc2ChoiceSequences = explode('|', $nc2AnswerValue);
+		$nc3AnswerValues = '';
+		$nc3AnswerArray = [];
+		foreach ($nc2ChoiceSequences as $nc2ChoiceSequence) {
+			if ($nc2ChoiceSequence == '0') {
+				continue;
+			}
+
+			$nc3Sequence = (int)$nc2ChoiceSequence - 1;
+			$nc3Choice = $nc3Choices[$nc3Sequence];
+
+			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/View/Helper/QuestionnaireAnswerHelper.php#L421-L428
+			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Behavior/QuestionnaireAnswerMultipleChoiceBehavior.php#L65
+			// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Behavior/QuestionnaireAnswerBehavior.php#L68-L71
+			$nc3AnswerValue = '|' . $nc3Choice['key'] . ':' . $nc3Choice['choice_label'];
+			if ($questionMap['Nc2QuestionnaireQuestion']['question_type'] == '2') {
+				$nc3AnswerArray[] = $nc3AnswerValue;
+			}
+		}
+
+		if ($nc3AnswerArray) {
+			return $nc3AnswerArray;
+		}
+
+		return $nc3AnswerValue;
 	}
 
 }
