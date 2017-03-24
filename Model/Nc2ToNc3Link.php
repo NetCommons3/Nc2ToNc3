@@ -31,254 +31,251 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method array generateNc3LinkFrameSettingData($nc2LinklistBlock)
  *
  */
-class Nc2ToNc3Link extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 
-    /**
-     * Custom database table name, or null/false if no table association is desired.
-     *
-     * @var string
-     * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-     */
-    public $useTable = false;
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
+	public $useTable = false;
 
-    /**
-     * List of behaviors to load when the model object is initialized. Settings can be
-     * passed to behaviors by using the behavior name as index.
-     *
-     * @var array
-     * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-     */
-    public $actsAs = ['Nc2ToNc3.Nc2ToNc3Link'];
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Link'];
 
-    /**
-     * Migration method.
-     *
-     * @return bool True on success.
-     */
-    public function migrate()
-    {
-        $this->writeMigrationLog(__d('nc2_to_nc3', 'Link Migration start.'));
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
+	public function migrate() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Link Migration start.'));
 
-        /* @var $Nc2Linklist AppModel */
-        $Nc2Linklist = $this->getNc2Model('linklist');
-        $nc2Linklists = $Nc2Linklist->find('all');
-        if (!$this->__saveLinkFromNc2($nc2Linklists)) {
-            return false;
-        }
+		/* @var $Nc2Linklist AppModel */
+		$Nc2Linklist = $this->getNc2Model('linklist');
+		$nc2Linklists = $Nc2Linklist->find('all');
+		if (!$this->__saveLinkFromNc2($nc2Linklists)) {
+			return false;
+		}
 
-        /* @var $Nc2LinklistBlock AppModel */
-        $Nc2LinklistBlock = $this->getNc2Model('linklist_block');
-        $nc2LinklistBlocks = $Nc2LinklistBlock->find('all');
+		/* @var $Nc2LinklistBlock AppModel */
+		$Nc2LinklistBlock = $this->getNc2Model('linklist_block');
+		$nc2LinklistBlocks = $Nc2LinklistBlock->find('all');
 
-        if (!$this->__saveLinkFrameSettingFromNc2($nc2LinklistBlocks)) {
-            return false;
-        }
+		if (!$this->__saveLinkFrameSettingFromNc2($nc2LinklistBlocks)) {
+			return false;
+		}
 
-        $this->writeMigrationLog(__d('nc2_to_nc3', 'Link Migration end.'));
-        return true;
-    }
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Link Migration end.'));
 
-    /**
-     * Save Link from Nc2.
-     *
-     * @param array $nc2Linklists Nc2Linklist data.
-     * @return bool True on success
-     * @throws Exception
-     */
-    private function __saveLinkFromNc2($nc2Linklists)
-    {
-        $this->writeMigrationLog(__d('nc2_to_nc3', '  Link data Migration start.'));
+		return true;
+	}
 
-        /* @var $Link Link */
-        /* @var $LinkBlock LinkBlock */
-        /* @var $Nc2LinklistBlock AppModel */
-        /* @var $Nc2LinklistCategory AppModel */
-        /* @var $Nc2LinklistLink AppModel */
-        /* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-        /* @var $Frame Frame */
-        $Link = ClassRegistry::init('Links.Link');
-        $LinkBlock = ClassRegistry::init('Links.LinkBlock');
-        $Nc2LinklistBlock = $this->getNc2Model('linklist_block');
-        $Nc2LinklistCategory = $this->getNc2Model('linklist_category');
-        $Nc2LinklistLink = $this->getNc2Model('linklist_link');
-        $Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-        $Frame = ClassRegistry::init('Frames.Frame');
-        foreach ($nc2Linklists as $nc2Linklist) {
-            $LinkBlock->begin();
-            try {
-                $nc2LinklistId = $nc2Linklist['Nc2Linklist']['linklist_id'];
-                $nc2Categories = $Nc2LinklistCategory->findAllByLinklistId($nc2LinklistId, null, ['category_sequence' => 'ASC'], -1);
+/**
+ * Save Link from Nc2.
+ *
+ * @param array $nc2Linklists Nc2Linklist data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveLinkFromNc2($nc2Linklists) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Link data Migration start.'));
 
-                $nc2RoomId = $nc2Linklist['Nc2Linklist']['room_id'];
-                $nc2LinklistBlock = $Nc2LinklistBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
-                if (!$nc2LinklistBlock) {
-                    $message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
-                    $this->writeMigrationLog($message);
-                    $LinkBlock->rollback();
-                    continue;
-                }
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L577-L578
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L631-L634
-                $frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
-                $nc3RoomId = $frameMap['Frame']['room_id'];
+		/* @var $Link Link */
+		/* @var $LinkBlock LinkBlock */
+		/* @var $Nc2LinklistBlock AppModel */
+		/* @var $Nc2LinklistCategory AppModel */
+		/* @var $Nc2LinklistLink AppModel */
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Frame Frame */
+		$Link = ClassRegistry::init('Links.Link');
+		$LinkBlock = ClassRegistry::init('Links.LinkBlock');
+		$Nc2LinklistBlock = $this->getNc2Model('linklist_block');
+		$Nc2LinklistCategory = $this->getNc2Model('linklist_category');
+		$Nc2LinklistLink = $this->getNc2Model('linklist_link');
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		foreach ($nc2Linklists as $nc2Linklist) {
+			$LinkBlock->begin();
+			try {
+				$nc2LinklistId = $nc2Linklist['Nc2Linklist']['linklist_id'];
+				$nc2Categories = $Nc2LinklistCategory->findAllByLinklistId($nc2LinklistId, null, ['category_sequence' => 'ASC'], -1);
 
-                $data = $this->generateNc3LinkBlockData($frameMap, $nc2Linklist, $nc2Categories);
-                if (!$data) {
-                    $LinkBlock->rollback();
-                    continue;
-                }
+				$nc2RoomId = $nc2Linklist['Nc2Linklist']['room_id'];
+				$nc2LinklistBlock = $Nc2LinklistBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
+				if (!$nc2LinklistBlock) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
+					$this->writeMigrationLog($message);
+					$LinkBlock->rollback();
+					continue;
+				}
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L577-L578
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L631-L634
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
+				$nc3RoomId = $frameMap['Frame']['room_id'];
 
-                Current::write('Frame.key', $frameMap['Frame']['key']);
-                Current::write('Frame.room_id', $nc3RoomId);
-                Current::write('Frame.plugin_key', 'links');
+				$data = $this->generateNc3LinkBlockData($frameMap, $nc2Linklist, $nc2Categories);
+				if (!$data) {
+					$LinkBlock->rollback();
+					continue;
+				}
 
-                // @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
-                Current::write('Plugin.key', 'links');
+				Current::write('Frame.key', $frameMap['Frame']['key']);
+				Current::write('Frame.room_id', $nc3RoomId);
+				Current::write('Frame.plugin_key', 'links');
 
-                // @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-                Current::write('Room.id', $nc3RoomId);
-                CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+				Current::write('Plugin.key', 'links');
 
-                // Model::idを初期化しないとUpdateになってしまう。
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireSetting.php#L129-L149
-                $Frame->create();
+				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+				Current::write('Room.id', $nc3RoomId);
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-                if (!$LinkBlock->saveLinkBlock($data)) {
-                    // @see https://phpmd.org/rules/design.html
-                    $message = $this->getLogArgument($nc2Linklist) . "\n" .
-                        var_export($LinkBlock->validationErrors, true);
-                    $this->writeMigrationLog($message);
+				// Model::idを初期化しないとUpdateになってしまう。
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireSetting.php#L129-L149
+				$Frame->create();
 
-                    $LinkBlock->rollback();
-                    continue;
-                }
+				if (!$LinkBlock->saveLinkBlock($data)) {
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Linklist) . "\n" .
+						var_export($LinkBlock->validationErrors, true);
+					$this->writeMigrationLog($message);
 
-                $nc2Links = $Nc2LinklistLink->findAllByLinklistId($nc2LinklistId, null, ['link_sequence' => 'ASC'], -1);
-                foreach ($nc2Links as $nc2Link) {
-                    $data = $this->generateNc3LinkData($LinkBlock->data, $nc2Link, $nc2Categories);
-                    if (!$Link->saveLink($data)) {
-                        // @see https://phpmd.org/rules/design.html
-                        $message = $this->getLogArgument($nc2Link) . "\n" .
-                            var_export($Link->validationErrors, true);
-                        $this->writeMigrationLog($message);
+					$LinkBlock->rollback();
+					continue;
+				}
 
-                        $Link->rollback();
-                        continue;
-                    }
-                }
+				$nc2Links = $Nc2LinklistLink->findAllByLinklistId($nc2LinklistId, null, ['link_sequence' => 'ASC'], -1);
+				foreach ($nc2Links as $nc2Link) {
+					$data = $this->generateNc3LinkData($LinkBlock->data, $nc2Link, $nc2Categories);
+					if (!$Link->saveLink($data)) {
+						// @see https://phpmd.org/rules/design.html
+						$message = $this->getLogArgument($nc2Link) . "\n" .
+							var_export($Link->validationErrors, true);
+						$this->writeMigrationLog($message);
 
-                // 登録処理で使用しているデータを空に戻す
-                unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+						$Link->rollback();
+						continue;
+					}
+				}
 
-                $idMap = [
-                    $nc2LinklistId => $LinkBlock->id,
-                ];
-                $this->saveMap('Link', $idMap);
+				// 登録処理で使用しているデータを空に戻す
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
-                $LinkBlock->commit();
+				$idMap = [
+					$nc2LinklistId => $LinkBlock->id,
+				];
+				$this->saveMap('Link', $idMap);
 
-            } catch (Exception $ex) {
-                // NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-                // $LinkBlockFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-                $LinkBlock->rollback($ex);
-                throw $ex;
-            }
-        }
+				$LinkBlock->commit();
 
-        // 登録処理で使用しているデータを空に戻す
-        Current::remove('Frame.key');
-        Current::remove('Frame.room_id');
-        Current::remove('Frame.plugin_key');
-        Current::remove('Plugin.key');
-        Current::remove('Room.id');
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $LinkBlockFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$LinkBlock->rollback($ex);
+				throw $ex;
+			}
+		}
 
-        $this->writeMigrationLog(__d('nc2_to_nc3', '  Link data Migration end.'));
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Frame.room_id');
+		Current::remove('Frame.plugin_key');
+		Current::remove('Plugin.key');
+		Current::remove('Room.id');
 
-        return true;
-    }
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Link data Migration end.'));
 
-    /**
-     * Save Link from Nc2.
-     *
-     * @param array $nc2LinklistBlocks Nc2Linklist data.
-     * @return bool True on success
-     * @throws Exception
-     */
-    private function __saveLinkFrameSettingFromNc2($nc2LinklistBlocks)
-    {
-        $this->writeMigrationLog(__d('nc2_to_nc3', '  LinkFrameSetting data Migration start.'));
+		return true;
+	}
 
-        /* @var $LinkFrameSetting LinkFrameSetting */
-        /* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-        /* @var $Block Block */
-        $LinkFrameSetting = ClassRegistry::init('Links.LinkFrameSetting');
-        $Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-        $Block = ClassRegistry::init('Blocks.Block');
-        foreach ($nc2LinklistBlocks as $nc2LinklistBlock) {
-            $LinkFrameSetting->begin();
-            try {
-                $data = $this->generateNc3LinkFrameSettingData($nc2LinklistBlock);
-                if (!$data) {
-                    $LinkFrameSetting->rollback();
-                    continue;
-                }
+/**
+ * Save Link from Nc2.
+ *
+ * @param array $nc2LinklistBlocks Nc2Linklist data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveLinkFrameSettingFromNc2($nc2LinklistBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  LinkFrameSetting data Migration start.'));
 
-                $nc2BlockId = $nc2LinklistBlock['Nc2LinklistBlock']['block_id'];
-                $frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-                if (!$frameMap) {
-                    $message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2LinklistBlock));
-                    $this->writeMigrationLog($message);
-                    $LinkFrameSetting->rollback();
-                    continue;
-                }
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameDisplayQuestionnaire.php#L221
-                Current::write('Frame.key', $frameMap['Frame']['key']);
+		/* @var $LinkFrameSetting LinkFrameSetting */
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Block Block */
+		$LinkFrameSetting = ClassRegistry::init('Links.LinkFrameSetting');
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
+		foreach ($nc2LinklistBlocks as $nc2LinklistBlock) {
+			$LinkFrameSetting->begin();
+			try {
+				$data = $this->generateNc3LinkFrameSettingData($nc2LinklistBlock);
+				if (!$data) {
+					$LinkFrameSetting->rollback();
+					continue;
+				}
 
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameSetting.php#L165-L167
-                // @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L464
-                $nc3Block = $Block->findByRoomIdAndPluginKey(
-                    $frameMap['Frame']['room_id'],
-                    'links',
-                    'id',
-                    null,
-                    -1
-                );
-                Current::write('Block.id', $nc3Block['Block']['id']);
+				$nc2BlockId = $nc2LinklistBlock['Nc2LinklistBlock']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2LinklistBlock));
+					$this->writeMigrationLog($message);
+					$LinkFrameSetting->rollback();
+					continue;
+				}
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameDisplayQuestionnaire.php#L221
+				Current::write('Frame.key', $frameMap['Frame']['key']);
 
-                if (!$LinkFrameSetting->saveLinkFrameSetting($data)) {
-                    // @see https://phpmd.org/rules/design.html
-                    $message = $this->getLogArgument($nc2LinklistBlock) . "\n" .
-                        var_export($LinkFrameSetting->validationErrors, true);
-                    $this->writeMigrationLog($message);
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameSetting.php#L165-L167
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L464
+				$nc3Block = $Block->findByRoomIdAndPluginKey(
+					$frameMap['Frame']['room_id'],
+					'links',
+					'id',
+					null,
+					-1
+				);
+				Current::write('Block.id', $nc3Block['Block']['id']);
 
-                    $LinkFrameSetting->rollback();
-                    continue;
-                }
+				if (!$LinkFrameSetting->saveLinkFrameSetting($data)) {
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2LinklistBlock) . "\n" .
+						var_export($LinkFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
 
-                $idMap = [
-                    $nc2BlockId => $LinkFrameSetting->id,
-                ];
-                $this->saveMap('LinkFrameSetting', $idMap);
+					$LinkFrameSetting->rollback();
+					continue;
+				}
 
-                $LinkFrameSetting->commit();
+				$idMap = [
+					$nc2BlockId => $LinkFrameSetting->id,
+				];
+				$this->saveMap('LinkFrameSetting', $idMap);
 
-            } catch (Exception $ex) {
-                // NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-                // $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-                $LinkFrameSetting->rollback($ex);
-                throw $ex;
-            }
-        }
+				$LinkFrameSetting->commit();
 
-        // 登録処理で使用しているデータを空に戻す
-        Current::remove('Frame.key');
-        Current::remove('Block.id');
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$LinkFrameSetting->rollback($ex);
+				throw $ex;
+			}
+		}
 
-        $this->writeMigrationLog(__d('nc2_to_nc3', '  LinkFrameSetting data Migration end.'));
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Block.id');
 
-        return true;
-    }
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  LinkFrameSetting data Migration end.'));
+
+		return true;
+	}
 }
 

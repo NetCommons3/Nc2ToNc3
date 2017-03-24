@@ -33,8 +33,7 @@ App::uses('ComponentCollection', 'Controller');
  * @method array generateNc3PhotoData($PhotoAlbumData, $nc2Photo)
  *
  */
-class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 
 /**
  * Custom database table name, or null/false if no table association is desired.
@@ -58,8 +57,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
  *
  * @return bool True on success.
  */
-	public function migrate()
-	{
+	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'PhotoAlbum Migration start.'));
 
 		/* @var $Nc2PhotoalbumBlock AppModel */
@@ -77,6 +75,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'PhotoAlbum Migration end.'));
+
 		return true;
 	}
 
@@ -87,18 +86,17 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
  * @return bool True on success
  * @throws Exception
  */
-	private function __savePhotoAlbumFrameSettingFromNc2($nc2PhotoalbumBlocks)
-	{
+	private function __savePhotoAlbumFrameSettingFromNc2($nc2PhotoalbumBlocks) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  PhotoAlbumFrameSetting data Migration start.'));
 
 		/* @var $PhotoAlbum PhotoAlbum */
-		/* @var $PhotoAlbumFrameSetting PhotoAlbumFrameSetting */
+		/* @var $FrameSetting PhotoAlbumFrameSetting */
 		/* @var $PhotoAlbumsComponent PhotoAlbumsComponent */
 		/* @var $Nc2Photoalbum AppModel */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		/* @var $Block Block */
 		$PhotoAlbum = ClassRegistry::init('PhotoAlbums.PhotoAlbum');
-		$PhotoAlbumFrameSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumFrameSetting');
+		$FrameSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumFrameSetting');
 		$PhotoAlbumsComponent = new PhotoAlbumsComponent(new ComponentCollection());
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
@@ -115,9 +113,9 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
 				Current::write('Room.id', $nc3RoomId);
 				$Block->create();
 				$PhotoAlbumsComponent->initializeSetting();
-				$photoAlbumFrameSetting = $PhotoAlbumFrameSetting->read();
+				$frameSetting = $FrameSetting->read();
 				$data = [
-					'PhotoAlbumFrameSetting' => $photoAlbumFrameSetting['PhotoAlbumFrameSetting'],
+					'PhotoAlbumFrameSetting' => $frameSetting['PhotoAlbumFrameSetting'],
 				];
 
 				$data = $this->generateNc3PhotoAlbumFrameSettingData($data, $nc2PhotoalbumBlock);
@@ -137,11 +135,11 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-				$PhotoAlbumFrameSetting->validate = [];
-				if (!$PhotoAlbumFrameSetting->savePhotoAlbumFrameSetting($data)) {
+				$FrameSetting->validate = [];
+				if (!$FrameSetting->savePhotoAlbumFrameSetting($data)) {
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2PhotoalbumBlock) . "\n" .
-						var_export($PhotoAlbumFrameSetting->validationErrors, true);
+						var_export($FrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
 					$PhotoAlbum->rollback();
@@ -152,7 +150,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$idMap = [
-					$nc2BlockId => $PhotoAlbumFrameSetting->id,
+					$nc2BlockId => $FrameSetting->id,
 				];
 				$this->saveMap('PhotoAlbumFrameSetting', $idMap);
 
@@ -160,7 +158,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $PhotoAlbumFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				// $FrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$PhotoAlbum->rollback($ex);
 				throw $ex;
 			}
@@ -185,8 +183,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel
  * @return bool True on success
  * @throws Exception
  */
-	private function __savePhotoAlbumFromNc2($nc2PhotoalbumAlbums)
-	{
+	private function __savePhotoAlbumFromNc2($nc2PhotoalbumAlbums) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Photoalbum data Migration start.'));
 
 		/* @var $PhotoAlbum PhotoAlbum */

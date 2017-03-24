@@ -14,8 +14,7 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
  * Nc2ToNc3FaqBehavior
  *
  */
-class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
-{
+class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
  * Get Log argument.
@@ -24,8 +23,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
  * @param array $nc2Photoalbum Array data of Nc2Photoalbum or Nc2PhotoalbumAlbum or Nc2PhotoalbumPhoto.
  * @return string Log argument
  */
-	public function getLogArgument(Model $model, $nc2Photoalbum)
-	{
+	public function getLogArgument(Model $model, $nc2Photoalbum) {
 		return $this->__getLogArgument($nc2Photoalbum);
 	}
 
@@ -56,8 +54,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
  * @param array $nc2Photo Nc2PhotoalbumPhoto data.
  * @return array Nc3PhotoAlbum data.
  */
-	public function generateNc3PhotoAlbumData(Model $model, $frameMap, $nc2PhotoalbumAlbum, $nc2Photo)
-	{
+	public function generateNc3PhotoAlbumData(Model $model, $frameMap, $nc2PhotoalbumAlbum, $nc2Photo) {
 		/* @var $Block Block */
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Block = ClassRegistry::init('Blocks.Block');
@@ -142,8 +139,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
  * @param array $nc2Photo Nc2Photo data.
  * @return array Nc3PhotoAlbumPhoto data.
  */
-	public function generateNc3PhotoData(Model $model, $nc3PhotoAlbum, $nc2Photo)
-	{
+	public function generateNc3PhotoData(Model $model, $nc3PhotoAlbum, $nc2Photo) {
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc2UploadId = $nc2Photo['Nc2PhotoalbumPhoto']['upload_id'];
@@ -185,8 +181,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
  * @param array $nc2PhotoalbumBlock Nc2PhotoalbumBlock data.
  * @return array Nc3PhotoAlbumFrameSetting data.
  */
-	public function generateNc3PhotoAlbumFrameSettingData(Model $model, $data, $nc2PhotoalbumBlock)
-	{
+	public function generateNc3PhotoAlbumFrameSettingData(Model $model, $data, $nc2PhotoalbumBlock) {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
@@ -202,6 +197,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
 		if (!$frameMap) {
 			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2PhotoalbumBlock));
 			$this->_writeMigrationLog($message);
+
 			return [];
 		}
 
@@ -240,12 +236,12 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
  * @param string $nc2Jacket Nc2PhotoalbumAlbum.album_jacket.
  * @return array jacket data
  */
-	public function __generatePresetFile($nc2Jacket) {
+	private function __generatePresetFile($nc2Jacket) {
 		$data = [];
 
 		$presetArr = [
-			'animal.gif','animal2.gif','city.gif','event.gif','event2.gif','flower.gif','food.gif',
-			'hobby.gif','human.gif','nature.gif','nature2.gif','room.gif','scene.gif','sports.gif','travel.gif'
+			'animal.gif', 'animal2.gif', 'city.gif', 'event.gif', 'event2.gif', 'flower.gif', 'food.gif',
+			'hobby.gif', 'human.gif', 'nature.gif', 'nature2.gif', 'room.gif', 'scene.gif', 'sports.gif', 'travel.gif',
 		];
 		if (!in_array($nc2Jacket, $presetArr)) {
 			return $data;
@@ -256,6 +252,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
 		if (!is_readable($tmpName)) {
 			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2PhotoalbumAlbum album_jacket:' . $nc2Jacket);
 			$this->_writeMigrationLog($message);
+
 			return $data;
 		}
 
@@ -274,7 +271,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
 			'type' => $finfo->file($tmpName),
 			'tmp_name' => $Folder->path . DS . $nc2Jacket,
 			'error' => UPLOAD_ERR_OK,
-			'size' => filesize($tmpName)
+			'size' => filesize($tmpName),
 		];
 
 		return $data;
@@ -286,8 +283,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior
  * @param array $nc2Photoalbum Array data of Nc2Photoalbum or Nc2PhotoalbumAlbum or Nc2PhotoalbumPhoto.
  * @return string Log argument
  */
-	private function __getLogArgument($nc2Photoalbum)
-	{
+	private function __getLogArgument($nc2Photoalbum) {
 		if (!isset($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id'])) {
 			return 'Nc2PhotoalbumBlock' .
 				'block_id' . $nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id'];
