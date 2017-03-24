@@ -178,26 +178,17 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param array $data array.
+ * @param array $frameMap Frame mapping data.
  * @param array $nc2PhotoalbumBlock Nc2PhotoalbumBlock data.
  * @return array Nc3PhotoAlbumFrameSetting data.
  */
-	public function generateNc3PhotoAlbumFrameSettingData(Model $model, $data, $nc2PhotoalbumBlock) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+	public function generateNc3PhotoAlbumFrameSettingData(Model $model, $data, $frameMap, $nc2PhotoalbumBlock) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$nc2BlockId = $nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id'];
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('PhotoAlbumFrameSetting', $nc2BlockId);
 		if ($mapIdList) {
 			// 移行済み
-			return [];
-		}
-
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2PhotoalbumBlock));
-			$this->_writeMigrationLog($message);
-
 			return [];
 		}
 
@@ -214,7 +205,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data['PhotoAlbumFrameSetting'] = [
+		$photoAlbumFrameSetting['PhotoAlbumFrameSetting'] = [
 			'frame_key' => $frameMap['Frame']['key'],
 			'display_type' => $displayType,
 			'slide_height' => $nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['height'],
@@ -225,6 +216,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']),
 			'created' => $this->_convertDate($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['insert_time']),
 		];
+		$data += $photoAlbumFrameSetting;
 
 		return $data;
 	}
