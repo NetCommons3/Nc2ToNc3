@@ -193,6 +193,12 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
 		foreach ($nc2JournalPosts as $nc2JournalPost) {
 
+			//root_idが0以外は、コメントデータにあたり、NC3-content_commentsへ移行する。
+			//Nc2ToNc3Commentクラス追加までは、暫定対応として処理しないようにする
+			if ($nc2JournalPost['Nc2JournalPost']['root_id']) {
+				continue;
+			}
+
 			$BlogEntry->begin();
 			try {
 				$data = $this->generateNc3BlogEntryData($nc2JournalPost);
@@ -214,6 +220,11 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
+				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
+				// ['datetime','datetime'] になってしまうので初期化
+				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
+				$BlogEntry->validate = [];
+
 				if (!$BlogEntry->saveEntry($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
@@ -224,11 +235,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					continue;
 				}
-
-				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
-				// ['datetime','datetime'] になってしまうので初期化
-				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
-				$BlogEntry->validate = [];
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 

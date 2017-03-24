@@ -190,7 +190,7 @@ class Nc2ToNc3CircularNoticeBehavior extends Nc2ToNc3BaseBehavior {
 				'is_room_target' => '1',
 				'public_type' => '1',
 				'use_reply_deadline' => $nc3UseReplyDeadline,
-				'reply_deadline' => $nc2Circular['Nc2Circular']['period'],
+				'reply_deadline' => $this->_convertDate($nc2Circular['Nc2Circular']['period']),
 				'status' => '1',
 				'created' => $this->_convertDate($nc2Circular['Nc2Circular']['insert_time']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Circular['Nc2Circular']),

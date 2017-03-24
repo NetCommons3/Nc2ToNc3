@@ -228,6 +228,11 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
+				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
+				// ['datetime','datetime'] になってしまうので初期化
+				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
+				$CircularNoticeCont->validate = [];
+
 				if (!$CircularNoticeCont->saveCircularNoticeContent($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
@@ -238,11 +243,6 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					continue;
 				}
-
-				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
-				// ['datetime','datetime'] になってしまうので初期化
-				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
-				$CircularNoticeCont->validate = [];
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
