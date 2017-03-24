@@ -31,30 +31,30 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * Generate Nc3LinkBlock data.
  *
  * Data sample
+ * data[Frame][id]:
+ * data[Block][id]:
+ * data[Block][key]:
+ * data[Block][room_id]:
+ * data[Block][plugin_key]:links
+ * data[Block][name]:
+ * data[Block][public_type]:1
+ * data[LinkBlock][key]:
  * data[LinkBlock][name]:
+ * data[LinkBlock][created_user]:
+ * data[LinkBlock][created]:
  * data[LinkSetting][use_workflow]:0
  * data[Categories]:
  *
  * @param Model $model Model using this behavior.
  * @param array $frameMap FrameMap data.
  * @param array $nc2Linklist Nc2Linklist data.
- * @param array $nc2Categories Nc2Categories data.
  * @return array Nc3Link data.
  */
-	public function generateNc3LinkBlockData(Model $model, $frameMap, $nc2Linklist, $nc2Categories) {
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$nc2LinklistId = $nc2Linklist['Nc2Linklist']['linklist_id'];
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('Link', $nc2LinklistId);
-		if ($mapIdList) {
-			// 移行済み
-			return [];
-		}
-
+	public function generateNc3LinkBlockData(Model $model, $frameMap, $nc2Linklist) {
 		$nc2LinklistId = $nc2Linklist['Nc2Linklist']['linklist_id'];
 		$linklistMap = $this->_getMap($nc2LinklistId);
 		if ($linklistMap) {
-			// 既存の場合
+			// 移行済みの場合
 			return [];
 		}
 
@@ -71,7 +71,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 			'public_type' => 1,
 		];
 		$data['LinkBlock'] = [
-			'key' => Hash::get($linklistMap, ['Linklist', 'key']),
+			'key' => '',
 			'name' => $nc2Linklist['Nc2Linklist']['linklist_name'],
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Linklist['Nc2Linklist']),
 			'created' => $this->_convertDate($nc2Linklist['Nc2Linklist']['insert_time']),
@@ -79,6 +79,14 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 		$data['LinkSetting'] = [
 			'use_workflow' => '0',
 		];
+		/* @var $Nc2LinklistCategory AppModel */
+		$Nc2LinklistCategory = $this->getNc2Model($model, 'linklist_category');
+		$nc2Categories = $Nc2LinklistCategory->findAllByLinklistId(
+			$nc2Linklist['Nc2Linklist']['linklist_id'],
+			null,
+			['category_sequence' => 'ASC'],
+			-1
+		);
 		$data['Categories'] = $this->_generateNc3CategoryData($nc2Categories);
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
@@ -142,16 +150,15 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $nc3Link Link data.
  * @param array $nc2LinklistLink Nc2LinklistLink data.
- * @param array $nc2Categories Nc2LinkCategories data.
  * @return array Nc3Link data.
  */
-	public function generateNc3LinkData(Model $model, $nc3Link, $nc2LinklistLink, $nc2Categories) {
+	public function generateNc3LinkData(Model $model, $nc3Link, $nc2LinklistLink) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$nc2LinkId = $nc2LinklistLink['Nc2LinklistLink']['link_id'];
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('LinkLink', $nc2LinkId);
 		if ($mapIdList) {
-			// 移行済み
+			// 移行済みの場合
 			return [];
 		}
 
@@ -187,7 +194,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Generate Nc3Link data.
+ * Generate Nc3LinkFrameSetting data.
  *
  * Data sample
  * data[LinkFrameSetting][id]:
@@ -201,33 +208,17 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * data[LinkFrameSetting][created]:
  *
  * @param Model $model Model using this behavior.
+ * @param array $frameMap FrameMap data.
  * @param array $nc2LinklistBlock NC2LinklistBlock data.
  * @return array Nc3LinkFrameSetting data.
  */
-	public function generateNc3LinkFrameSettingData(Model $model, $nc2LinklistBlock) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+	public function generateNc3LinkFrameSettingData(Model $model, $frameMap, $nc2LinklistBlock) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$nc2BlockId = $nc2LinklistBlock['Nc2LinklistBlock']['block_id'];
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('LinkFrameSetting', $nc2BlockId);
 		if ($mapIdList) {
 			// 移行済み
-			return [];
-		}
-
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2LinklistBlock));
-			$this->_writeMigrationLog($message);
-
-			return [];
-		}
-
-		$nc2LinklistId = $nc2LinklistBlock['Nc2LinklistBlock']['linklist_id'];
-		$LinkMap = $this->_getMap($nc2LinklistId);
-		if ($LinkMap) {
-			// 既存の場合
 			return [];
 		}
 
@@ -286,36 +277,36 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get map
  *
- * @param array|string $nc2LinklistIds Nc2CLinklist link_id.
+ * @param array|string $nc2LinklistIds Nc2CLinklist linklist_id.
  * @return array Map data with Nc2Block block_id as key.
  */
 	protected function _getMap($nc2LinklistIds) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		/* @var $Link Link */
+		/* @var $LinkBlock LinkBlock */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$Link = ClassRegistry::init('Links.Link');
+		$LinkBlock = ClassRegistry::init('Links.LinkBlock');
 
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('Link', $nc2LinklistIds);
 		$query = [
 			'fields' => [
-				'Link.id',
-				'Link.key',
+				'LinkBlock.id',
+				'LinkBlock.key',
 			],
 			'conditions' => [
-				'Link.id' => $mapIdList,
+				'LinkBlock.id' => $mapIdList,
 			],
 			'recursive' => -1,
 			'callbacks' => false,
 		];
-		$nc3Links = $Link->find('all', $query);
-		if (!$nc3Links) {
-			return $nc3Links;
+		$nc3LinkBlocks = $LinkBlock->find('all', $query);
+		if (!$nc3LinkBlocks) {
+			return $nc3LinkBlocks;
 		}
 
 		$map = [];
-		foreach ($nc3Links as $nc3Link) {
-			$nc2Id = array_search($nc3Link['Link']['id'], $mapIdList);
-			$map[$nc2Id] = $nc3Link;
+		foreach ($nc3LinkBlocks as $nc3LinkBlock) {
+			$nc2Id = array_search($nc3LinkBlock['LinkBlock']['id'], $mapIdList);
+			$map[$nc2Id] = $nc3LinkBlock;
 		}
 
 		if (is_string($nc2LinklistIds)) {
