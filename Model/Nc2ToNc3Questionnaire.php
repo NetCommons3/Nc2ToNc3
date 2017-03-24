@@ -156,6 +156,10 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				$Frame->create();
 
 				if (!$Questionnaire->saveQuestionnaire($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Questionnaire->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
