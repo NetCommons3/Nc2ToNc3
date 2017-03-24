@@ -31,50 +31,36 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
  * Generate Nc3Faq data.
  *
  * Data sample
- * data[Faq][import_key]:
- * data[Faq][export_key]:
- * data[Faq][faq_name]:
- * data[FaqFrameSetting][id]:
- * data[FaqFrameSetting][frame_key]:
- * data[FaqFrameSetting][content_per_page]:1
- * data[AuthorizationKey][authorization_key]:
+ * data[Frame][id]:
+ * data[Block][id]:
+ * data[Block][key]:
+ * data[Block][room_id]:
+ * data[Block][plugin_key]:faqs
+ * data[Block][name]:
+ * data[Block][public_type]:1
+ * data[Faq][id]:
+ * data[Faq][key]:
+ * data[Faq][name]:
+ * data[Faq][created_user]:
+ * data[Faq][created]:
+ * data[Categories]:
+ * data[Topics][plugin_key]:faqs
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2FaqBlock Nc2FaqBlock data.
- * @param array $nc2Categories Nc2Categories data.
+ * @param array $frameMap Frame mapping data.
+ * @param array $nc2Faq Nc2Faq data.
  * @return array Nc3Faq data.
  */
-	public function generateNc3FaqData(Model $model, $nc2FaqBlock, $nc2Categories) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2FaqBlock));
-			$this->_writeMigrationLog($message);
-
+	public function generateNc3FaqData(Model $model, $frameMap, $nc2Faq) {
+		$nc2FaqId = $nc2Faq['Nc2Faq']['faq_id'];
+		$faqMap = $this->_getMap($nc2FaqId);
+		if ($faqMap) {
+			// 移行済みの場合
 			return [];
 		}
-
-		$nc2FaqId = $nc2FaqBlock['Nc2FaqBlock']['faq_id'];
-		$FaqMap = $this->_getMap($nc2FaqId);
-		if ($FaqMap) {
-			// 既存の場合
-			return [];
-		}
-		/* @var $Nc2Faq AppModel */
-		$Nc2Faq = $this->getNc2Model($model, 'faq');
-		$nc2Faq = $Nc2Faq->findByFaqId($nc2FaqId);
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data['Faq'] = [
-			'id' => '',
-			'key' => '',
-			'name' => $nc2Faq['Nc2Faq']['faq_name'],
-			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Faq['Nc2Faq']),
-			'created' => $this->_convertDate($nc2Faq['Nc2Faq']['insert_time']),
-		];
 		$data['Frame'] = [
 			'id' => $frameMap['Frame']['id'],
 		];
@@ -86,22 +72,28 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 			'name' => $nc2Faq['Nc2Faq']['faq_name'],
 			'public_type' => 1,
 		];
-		$data['FaqFrameSetting'] = [
+		$data['Faq'] = [
 			'id' => '',
-			'frame_key' => $frameMap['Frame']['key'],
-			'content_per_page' => $nc2FaqBlock['Nc2FaqBlock']['display_row'],
+			'key' => '',
+			'name' => $nc2Faq['Nc2Faq']['faq_name'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Faq['Nc2Faq']),
+			'created' => $this->_convertDate($nc2Faq['Nc2Faq']['insert_time']),
 		];
-		$data['FaqSetting'] = [
-			'use_workflow' => '0',
-			'use_like' => '0',
-			'use_unlike' => '0',
-		];
+
+		/* @var $Nc2FaqCategory AppModel */
+		$Nc2FaqCategory = $this->getNc2Model($model, 'faq_category');
+		$nc2Categories = $Nc2FaqCategory->findAllByFaqId(
+			$nc2Faq['Nc2Faq']['faq_id'],
+			null,
+			['display_sequence' => 'ASC'],
+			-1
+		);
+		$data['Categories'] = $this->_generateNc3CategoryData($nc2Categories);
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
 		$data['Topic'] = [
-			'plugin_key' => 'Faqs',
+			'plugin_key' => 'faqs',
 		];
-		$data['Categories'] = $this->_generateNc3CategoryData($nc2Categories);
 
 		return $data;
 	}
@@ -153,24 +145,13 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
  * data[FaqQuestionOrder][id]:0
  * data[FaqQuestionOrder][faq_key]:
  * data[FaqQuestionOrder][faq_question_key]:
- * data[AuthorizationKey][authorization_key]
  *
  * @param Model $model Model using this behavior.
  * @param array $nc3Faq Faq data.
  * @param array $nc2FaqQuestion Nc2FaqQuestion data.
- * @param array $nc2Categories Nc2FaqCategories data.
  * @return array Nc3FaqQuestion data.
  */
-	public function generateNc3FaqQuestionData(Model $model, $nc3Faq, $nc2FaqQuestion, $nc2Categories) {
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$nc2FaqQuestionId = $nc2FaqQuestion['Nc2FaqQuestion']['question_id'];
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('FaqQuestion', $nc2FaqQuestionId);
-		if ($mapIdList) {
-			// 移行済み
-			return [];
-		}
-
+	public function generateNc3FaqQuestionData(Model $model, $nc3Faq, $nc2FaqQuestion) {
 		$data = [
 			'Faq' => [
 				'key' => $nc3Faq['Faq']['key'],
@@ -197,21 +178,74 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Generate Nc3FaqFrameSetting data.
+ *
+ * Data sample
+ * data[FaqFrameSetting][id]:
+ * data[FaqFrameSetting][frame_key]:
+ * data[FaqFrameSetting][content_per_page]:1
+ * data[FaqFrameSetting][created_user]:
+ * data[FaqFrameSetting][created]:
+ * data[FaqSetting][use_workflow]:
+ * data[FaqSetting][use_like]:
+ * data[FaqSetting][use_unlike]:
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2FaqBlock Nc2FaqBlock data.
+ * @return array Nc3Faq data.
+ */
+	public function generateNc3FaqFrameSettingData(Model $model, $nc2FaqBlock) {
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if (!$frameMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2FaqBlock));
+			$this->_writeMigrationLog($message);
+
+			return [];
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$data['FaqFrameSetting'] = [
+			'id' => '',
+			'frame_key' => $frameMap['Frame']['key'],
+			'content_per_page' => $nc2FaqBlock['Nc2FaqBlock']['display_row'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2FaqBlock['Nc2FaqBlock']),
+			'created' => $this->_convertDate($nc2FaqBlock['Nc2FaqBlock']['insert_time']),
+		];
+		$data['FaqSetting'] = [
+			'use_workflow' => '0',
+			'use_like' => '0',
+			'use_unlike' => '0',
+		];
+
+		return $data;
+	}
+
+/**
  * Get Log argument.
  *
- * @param array $nc2FaqBlock Array data of Nc2FaqBlock and Nc2Faq.
+ * @param array $nc2Faq Array data of Nc2FaqBlock, Nc2Faq and Nc2FaqQuestion.
  * @return string Log argument
  */
-	private function __getLogArgument($nc2FaqBlock) {
+	private function __getLogArgument($nc2Faq) {
 
-		if (isset($nc2FaqBlock['Nc2FaqBlock'])) {
+		if (isset($nc2Faq['Nc2FaqBlock'])) {
 			return 'Nc2FaqBlock ' .
-				'block_id:' . $nc2FaqBlock['Nc2FaqBlock']['block_id'];
+				'block_id:' . $nc2Faq['Nc2FaqBlock']['block_id'];
+		}
+
+		if (isset($nc2Faq['Nc2FaqQuestion'])) {
+			return 'Nc2FaqQuestion' .
+				'faq_id:' . $nc2Faq['Nc2FaqQuestion']['faq_id'] . ',' .
+				'question_id:' . $nc2Faq['Nc2FaqQuestion']['question_id'];
 		}
 
 		return 'Nc2Faq ' .
-			'faq_id:' . $nc2FaqBlock['Nc2Faq']['faq_id'] . ',' .
-			'faq_name:' . $nc2FaqBlock['Nc2Faq']['faq_name'];
+			'faq_id:' . $nc2Faq['Nc2Faq']['faq_id'] . ',' .
+			'faq_name:' . $nc2Faq['Nc2Faq']['faq_name'];
 	}
 
 /**
