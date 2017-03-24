@@ -50,9 +50,8 @@ class Nc2ToNc3IframeBehavior extends Nc2ToNc3BaseBehavior {
         $Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$nc2BlockId = $nc2Iframe['Nc2Iframe']['block_id'];
         $frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-        if (!$frameMap) {
-            $message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Iframe));
-            $this->_writeMigrationLog($message);
+        if ($frameMap) {
+			// 移行済みの場合
             return [];
         }
 
@@ -86,5 +85,17 @@ class Nc2ToNc3IframeBehavior extends Nc2ToNc3BaseBehavior {
 		];
 
 		return $data;
+	}
+
+/**
+ * Get Log argument.
+ *
+ * @param array $nc2Iframe Array data of Nc2Iframe.
+ * @return string Log argument
+ */
+	private function __getLogArgument($nc2Iframe) {
+
+		return 'Nc2Iframe ' .
+			'block_id:' . $nc2Iframe['Nc2Iframe']['block_id'];
 	}
 }

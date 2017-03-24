@@ -75,7 +75,7 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
  * Save Iframe from Nc2.
  *
  * @param array $nc2Iframes Nc2Iframe data.
- * @return bool True on success
+ * @return bool true on success
  * @throws Exception
  */
 	private function __saveIframeFromNc2($nc2Iframes) {
@@ -98,28 +98,12 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// @see https://github.com/NetCommons3/Iframes/blob/3.1.0/Model/Iframe.php#L577-L578
-				// @see https://github.com/NetCommons3/Iframes/blob/3.1.0/Model/Iframe.php#L631-L634
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2Iframe['Nc2Iframe']['block_id']);
-				$nc3RoomId = $frameMap['Frame']['room_id'];
-				Current::write('Frame.key', $frameMap['Frame']['key']);
-				Current::write('Frame.room_id', $nc3RoomId);
-				Current::write('Frame.plugin_key', 'iframes');
+				$nc2BlockId = $nc2Iframe['Nc2Iframe']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				$this->__writeCurrent($frameMap, 'iframes');
 
-				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
-				Current::write('Plugin.key', 'iframes');
-
-				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
-
-				// Model::idを初期化しないとUpdateになってしまう。
-				// @see https://github.com/NetCommons3/Iframes/blob/3.1.0/Model/Iframe.php#L442
-				// @see https://github.com/NetCommons3/Iframes/blob/3.1.0/Model/IframeSetting.php#L129-L149
 				$Frame->create();
-
 				if (!$Iframe->saveIframe($data)) {
-					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Iframe) . "\n" .
 						var_export($Iframe->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -136,7 +120,6 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 						],
 				];
 				if (!$IframeFrameSetting->saveIframeFrameSetting($frameSettingData)) {
-					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Iframe) . "\n" .
 						var_export($Iframe->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -146,9 +129,10 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 				}
 
 				// 登録処理で使用しているデータを空に戻す
+				$nc3RoomId = $frameMap['Frame']['room_id'];
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
-				$nc2IframeId = $nc2Iframe['Nc2Iframe']['iframe_id'];
+				$nc2IframeId = $nc2Iframe['Nc2Iframe']['block_id'];
 				$idMap = [
 					$nc2IframeId => $Iframe->id,
 				];
@@ -157,24 +141,52 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 				$Iframe->commit();
 
 			} catch (Exception $ex) {
-				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $IframeFrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$Iframe->rollback($ex);
 				throw $ex;
 			}
 		}
 
+		$this->__removeUseCurrent();
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Iframe data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Write Current.
+ *
+ * @param array $frameMap array data.
+ * @param string $pluginKey plugin key.
+ * @return void
+ * @throws Exception
+ */
+	private function __writeCurrent($frameMap, $pluginKey) {
+		$nc3RoomId = $frameMap['Frame']['room_id'];
+		Current::write('Frame.key', $frameMap['Frame']['key']);
+		Current::write('Frame.room_id', $frameMap['Frame']['room_id']);
+		Current::write('Frame.plugin_key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		Current::write('Room.id', $nc3RoomId);
+		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+	}
+
+/**
+ * Remove Current.
+ *
+ * @return void
+ * @throws Exception
+ */
+	private function __removeUseCurrent() {
 		// 登録処理で使用しているデータを空に戻す
 		Current::remove('Frame.key');
 		Current::remove('Frame.room_id');
 		Current::remove('Frame.plugin_key');
 		Current::remove('Plugin.key');
 		Current::remove('Room.id');
-		// Fatal error: Attempt to unset static property が発生。keyを指定した場合は発生しない。なんで？
-		//unset(CurrentBase::$permission);
-
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Iframe data Migration end.'));
-
-		return true;
 	}
 }
