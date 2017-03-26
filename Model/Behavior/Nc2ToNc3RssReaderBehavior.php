@@ -83,17 +83,17 @@ class Nc2ToNc3RssReaderBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-        $data['Frame'] = [
-            'id' => $frameMap['Frame']['id'],
-        ];
-        $data['Block'] = [
-            'id' => '',
-            'key' => '',
-            'room_id' => $frameMap['Frame']['room_id'],
-            'plugin_key' => 'rss_readers',
-            'name' => $name,
-            'public_type' => '1',
-        ];
+		$data['Frame'] = [
+			'id' => $frameMap['Frame']['id'],
+		];
+		$data['Block'] = [
+			'id' => '',
+			'key' => '',
+			'room_id' => $frameMap['Frame']['room_id'],
+			'plugin_key' => 'rss_readers',
+			'name' => $name,
+			'public_type' => '1',
+		];
 		$data['RssReader'] = [
 			'id' => '',
 			'key' => '',

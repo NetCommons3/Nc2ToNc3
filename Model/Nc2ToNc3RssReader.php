@@ -68,6 +68,7 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'RssReader Migration end.'));
+
 		return true;
 	}
 
