@@ -230,6 +230,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3PhotoAlbum',
 			'Nc2ToNc3RssReader',
 			'Nc2ToNc3Questionnaire',
+			'Nc2ToNc3Search',
 		];
 
 		foreach ($migrationModelNames as $migrationModelName) {
