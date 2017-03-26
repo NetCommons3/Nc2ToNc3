@@ -20,11 +20,11 @@ class Nc2ToNc3RssReaderBehavior extends Nc2ToNc3BaseBehavior {
  * Get Log argument.
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2Iframe Array data of Nc2Iframe.
+ * @param array $nc2RssBlock Array data of Nc2RssBlock.
  * @return string Log argument
  */
-	public function getLogArgument(Model $model, $nc2Iframe) {
-		return $this->__getLogArgument($nc2Iframe);
+	public function getLogArgument(Model $model, $nc2RssBlock) {
+		return $this->__getLogArgument($nc2RssBlock);
 	}
 
 /**

@@ -60,7 +60,7 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'RssReader Migration start.'));
 
-		/* @var $Nc2QBlock AppModel */
+		/* @var $Nc2RssBlock AppModel */
 		$Nc2RssBlock = $this->getNc2Model('rss_block');
 		$nc2RssBlocks = $Nc2RssBlock->find('all');
 		if (!$this->__saveRssFromNc2($nc2RssBlocks)) {
