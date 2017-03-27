@@ -1,6 +1,6 @@
 <?php
 /**
- * Nc2ToNc3Iframe
+ * Nc2ToNc3RssReader
  *
  * @copyright Copyright 2014, NetCommons Project
  * @author Kohei Teraguchi <kteraguchi@commonsnet.org>
@@ -11,7 +11,7 @@
 App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 
 /**
- * Nc2ToNc3Iframe
+ * Nc2ToNc3RssReader
  *
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
@@ -27,12 +27,13 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method string convertTitleIcon($titleIcon)
  * @method string convertTimezone($timezoneOffset)
  *
- * @see Nc2ToNc3IframeBehavior
- * @method string getLogArgument($nc2Iframe)
- * @method array generateNc3IframeData($nc2Iframe)
+ * @see Nc2ToNc3RssReaderBehavior
+ * @method string getLogArgument($nc2RssBlock)
+ * @method array generateNc3RssReaderData($frameMap, $nc2RssBlock)
+ * @method array generateNc3FrameSettingData($frameMap, $nc2RssBlock)
  *
  */
-class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
+class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 
 /**
  * Custom database table name, or null/false if no table association is desired.
@@ -49,7 +50,7 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Iframe'];
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3RssReader'];
 
 /**
  * Migration method.
@@ -57,74 +58,76 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
  * @return bool True on success.
  */
 	public function migrate() {
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'Iframe Migration start.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'RssReader Migration start.'));
 
-		/* @var $Nc2Iframe AppModel */
-		$Nc2Iframe = $this->getNc2Model('iframe');
-		$nc2Iframes = $Nc2Iframe->find('all');
-		if (!$this->__saveIframeFromNc2($nc2Iframes)) {
+		/* @var $Nc2RssBlock AppModel */
+		$Nc2RssBlock = $this->getNc2Model('rss_block');
+		$nc2RssBlocks = $Nc2RssBlock->find('all');
+		if (!$this->__saveRssFromNc2($nc2RssBlocks)) {
 			return false;
 		}
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'Iframe Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'RssReader Migration end.'));
 
 		return true;
 	}
 
 /**
- * Save Iframe from Nc2.
+ * Save RssReader from Nc2.
  *
- * @param array $nc2Iframes Nc2Iframe data.
- * @return bool true on success
+ * @param array $nc2RssBlocks Nc2RssBlock data.
+ * @return bool True on success
  * @throws Exception
  */
-	private function __saveIframeFromNc2($nc2Iframes) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Iframe data Migration start.'));
+	private function __saveRssFromNc2($nc2RssBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  RssReader data Migration start.'));
 
 		/* @var $Frame Frame */
-		/* @var $Iframe Iframe */
-		/* @var $IframeFrameSetting IframeFrameSetting */
+		/* @var $RssReader RssReader */
+		/* @var $RssReaderFrameSetting RssReaderFrameSetting */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $BlocksLanguage BlocksLanguage */
+		$RssReader = ClassRegistry::init('RssReaders.RssReader');
+		$RssReaderFrameSetting = ClassRegistry::init('RssReaders.RssReaderFrameSetting');
 		$Frame = ClassRegistry::init('Frames.Frame');
-		$Iframe = ClassRegistry::init('Iframes.Iframe');
-		$IframeFrameSetting = ClassRegistry::init('Iframes.IframeFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		foreach ($nc2Iframes as $nc2Iframe) {
-			$Iframe->begin();
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		foreach ($nc2RssBlocks as $nc2RssBlock) {
+			$RssReader->begin();
 			try {
-				$data = $this->generateNc3IframeData($nc2Iframe);
+				$nc2BlockId = $nc2RssBlock['Nc2RssBlock']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				$this->__writeCurrent($frameMap, 'rss_readers');
+
+				$data = $this->generateNc3RssReaderData($frameMap, $nc2RssBlock);
 				if (!$data) {
-					$Iframe->rollback();
+					$RssReader->rollback();
 					continue;
 				}
-
-				$nc2BlockId = $nc2Iframe['Nc2Iframe']['block_id'];
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-				$this->__writeCurrent($frameMap, 'iframes');
 
 				$Frame->create();
-				if (!$Iframe->saveIframe($data)) {
-					$message = $this->getLogArgument($nc2Iframe) . "\n" .
-						var_export($Iframe->validationErrors, true);
+				$BlocksLanguage->create();
+				if (!$RssReader->saveRssReader($data)) {
+					$message = $this->getLogArgument($nc2RssBlock) . "\n" .
+						var_export($RssReader->validationErrors, true);
 					$this->writeMigrationLog($message);
 
-					$Iframe->rollback();
+					$RssReader->rollback();
 					continue;
 				}
 
-				$nc3Iframe = $Iframe->read();
-				$frameSettingData = [
-					'IframeFrameSetting' =>
-						$data['IframeFrameSetting'] + [
-							'frame_key' => $nc3Iframe['Iframe']['key'],
-						],
-				];
-				if (!$IframeFrameSetting->saveIframeFrameSetting($frameSettingData)) {
-					$message = $this->getLogArgument($nc2Iframe) . "\n" .
-						var_export($Iframe->validationErrors, true);
+				$data = $this->generateNc3FrameSettingData($frameMap, $nc2RssBlock);
+				if (!$data) {
+					$RssReader->rollback();
+					continue;
+				}
+
+				if (!$RssReaderFrameSetting->saveRssReaderFrameSetting($data)) {
+					$message = $this->getLogArgument($nc2RssBlock) . "\n" .
+						var_export($RssReaderFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
-					$Iframe->rollback();
+					$RssReader->rollback();
 					continue;
 				}
 
@@ -132,23 +135,23 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 				$nc3RoomId = $frameMap['Frame']['room_id'];
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
-				$nc2IframeId = $nc2Iframe['Nc2Iframe']['block_id'];
+				$nc2RssBlockId = $nc2RssBlock['Nc2RssBlock']['block_id'];
 				$idMap = [
-					$nc2IframeId => $Iframe->id,
+					$nc2RssBlockId => $RssReader->id,
 				];
-				$this->saveMap('Iframe', $idMap);
+				$this->saveMap('RssReader', $idMap);
 
-				$Iframe->commit();
+				$RssReader->commit();
 
 			} catch (Exception $ex) {
-				$Iframe->rollback($ex);
+				$RssReader->rollback($ex);
 				throw $ex;
 			}
 		}
 
 		$this->__removeUseCurrent();
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Iframe data Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  RssReader data Migration end.'));
 
 		return true;
 	}

@@ -29,7 +29,7 @@ App::uses('ComponentCollection', 'Controller');
  * @see Nc2ToNc3PhotoAlbumBehavior
  * @method string getLogArgument($nc2PhotoalbumBlock)
  * @method array generateNc3PhotoAlbumData($frameMap, $nc2PhotoalbumAlbum, $nc2Photos)
- * @method array generateNc3PhotoAlbumFrameSettingData($data, $nc2PhotoalbumBlock)
+ * @method array generateNc3PhotoAlbumFrameSettingData($data, $frameMap, $nc2PhotoalbumBlock)
  * @method array generateNc3PhotoData($PhotoAlbumData, $nc2Photo)
  *
  */
@@ -117,8 +117,10 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				$data = [
 					'PhotoAlbumFrameSetting' => $frameSetting['PhotoAlbumFrameSetting'],
 				];
+//				error_log(print_r('fddsdfdfs', true)."\n\n", 3, LOGS."/tail.log");
+//				error_log(print_r($frameSetting, true)."\n\n", 3, LOGS."/tail.log");
 
-				$data = $this->generateNc3PhotoAlbumFrameSettingData($data, $nc2PhotoalbumBlock);
+				$data = $this->generateNc3PhotoAlbumFrameSettingData($data, $frameMap, $nc2PhotoalbumBlock);
 				if (!$data) {
 					$PhotoAlbum->rollback();
 					continue;
@@ -137,7 +139,6 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 
 				$FrameSetting->validate = [];
 				if (!$FrameSetting->savePhotoAlbumFrameSetting($data)) {
-					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2PhotoalbumBlock) . "\n" .
 						var_export($FrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -157,19 +158,12 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				$PhotoAlbum->commit();
 
 			} catch (Exception $ex) {
-				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $FrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$PhotoAlbum->rollback($ex);
 				throw $ex;
 			}
 		}
 
-		// 登録処理で使用しているデータを空に戻す
-		Current::remove('Frame.key');
-		Current::remove('Frame.room_id');
-		Current::remove('Frame.plugin_key');
-		Current::remove('Plugin.key');
-		Current::remove('Room.id');
+		$this->__removeUseCurrent();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  PhotoAlbumFrameSetting data Migration end.'));
 
@@ -184,13 +178,14 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
  * @throws Exception
  */
 	private function __savePhotoAlbumFromNc2($nc2PhotoalbumAlbums) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Photoalbum data Migration start.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  PhotoAlbum data Migration start.'));
 
 		/* @var $PhotoAlbum PhotoAlbum */
 		/* @var $PhotoAlbumPhoto PhotoAlbumPhoto */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		/* @var $Nc2PhotoalbumBlock AppModel */
 		/* @var $Nc2PhotoalbumPhoto AppModel */
+		/* @var $Block Block */
 		$PhotoAlbum = ClassRegistry::init('PhotoAlbums.PhotoAlbum');
 		$PhotoAlbumPhoto = ClassRegistry::init('PhotoAlbums.PhotoAlbumPhoto');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
@@ -207,7 +202,6 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
 				$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_sequence' => 'ASC'], -1);
 				if (count($nc2Photos) === 0) {
-					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Photos);
 					$this->writeMigrationLog($message);
 
@@ -221,10 +215,6 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				Current::write('Frame.key', $frameMap['Frame']['key']);
-				Current::write('Frame.room_id', $frameMap['Frame']['room_id']);
-				Current::write('Frame.plugin_key', 'photo_albums');
-
 				$nc3Block = $Block->findByRoomIdAndPluginKey(
 					$frameMap['Frame']['room_id'],
 					'photo_albums',
@@ -236,18 +226,11 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				$data['PhotoAlbum']['block_id'] = $nc3Block['Block']['id'];
 				Current::write('Block.id', $nc3Block['Block']['id']);
 
-				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
-				Current::write('Plugin.key', 'photo_albums');
-
-				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-				Current::write('Room.id', $frameMap['Frame']['room_id']);
-
-				CurrentBase::$permission[$frameMap['Frame']['room_id']]['Permission']['content_publishable']['value'] = true;
+				$this->__writeCurrent($frameMap, 'photo_albums');
 
 				$PhotoAlbum->create();
 				$PhotoAlbum->validate = [];
 				if (!$PhotoAlbum->saveAlbumForAdd($data)) {
-					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2PhotoalbumAlbum) . "\n" .
 						var_export($PhotoAlbum->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -262,7 +245,6 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					$PhotoAlbumPhoto->create();
 					$PhotoAlbumPhoto->validate = [];
 					if (!$PhotoAlbumPhoto->savePhoto($data)) {
-						// @see https://phpmd.org/rules/design.html
 						$message = $this->getLogArgument($nc2Photo) . "\n" .
 							var_export($PhotoAlbumPhoto->validationErrors, true);
 						$this->writeMigrationLog($message);
@@ -288,13 +270,49 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 			}
 		}
 
-		// 登録処理で使用しているデータを空に戻す
-		Current::remove('Frame.key');
-		Current::remove('Block.id');
+		$this->__removeUseCurrent();
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Photoalbum data Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  PhotoAlbum data Migration end.'));
 
 		return true;
+	}
+
+/**
+ * Write Current.
+ *
+ * @param array $frameMap array data.
+ * @param string $pluginKey plugin key.
+ * @return void
+ * @throws Exception
+ */
+	private function __writeCurrent($frameMap, $pluginKey) {
+		$nc3RoomId = $frameMap['Frame']['room_id'];
+		Current::write('Frame.key', $frameMap['Frame']['key']);
+		Current::write('Frame.room_id', $frameMap['Frame']['room_id']);
+		Current::write('Frame.plugin_key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		Current::write('Room.id', $nc3RoomId);
+		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+	}
+
+/**
+ * Remove Current.
+ *
+ * @return void
+ * @throws Exception
+ */
+	private function __removeUseCurrent() {
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Frame.room_id');
+		Current::remove('Frame.plugin_key');
+		Current::remove('Plugin.key');
+		Current::remove('Room.id');
+		Current::remove('Block.id');
 	}
 }
 
