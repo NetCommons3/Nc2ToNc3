@@ -120,6 +120,8 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		) {
 			$data['Questionnaire']['is_image_authentication'] = '0';
 		}
+		// 使ってないが一応セット
+		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Config/Migration/1450753185_init.php#L224-L225
 		if ($nc2Questionnaire['Nc2Questionnaire']['questionnaire_type'] == '3') {
 			$data['Questionnaire']['is_page_random'] = '1';
 		}
