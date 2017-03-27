@@ -26,177 +26,248 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  *
  * @see Nc2ToNc3FaqBehavior
  * @method string getLogArgument($nc2FaqBlock)
- * @method array generateNc3FaqData($nc2Faq, $nc2Categories)
- * @method array generateNc3FaqQuestionData($nc3Faq, $nc2Question, $nc2Categories)
+ * @method array generateNc3FaqData($frameMap, $nc2Faq)
+ * @method array generateNc3FaqQuestionData($nc3Faq, $nc2Question)
+ * @method array generateNc3FaqFrameSettingData($nc2FaqBlock)
  *
  */
-class Nc2ToNc3Faq extends Nc2ToNc3AppModel
-{
+class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
-    /**
-     * Custom database table name, or null/false if no table association is desired.
-     *
-     * @var string
-     * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-     */
-    public $useTable = false;
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
+	public $useTable = false;
 
-    /**
-     * List of behaviors to load when the model object is initialized. Settings can be
-     * passed to behaviors by using the behavior name as index.
-     *
-     * @var array
-     * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-     */
-    public $actsAs = ['Nc2ToNc3.Nc2ToNc3Faq'];
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
+	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Faq'];
 
-    /**
-     * Migration method.
-     *
-     * @return bool True on success.
-     */
-    public function migrate()
-    {
-        $this->writeMigrationLog(__d('nc2_to_nc3', 'Faq Migration start.'));
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
+	public function migrate() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Faq Migration start.'));
 
-        /* @var $Nc2FaqBlock AppModel */
-        $Nc2FaqBlock = $this->getNc2Model('faq_block');
-        $nc2FaqBlocks = $Nc2FaqBlock->find('all');
+		/* @var $Nc2Faq AppModel */
+		$Nc2Faq = $this->getNc2Model('faq');
+		$nc2Faqs = $Nc2Faq->find('all');
+		if (!$this->__saveFaqFromNc2($nc2Faqs)) {
+			return false;
+		}
 
-        if (!$this->__saveFaqFromNc2($nc2FaqBlocks)) {
-            return false;
-        }
+		/* @var $Nc2FaqBlock AppModel */
+		$Nc2FaqBlock = $this->getNc2Model('faq_block');
+		$nc2FaqBlocks = $Nc2FaqBlock->find('all');
+		if (!$this->__saveFaqBlockFromNc2($nc2FaqBlocks)) {
+			return false;
+		}
 
-        $this->writeMigrationLog(__d('nc2_to_nc3', 'Faq Migration end.'));
-        return true;
-    }
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Faq Migration end.'));
 
-    /**
-     * Save FaqBlock from Nc2.
-     *
-     * @param array $nc2FaqBlocks Nc2Faq data.
-     * @return bool True on success
-     * @throws Exception
-     */
-    private function __saveFaqFromNc2($nc2FaqBlocks)
-    {
-        $this->writeMigrationLog(__d('nc2_to_nc3', '  FaqBlock data Migration start.'));
+		return true;
+	}
 
-        /* @var $Faq Faq */
-        /* @var $FaqFrameSetting FaqFrameSetting */
-        /* @var $FaqQuestion FaqQuestion */
-        /* @var $Nc2FaqCategory AppModel */
-        /* @var $Nc2FaqQuestion AppModel */
-        /* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-        $Faq = ClassRegistry::init('Faqs.Faq');
+/**
+ * Save Faq from Nc2.
+ *
+ * @param array $nc2Faqs Nc2Faq data.
+ * @return bool true on success
+ * @throws Exception
+ */
+	private function __saveFaqFromNc2($nc2Faqs) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Faq data Migration start.'));
 
-        //BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
-        //@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
-        $Faq->Behaviors->Block->settings = $Faq->actsAs['Blocks.Block'];
+		/* @var $Faq Faq */
+		/* @var $FaqQuestion FaqQuestion */
+		/* @var $Nc2FaqBlock AppModel */
+		/* @var $Nc2FaqQuestion AppModel */
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $BlocksLanguage BlocksLanguage */
+		$Faq = ClassRegistry::init('Faqs.Faq');
 
-        $FaqFrameSetting = ClassRegistry::init('Faqs.FaqFrameSetting');
-        $FaqQuestion = ClassRegistry::init('Faqs.FaqQuestion');
-        $Nc2FaqCategory = $this->getNc2Model('faq_category');
-        $Nc2FaqQuestion = $this->getNc2Model('faq_question');
-        $Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-        foreach ($nc2FaqBlocks as $nc2FaqBlock) {
-            $nc2Categories = $Nc2FaqCategory->findAllByFaqId($nc2FaqBlock['Nc2FaqBlock']['faq_id'], null, ['display_sequence' => 'ASC'], -1);
-            $Faq->begin();
-            try {
-                $data = $this->generateNc3FaqData($nc2FaqBlock, $nc2Categories);
-                if (!$data) {
-                    $Faq->rollback();
-                    continue;
-                }
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		$Faq->Behaviors->Block->settings = $Faq->actsAs['Blocks.Block'];
 
-                // FaqFrameDisplayFaq::saveDisplayFaq でFrameに割り当てられてしまうが、
-                // Nc2ToNc3Faq::saveFaqFrameDisplayFromNc2で再登録を行うことで調整
-                // @see https://github.com/NetCommons3/Faqs/blob/3.1.0/Model/Faq.php#L577-L578
-                // @see https://github.com/NetCommons3/Faqs/blob/3.1.0/Model/Faq.php#L631-L634
-                $frameMap = $Nc2ToNc3Frame->getMap($nc2FaqBlock['Nc2FaqBlock']['block_id']);
-                $nc3RoomId = $frameMap['Frame']['room_id'];
-                Current::write('Frame.key', $frameMap['Frame']['key']);
-                Current::write('Frame.room_id', $nc3RoomId);
-                Current::write('Frame.plugin_key', 'faqs');
+		$FaqQuestion = ClassRegistry::init('Faqs.FaqQuestion');
+		$Nc2FaqBlock = $this->getNc2Model('faq_block');
+		$Nc2FaqQuestion = $this->getNc2Model('faq_question');
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		foreach ($nc2Faqs as $nc2Faq) {
+			$Faq->begin();
+			try {
+				$nc2RoomId = $nc2Faq['Nc2Faq']['room_id'];
+				$nc2FaqBlock = $Nc2FaqBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
+				if (!$nc2FaqBlock) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Faq));
+					$this->writeMigrationLog($message);
+					$Faq->rollback();
+					continue;
+				}
 
-                // @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
-                Current::write('Plugin.key', 'faqs');
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2FaqBlock['Nc2FaqBlock']['block_id']);
 
-                // @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-                Current::write('Room.id', $nc3RoomId);
-                CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				$data = $this->generateNc3FaqData($frameMap, $nc2Faq);
+				if (!$data) {
+					$Faq->rollback();
+					continue;
+				}
 
-                if (!$Faq->saveFaq($data)) {
-                    // @see https://phpmd.org/rules/design.html
-                    $message = $this->getLogArgument($nc2FaqBlock) . "\n" .
-                        var_export($Faq->validationErrors, true);
-                    $this->writeMigrationLog($message);
+				$this->__writeCurrent($frameMap, 'faqs');
 
-                    $Faq->rollback();
-                    continue;
-                }
+				$BlocksLanguage->create();
+				if (!$Faq->saveFaq($data)) {
+					$message = $this->getLogArgument($nc2Faq) . "\n" .
+						var_export($Faq->validationErrors, true);
+					$this->writeMigrationLog($message);
 
-                $faqFrameSettingData = [
-                    'FaqFrameSetting' => $data['FaqFrameSetting'],
-                ];
+					$Faq->rollback();
+					continue;
+				}
 
-                if (!$FaqFrameSetting->saveFaqFrameSetting($faqFrameSettingData)) {
-                    // @see https://phpmd.org/rules/design.html
-                    $message = $this->getLogArgument($nc2FaqBlock) . "\n" .
-                        var_export($Faq->validationErrors, true);
-                    $this->writeMigrationLog($message);
+				$nc2FaqId = $nc2Faq['Nc2Faq']['faq_id'];
+				$nc2Questions = $Nc2FaqQuestion->findAllByFaqId($nc2FaqId, null, ['display_sequence' => 'ASC'], -1);
+				$nc3Faq = $Faq->read();
+				foreach ($nc2Questions as $nc2Question) {
+					$data = $this->generateNc3FaqQuestionData($nc3Faq, $nc2Question);
+					if (!$FaqQuestion->saveFaqQuestion($data)) {
+						$message = $this->getLogArgument($nc2Question) . "\n" .
+							var_export($Faq->validationErrors, true);
+						$this->writeMigrationLog($message);
 
-                    $Faq->rollback();
-                    continue;
-                }
+						$Faq->rollback();
+						continue;
+					}
+				}
 
-                $nc3Faq = $Faq->read();
-                $nc2Questions = $Nc2FaqQuestion->findAllByFaqId(
-                    $nc2FaqBlock['Nc2FaqBlock']['faq_id'],
-                    null,
-                    ['display_sequence' => 'ASC'],
-                    -1
-                );
-                foreach ($nc2Questions as $nc2Question) {
-                    $data = $this->generateNc3FaqQuestionData($nc3Faq, $nc2Question, $nc2Categories);
-                    if (!$FaqQuestion->saveFaqQuestion($data)) {
-                        // @see https://phpmd.org/rules/design.html
-                        $message = $this->getLogArgument($nc2FaqBlock) . "\n" .
-                            var_export($Faq->validationErrors, true);
-                        $this->writeMigrationLog($message);
+				// 登録処理で使用しているデータを空に戻す
+				$nc3RoomId = $frameMap['Frame']['room_id'];
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
-                        $Faq->rollback();
-                        continue;
-                    }
-                }
+				$idMap = [
+					$nc2FaqId => $Faq->id,
+				];
+				$this->saveMap('Faq', $idMap);
 
-                // 登録処理で使用しているデータを空に戻す
-                unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				$Faq->commit();
 
-                $nc2FaqId = $nc2FaqBlock['Nc2FaqBlock']['faq_id'];
-                $idMap = [
-                    $nc2FaqId => $Faq->id,
-                ];
-                $this->saveMap('Faq', $idMap);
+			} catch (Exception $ex) {
+				$Faq->rollback($ex);
+				throw $ex;
+			}
+		}
+		$this->__removeUseCurrent();
 
-                $Faq->commit();
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Faq data Migration end.'));
 
-            } catch (Exception $ex) {
-                $Faq->rollback($ex);
-                throw $ex;
-            }
-        }
+		return true;
+	}
 
-        // 登録処理で使用しているデータを空に戻す
-        Current::remove('Frame.key');
-        Current::remove('Frame.room_id');
-        Current::remove('Frame.plugin_key');
-        Current::remove('Plugin.key');
-        Current::remove('Room.id');
+/**
+ * Save FaqFrameSetting from Nc2.
+ *
+ * @param array $nc2FaqBlocks Nc2Faq data.
+ * @return bool true on success
+ * @throws Exception
+ */
+	private function __saveFaqBlockFromNc2($nc2FaqBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  FaqFrameSetting data Migration start.'));
 
-        $this->writeMigrationLog(__d('nc2_to_nc3', '  FaqBlock data Migration end.'));
+		/* @var $FaqFrameSetting FaqFrameSetting */
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$FaqFrameSetting = ClassRegistry::init('Faqs.FaqFrameSetting');
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		foreach ($nc2FaqBlocks as $nc2FaqBlock) {
+			$FaqFrameSetting->begin();
+			try {
+				$data = $this->generateNc3FaqFrameSettingData($nc2FaqBlock);
+				if (!$data) {
+					$FaqFrameSetting->rollback();
+					continue;
+				}
 
-        return true;
-    }
+				$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				$this->__writeCurrent($frameMap, 'faqs');
+
+				if (!$FaqFrameSetting->saveFaqFrameSetting($data)) {
+					$message = $this->getLogArgument($nc2FaqBlock) . "\n" .
+						var_export($FaqFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$FaqFrameSetting->rollback();
+					continue;
+				}
+
+				// 登録処理で使用しているデータを空に戻す
+				$nc3RoomId = $frameMap['Frame']['room_id'];
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$idMap = [
+					$nc2BlockId => $FaqFrameSetting->id,
+				];
+				$this->saveMap('FaqFrameSetting', $idMap);
+
+				$FaqFrameSetting->commit();
+
+			} catch (Exception $ex) {
+				$FaqFrameSetting->rollback($ex);
+				throw $ex;
+			}
+		}
+		$this->__removeUseCurrent();
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  FaqFrameSetting data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Write Current.
+ *
+ * @param array $frameMap array data.
+ * @param string $pluginKey plugin key.
+ * @return void
+ * @throws Exception
+ */
+	private function __writeCurrent($frameMap, $pluginKey) {
+		$nc3RoomId = $frameMap['Frame']['room_id'];
+		Current::write('Frame.key', $frameMap['Frame']['key']);
+		Current::write('Frame.room_id', $frameMap['Frame']['room_id']);
+		Current::write('Frame.plugin_key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		Current::write('Room.id', $nc3RoomId);
+		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+	}
+
+/**
+ * Remove Current.
+ *
+ * @return void
+ * @throws Exception
+ */
+	private function __removeUseCurrent() {
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Frame.room_id');
+		Current::remove('Frame.plugin_key');
+		Current::remove('Plugin.key');
+		Current::remove('Room.id');
+	}
 }
 
