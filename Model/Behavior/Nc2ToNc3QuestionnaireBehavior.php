@@ -222,11 +222,13 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 
 		$nc3AnswerNumber = '1';
 		$nc3UserId = null;
+		$nc3Created = null;
 		if ($nc2QSummary['Nc2QuestionnaireSummary']['insert_user_id'] != '0') {
 			/* @var $Nc2ToNc3User Nc2ToNc3User */
 			$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 			$nc3AnswerNumber = $nc2QSummary['Nc2QuestionnaireSummary']['answer_number'];
 			$nc3UserId = $Nc2ToNc3User->getCreatedUser($nc2QSummary['Nc2QuestionnaireSummary']);
+			$nc3Created = $this->_convertDate($nc2QSummary['Nc2QuestionnaireSummary']['insert_time']);
 		}
 
 		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireAnswerSummary.php#L213-L222
@@ -238,6 +240,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			'questionnaire_key' => $questionnaireMap['Questionnaire']['key'],
 			'user_id' => $nc3UserId,
 			'created_user' => $nc3UserId,
+			'created' => $nc3Created,
 		];
 
 		return $data;
