@@ -232,6 +232,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Registration',
 			'Nc2ToNc3RssReader',
 			'Nc2ToNc3Questionnaire',
+			'Nc2ToNc3Quiz',
 			'Nc2ToNc3Search',
 			'Nc2ToNc3Task',
 			'Nc2ToNc3Video',
