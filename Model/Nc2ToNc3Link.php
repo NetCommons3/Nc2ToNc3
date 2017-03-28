@@ -94,12 +94,12 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		/* @var $BlocksLanguage BlocksLanguage */
 		$Link = ClassRegistry::init('Links.Link');
+		$LinkBlock = ClassRegistry::init('Links.LinkBlock');
 
 		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
-		$Link->Behaviors->Block->settings = $Link->actsAs['Blocks.Block'];
+		$LinkBlock->Behaviors->Block->settings = $LinkBlock->actsAs['Blocks.Block'];
 
-		$LinkBlock = ClassRegistry::init('Links.LinkBlock');
 		$Nc2LinklistBlock = $this->getNc2Model('linklist_block');
 		$Nc2LinklistLink = $this->getNc2Model('linklist_link');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
@@ -142,6 +142,10 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				$nc2Links = $Nc2LinklistLink->findAllByLinklistId($nc2LinklistId, null, ['link_sequence' => 'ASC'], -1);
 				foreach ($nc2Links as $nc2Link) {
 					$data = $this->generateNc3LinkData($LinkBlock->data, $nc2Link);
+					if (!$data) {
+						$LinkBlock->rollback();
+						continue;
+					}
 					if (!$Link->saveLink($data)) {
 						$message = $this->getLogArgument($nc2Link) . "\n" .
 							var_export($Link->validationErrors, true);
