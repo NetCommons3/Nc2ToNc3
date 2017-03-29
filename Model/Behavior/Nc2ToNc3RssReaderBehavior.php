@@ -55,7 +55,6 @@ class Nc2ToNc3RssReaderBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3RssReader data.
  */
 	public function generateNc3RssReaderData(Model $model, $frameMap, $nc2RssBlock) {
-
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('RssReader', $nc2RssBlock['Nc2RssBlock']['block_id']);
@@ -128,7 +127,6 @@ class Nc2ToNc3RssReaderBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3RssReaderFrameSetting data.
  */
 	public function generateNc3FrameSettingData(Model $model, $frameMap, $nc2RssBlock) {
-
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data['RssReaderFrameSetting'] = [
@@ -149,7 +147,6 @@ class Nc2ToNc3RssReaderBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2RssBlock) {
-
 		return 'Nc2RssBlock ' .
 			'block_id:' . $nc2RssBlock['Nc2RssBlock']['block_id'];
 	}

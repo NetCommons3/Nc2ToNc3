@@ -117,8 +117,8 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				$data = [
 					'PhotoAlbumFrameSetting' => $frameSetting['PhotoAlbumFrameSetting'],
 				];
-//				error_log(print_r('fddsdfdfs', true)."\n\n", 3, LOGS."/tail.log");
-//				error_log(print_r($frameSetting, true)."\n\n", 3, LOGS."/tail.log");
+				//error_log(print_r('fddsdfdfs', true)."\n\n", 3, LOGS."/tail.log");
+				//error_log(print_r($frameSetting, true)."\n\n", 3, LOGS."/tail.log");
 
 				$data = $this->generateNc3PhotoAlbumFrameSettingData($data, $frameMap, $nc2PhotoalbumBlock);
 				if (!$data) {
@@ -163,7 +163,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 			}
 		}
 
-		$this->__removeUseCurrent();
+		$this->removeUseCurrent();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  PhotoAlbumFrameSetting data Migration end.'));
 

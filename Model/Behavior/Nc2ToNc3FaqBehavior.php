@@ -163,7 +163,7 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3Faq['Block']['id'],
 				'status' => '1',
 				'language_id' => '',
-				'category_id' => '', // TODO カテゴリを設定する
+				'category_id' => '', // TODOーカテゴリを設定する
 				'question' => $nc2FaqQuestion['Nc2FaqQuestion']['question_name'],
 				'answer' => $nc2FaqQuestion['Nc2FaqQuestion']['question_answer'],
 			],
@@ -231,7 +231,6 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2Faq) {
-
 		if (isset($nc2Faq['Nc2FaqBlock'])) {
 			return 'Nc2FaqBlock ' .
 				'block_id:' . $nc2Faq['Nc2FaqBlock']['block_id'];

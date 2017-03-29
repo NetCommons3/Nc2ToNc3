@@ -88,7 +88,7 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		/* @var $BlocksLanguage BlocksLanguage */
 		$RssReader = ClassRegistry::init('RssReaders.RssReader');
-		$RssReaderFrameSetting = ClassRegistry::init('RssReaders.RssReaderFrameSetting');
+		$RssReaderFrameSet = ClassRegistry::init('RssReaders.RssReaderFrameSetting');
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
@@ -122,9 +122,9 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				if (!$RssReaderFrameSetting->saveRssReaderFrameSetting($data)) {
+				if (!$RssReaderFrameSet->saveRssReaderFrameSetting($data)) {
 					$message = $this->getLogArgument($nc2RssBlock) . "\n" .
-						var_export($RssReaderFrameSetting->validationErrors, true);
+						var_export($RssReaderFrameSet->validationErrors, true);
 					$this->writeMigrationLog($message);
 
 					$RssReader->rollback();

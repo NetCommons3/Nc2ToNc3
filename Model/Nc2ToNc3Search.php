@@ -35,28 +35,28 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  */
 class Nc2ToNc3Search extends Nc2ToNc3AppModel {
 
-	/**
-	 * Custom database table name, or null/false if no table association is desired.
-	 *
-	 * @var string
-	 * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
-	 */
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
 	public $useTable = false;
 
-	/**
-	 * List of behaviors to load when the model object is initialized. Settings can be
-	 * passed to behaviors by using the behavior name as index.
-	 *
-	 * @var array
-	 * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
-	 */
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
 	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Search'];
 
-	/**
-	 * Migration method.
-	 *
-	 * @return bool True on success.
-	 */
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Search Migration start.'));
 
@@ -72,13 +72,13 @@ class Nc2ToNc3Search extends Nc2ToNc3AppModel {
 		return true;
 	}
 
-	/**
-	 * Save Search from Nc2.
-	 *
-	 * @param array $nc2SearchBlocks Nc2SearchBlock data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
+/**
+ * Save Search from Nc2.
+ *
+ * @param array $nc2SearchBlocks Nc2SearchBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
 	private function __saveSearchFromNc2($nc2SearchBlocks) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Search data Migration start.'));
 

@@ -223,8 +223,8 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
  * data[RegistrationAnswer][1e8c4984041da363dee126e84f3b4006][0][matrix_choice_key]:
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2QAnswers Nc2RegistrationAnswer data.
- * @param array $questionMap RegistrationQuestion map data.
+ * @param array $nc2ItemData Nc2Item data.
+ * @param array $registrationMap Registration map data.
  * @return array Nc3RegistrationAnswer data.
  */
 	public function generateNc3RegistrationAnswerData(Model $model, $nc2ItemData, $registrationMap) {
@@ -516,13 +516,13 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 	protected function _convertQuestionType($questionType) {
 		// nc2 => nc3
 		$map = [
-			'1' => '3',// テキスト
-			'3' => '1',// 択一式
-			'2' => '2',// 複数選択
-			'4' => '8',// リストボックス
-			'5' => '4',// 記述式
-			'6' => '9',// メール
-			'7' => '10',// ファイル
+			'1' => '3', // テキスト
+			'3' => '1', // 択一式
+			'2' => '2', // 複数選択
+			'4' => '8', // リストボックス
+			'5' => '4', // 記述式
+			'6' => '9', // メール
+			'7' => '10', // ファイル
 		];
 
 		return $map[$questionType];
@@ -532,7 +532,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
  * Convert answer value.
  *
  * @param string $nc2AnswerValue Nc2 answer value.
- * @param array $questionMap questionMap data.
+ * @param array $registrationMap registrationMap data.
  * @return string graph_color code
  */
 	protected function _convertAnswerValue($nc2AnswerValue, $registrationMap) {
@@ -543,7 +543,9 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		$nc2Choices = explode('|', $nc2AnswerValue);
 		$nc3AnswerValue = '';
 		$nc3AnswerArray = [];
-		foreach ($nc2Choices as $key => $nc2Choice) {
+		//foreach ($nc2Choices as $key => $nc2Choice) {
+		//phpmdで　 Avoid unused local variables such as '$key'　が出力されたので対応
+		foreach ($nc2Choices as $nc2Choice) {
 			if (empty($nc2Choice)) {
 				continue;
 			}

@@ -46,28 +46,28 @@ class Nc2ToNc3IframeBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3Iframe data.
  */
 	public function generateNc3IframeData(Model $model, $nc2Iframe) {
-        /* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-        $Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$nc2BlockId = $nc2Iframe['Nc2Iframe']['block_id'];
-        $frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-        if ($frameMap) {
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if ($frameMap) {
 			// 移行済みの場合
-            return [];
-        }
+			return [];
+		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-        $data['Frame'] = [
-            'id' => $frameMap['Frame']['id'],
-        ];
-        $data['Block'] = [
-            'id' => '',
-            'key' => '',
-            'room_id' => $frameMap['Frame']['room_id'],
-            'plugin_key' => 'iframes',
-            'name' => $nc2Iframe['Nc2Iframe']['url'],
-            'public_type' => 1,
-        ];
+		$data['Frame'] = [
+			'id' => $frameMap['Frame']['id'],
+		];
+		$data['Block'] = [
+			'id' => '',
+			'key' => '',
+			'room_id' => $frameMap['Frame']['room_id'],
+			'plugin_key' => 'iframes',
+			'name' => $nc2Iframe['Nc2Iframe']['url'],
+			'public_type' => 1,
+		];
 		$data['Iframe'] = [
 			'id' => '',
 			'key' => '',
@@ -94,7 +94,6 @@ class Nc2ToNc3IframeBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2Iframe) {
-
 		return 'Nc2Iframe ' .
 			'block_id:' . $nc2Iframe['Nc2Iframe']['block_id'];
 	}

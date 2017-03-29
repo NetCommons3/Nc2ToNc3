@@ -243,33 +243,28 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 
 		/* @var $RegistrationAnswer RegistrationAnswer */
 		$RegistrationAnswer = ClassRegistry::init('Registrations.RegistrationAnswer');
-//		$RegistrationAnswer->begin();
-		try {
-
+		//$RegistrationAnswer->begin();
+			try {
 			$nc2ItemDataFirst = reset($nc2ItemData);
 			$questionMap = $this->getQuestionMap($nc2ItemDataFirst, $nc3Registration);
 
 			$data = $this->generateNc3RegistrationAnswerData($nc2ItemData, $questionMap);
 			if (!$data) {
-//				$RegistrationAnswer->rollback();
+				//$RegistrationAnswer->rollback();
 				return false;
 			}
-
 			if (!$RegistrationAnswer->saveAnswer($data, $nc3Registration, $nc3Summary)) {
 				$message = $this->getLogArgument($nc2ItemDataFirst) . "\n" .
 					var_export($RegistrationAnswer->validationErrors, true);
 				$this->writeMigrationLog($message);
-
-//				$RegistrationAnswer->rollback();
+				//$RegistrationAnswer->rollback();
 				return false;
 			}
-
-//			$RegistrationAnswer->commit();
-
-		} catch (Exception $ex) {
-//			$RegistrationAnswer->rollback();
+			//$RegistrationAnswer->commit();
+			} catch (Exception $ex) {
+			//$RegistrationAnswer->rollback();
 			throw $ex;
-		}
+			}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '    RegistrationAnswer data Migration end.'));
 

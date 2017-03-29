@@ -104,7 +104,7 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 
 					$TopicFrameSetting->rollback();
-					continue;
+					continue;	
 				}
 
 				// 登録処理で使用しているデータを空に戻す

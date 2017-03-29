@@ -26,7 +26,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  *
  * @see Nc2ToNc3TaskBehavior
  * @method string getLogArgument($nc2TaskBlock)
- * @method array generateNc3TaskData($frameMap, $nc2Todo)
+ * @method array generateNc3TaskData($frameMap, $nc2TodoData)
  * @method array generateNc3TaskContentsData($frameMap, $nc3Task, $nc2Task)
  *
  */
@@ -57,10 +57,10 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Task Migration start.'));
 
-		/* @var $Nc2Todo AppModel */
-		$Nc2Todo = $this->getNc2Model('todo');
-		$nc2Todos = $Nc2Todo->find('all');
-		if (!$this->__saveTaskFromNc2($nc2Todos)) {
+		/* @var $Nc2TodoModel AppModel */
+		$Nc2TodoModel = $this->getNc2Model('todo');
+		$nc2TodoDatas = $Nc2TodoModel->find('all');
+		if (!$this->__saveTaskFromNc2($nc2TodoDatas)) {
 			return false;
 		}
 
@@ -72,11 +72,11 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 /**
  * Save Task from Nc2.
  *
- * @param array $nc2Tasks Nc2Task data.
+ * @param array $nc2TodoDatas Nc2Task data.
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveTaskFromNc2($nc2Todos) {
+	private function __saveTaskFromNc2($nc2TodoDatas) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Task data Migration start.'));
 
 		/* @var $Task Task */
@@ -98,13 +98,13 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
-		foreach ($nc2Todos as $nc2Todo) {
+		foreach ($nc2TodoDatas as $nc2TodoData) {
 			$Task->begin();
 			try {
-				$nc2RoomId = $nc2Todo['Nc2Todo']['room_id'];
+				$nc2RoomId = $nc2TodoData['Nc2Todo']['room_id'];
 				$nc2TodoBlock = $Nc2TodoBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
 				if (!$nc2TodoBlock) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Todo));
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2TodoData));
 					$this->writeMigrationLog($message);
 					$Task->rollback();
 					continue;
@@ -112,7 +112,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2TodoBlock['Nc2TodoBlock']['block_id']);
 
-				$data = $this->generateNc3TaskData($frameMap, $nc2Todo);
+				$data = $this->generateNc3TaskData($frameMap, $nc2TodoData);
 				if (!$data) {
 					$Task->rollback();
 					continue;
@@ -124,7 +124,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$Block->create();
 				$BlocksLanguage->create();
 				if (!$Task->saveTask($data)) {
-					$message = $this->getLogArgument($nc2Todo) . "\n" .
+					$message = $this->getLogArgument($nc2TodoData) . "\n" .
 						var_export($Task->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -132,7 +132,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$nc2TodoId = $nc2Todo['Nc2Todo']['todo_id'];
+				$nc2TodoId = $nc2TodoData['Nc2Todo']['todo_id'];
 				$nc2Tasks = $Nc2TodoTask->findAllByTodoId($nc2TodoId, null, ['task_sequence' => 'ASC'], -1);
 				$nc3Task = $Task->read();
 				foreach ($nc2Tasks as $nc2Task) {

@@ -58,7 +58,6 @@ class Nc2ToNc3SearchBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3SearchFrameSetting data.
  */
 	public function generateNc3FrameSettingData(Model $model, $frameMap, $nc2SearchBlock) {
-
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('Search', $nc2SearchBlock['Nc2SearchBlock']['block_id']);
@@ -106,7 +105,6 @@ class Nc2ToNc3SearchBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2SearchBlock) {
-
 		return 'Nc2SearchBlock ' .
 			'block_id:' . $nc2SearchBlock['Nc2SearchBlock']['block_id'];
 	}

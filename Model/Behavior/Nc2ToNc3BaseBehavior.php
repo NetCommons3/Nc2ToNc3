@@ -15,6 +15,10 @@ App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
  * Nc2ToNc3MigrationBehavior
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyMethods)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
+ * @SuppressWarnings(PHPMD.NumberOfChildren)
+ *
  */
 class Nc2ToNc3BaseBehavior extends ModelBehavior {
 

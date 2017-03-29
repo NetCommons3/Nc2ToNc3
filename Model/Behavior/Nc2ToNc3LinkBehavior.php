@@ -176,7 +176,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3Link['Block']['id'],
 				'status' => '1',
 				'language_id' => $nc3Link['BlocksLanguage']['language_id'],
-				'category_id' => '', // TODO カテゴリを設定する
+				'category_id' => '', // TODOーカテゴリを設定する
 				'url' => $nc2LinklistLink['Nc2LinklistLink']['url'],
 				'title' => $nc2LinklistLink['Nc2LinklistLink']['title'],
 				'description' => $nc2LinklistLink['Nc2LinklistLink']['description'],
@@ -186,7 +186,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 				'id' => '',
 				'block_key' => $nc3Link['Block']['key'],
 				'link_key' => '',
-				'category_key' => '',// TODO カテゴリ
+				'category_key' => '', // TODOーカテゴリ
 			],
 		];
 
@@ -263,7 +263,6 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2LinkBlock) {
-
 		if (isset($nc2LinkBlock['Nc2LinkBlock'])) {
 			return 'Nc2LinkBlock ' .
 				'block_id:' . $nc2LinkBlock['Nc2LinkBlock']['block_id'];

@@ -49,13 +49,13 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param array $frameMap FrameMap data.
- * @param array $nc2Todo Nc2Todo data.
+ * @param array $nc2TodoData Nc2TodoData data.
  * @return array Nc3Task data.
  */
-	public function generateNc3TaskData(Model $model, $frameMap, $nc2Todo) {
+	public function generateNc3TaskData(Model $model, $frameMap, $nc2TodoData) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('Task', $nc2Todo['Nc2Todo']['todo_id']);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Task', $nc2TodoData['Nc2Todo']['todo_id']);
 		if ($mapIdList) {
 			// 移行済み
 			return [];
@@ -75,9 +75,9 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 		];
 		$data['Task'] = [
 			'key' => '',
-			'name' => $nc2Todo['Nc2Todo']['todo_name'],
-			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Todo['Nc2Todo']),
-			'created' => $this->_convertDate($nc2Todo['Nc2Todo']['insert_time']),
+			'name' => $nc2TodoData['Nc2Todo']['todo_name'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2TodoData['Nc2Todo']),
+			'created' => $this->_convertDate($nc2TodoData['Nc2Todo']['insert_time']),
 		];
 		$data['TaskSetting'] = [
 			'use_workflow' => '0',
@@ -87,7 +87,7 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $Nc2TodoCategory AppModel */
 		$Nc2TodoCategory = $this->getNc2Model($model, 'todo_category');
 		$nc2Categories = $Nc2TodoCategory->findAllByTodoId(
-			$nc2Todo['Nc2Todo']['todo_id'],
+			$nc2TodoData['Nc2Todo']['todo_id'],
 			null,
 			['display_sequence' => 'ASC'],
 			-1
@@ -163,7 +163,6 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3Task data.
  */
 	public function generateNc3TaskContentsData(Model $model, $frameMap, $nc3Task, $nc2Task) {
-
 		$taskEndDate = null;
 		$isDateSet = '0';
 		if ($nc2Task['Nc2TodoTask']['period']) {
@@ -185,7 +184,7 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3Task['Block']['id'],
 				'status' => '1',
 				'language_id' => $nc3Task['BlocksLanguage']['language_id'],
-				'category_id' => '0', // TODO カテゴリを設定する
+				'category_id' => '0', // TODOカテゴリを設定する
 				'progress_rate' => $nc2Task['Nc2TodoTask']['progress'],
 				'title' => $nc2Task['Nc2TodoTask']['task_value'],
 				'priority' => $this->_convertPriority($nc2Task['Nc2TodoTask']['priority']),
@@ -208,7 +207,6 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2Task) {
-
 		if (isset($nc2Task['Nc2TodoBlock'])) {
 			return 'Nc2TodoBlock ' .
 				'block_id:' . $nc2Task['Nc2TodoBlock']['block_id'];
@@ -227,15 +225,15 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get priority map
  *
- * @param string $questionType nc2TodoTask.priority data.
+ * @param string $nc2Priority nc2TodoTask.priority data.
  * @return string data with TaskContents.priority.
  */
 	protected function _convertPriority($nc2Priority) {
 		// nc2 => nc3
 		$map = [
-			'0' => '1',// 低
-			'1' => '2',// 中
-			'2' => '3',// 高
+			'0' => '1', // 低
+			'1' => '2', // 中
+			'2' => '3', // 高
 		];
 
 		return $map[$nc2Priority];
