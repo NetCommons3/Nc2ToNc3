@@ -162,7 +162,15 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			$nc3CabinetFileTreeId = $nc3CabinetFileTrees['CabinetFileTree']['id'];
 		} else {
 			$mapIdList = $Nc2ToNc3Map->getMapIdList('CabinetFile', $nc2CabFileParentId);
-			$nc3CabinetFileTreeId = $mapIdList[$nc2CabFileParentId];
+			/* @var $CabinetFile CabinetFile */
+			$CabinetFile = ClassRegistry::init('Cabinets.CabinetFile');
+			$nc3CabinetFile = $CabinetFile->findById(
+				$mapIdList[$nc2CabFileParentId],
+				'cabinet_file_tree_id',
+				null,
+				-1
+			);
+			$nc3CabinetFileTreeId = $nc3CabinetFile['CabinetFile']['cabinet_file_tree_id'];
 		}
 
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
