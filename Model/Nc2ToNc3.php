@@ -212,7 +212,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
-			// phpmdのNPath complexity threshold is 200 に対応するように機能ごとにループ
+		// phpmdのNPath complexity threshold is 200 に対応するように機能ごとにループ
 		$migrationModelNames = [
 			'Nc2ToNc3UserAttribute',
 			'Nc2ToNc3User',
