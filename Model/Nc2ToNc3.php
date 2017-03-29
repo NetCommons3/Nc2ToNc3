@@ -236,6 +236,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Search',
 			'Nc2ToNc3Task',
 			'Nc2ToNc3Video',
+			'Nc2ToNc3Topic',
 		];
 
 		foreach ($migrationModelNames as $migrationModelName) {

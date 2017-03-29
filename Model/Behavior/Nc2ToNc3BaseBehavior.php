@@ -454,7 +454,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			return null;
 		}
 
-		$nc3Choices = rsort($nc3Choices, SORT_NUMERIC);
+		rsort($nc3Choices, SORT_NUMERIC);
 		foreach ($nc3Choices as $nc3Choice) {
 			if ($nc2Value >= $nc3Choice) {
 				$nc2Value = $nc3Choice;
@@ -639,5 +639,66 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	protected function _convertWYSIWYG($content) {
 		$body = $content;
 		return $body;
+	}
+
+/**
+ * Write Current.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $frameMap array data.
+ * @param string $pluginKey plugin key.
+ * @return void
+ * @throws Exception
+ */
+	public function writeCurrent(Model $model, $frameMap, $pluginKey) {
+		return $this->_writeCurrent($frameMap, $pluginKey);
+	}
+
+/**
+ * Remove Current.
+ *
+ * @param Model $model Model using this behavior.
+ * @return void
+ * @throws Exception
+ */
+	public function removeUseCurrent(Model $model) {
+		return $this->_removeUseCurrent();
+	}
+
+/**
+ * Write Current.
+ *
+ * @param array $frameMap array data.
+ * @param string $pluginKey plugin key.
+ * @return void
+ * @throws Exception
+ */
+	protected function _writeCurrent($frameMap, $pluginKey) {
+		$nc3RoomId = $frameMap['Frame']['room_id'];
+		Current::write('Frame.key', $frameMap['Frame']['key']);
+		Current::write('Frame.room_id', $frameMap['Frame']['room_id']);
+		Current::write('Frame.plugin_key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', $pluginKey);
+
+		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		Current::write('Room.id', $nc3RoomId);
+		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+	}
+
+/**
+ * Remove Current.
+ *
+ * @return void
+ * @throws Exception
+ */
+	protected function _removeUseCurrent() {
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Frame.room_id');
+		Current::remove('Frame.plugin_key');
+		Current::remove('Plugin.key');
+		Current::remove('Room.id');
 	}
 }

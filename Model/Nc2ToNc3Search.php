@@ -93,7 +93,7 @@ class Nc2ToNc3Search extends Nc2ToNc3AppModel {
 			try {
 				$nc2BlockId = $nc2SearchBlock['Nc2SearchBlock']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-				$this->__writeCurrent($frameMap, 'searches');
+				$this->writeCurrent($frameMap, 'searches');
 
 				$data = $this->generateNc3FrameSettingData($frameMap, $nc2SearchBlock);
 				if (!$data) {
@@ -129,47 +129,10 @@ class Nc2ToNc3Search extends Nc2ToNc3AppModel {
 			}
 		}
 
-		$this->__removeUseCurrent();
+		$this->removeUseCurrent();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Search data Migration end.'));
 
 		return true;
-	}
-
-	/**
-	 * Write Current.
-	 *
-	 * @param array $frameMap array data.
-	 * @param string $pluginKey plugin key.
-	 * @return void
-	 * @throws Exception
-	 */
-	private function __writeCurrent($frameMap, $pluginKey) {
-		$nc3RoomId = $frameMap['Frame']['room_id'];
-		Current::write('Frame.key', $frameMap['Frame']['key']);
-		Current::write('Frame.room_id', $frameMap['Frame']['room_id']);
-		Current::write('Frame.plugin_key', $pluginKey);
-
-		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
-		Current::write('Plugin.key', $pluginKey);
-
-		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-		Current::write('Room.id', $nc3RoomId);
-		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
-	}
-
-	/**
-	 * Remove Current.
-	 *
-	 * @return void
-	 * @throws Exception
-	 */
-	private function __removeUseCurrent() {
-		// 登録処理で使用しているデータを空に戻す
-		Current::remove('Frame.key');
-		Current::remove('Frame.room_id');
-		Current::remove('Frame.plugin_key');
-		Current::remove('Plugin.key');
-		Current::remove('Room.id');
 	}
 }

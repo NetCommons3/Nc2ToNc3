@@ -84,6 +84,10 @@ class Nc2ToNc3CircularNoticeBehavior extends Nc2ToNc3BaseBehavior {
 				'public_type' => '1',
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CircularBlock['Nc2CircularBlock'])
 			],
+			'BlocksLanguage' => [
+				'language_id' => '',
+				'name' => ''
+			],
 			'CircularNoticeFrameSetting' => [
 				'id' => '',
 				'frame_key' => $frameMap['Frame']['key'],
