@@ -108,6 +108,9 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 				$Frame->create();
 				$BlocksLanguage->create();
 				if (!$RssReader->saveRssReader($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$RssReader->rollback();
 					$message = $this->getLogArgument($nc2RssBlock) . "\n" .
 						var_export($RssReader->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -123,6 +126,10 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 				}
 
 				if (!$RssReaderFrameSet->saveRssReaderFrameSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$RssReaderFrameSet->rollback();
+
 					$message = $this->getLogArgument($nc2RssBlock) . "\n" .
 						var_export($RssReaderFrameSet->validationErrors, true);
 					$this->writeMigrationLog($message);

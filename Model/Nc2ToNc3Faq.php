@@ -128,6 +128,10 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
 				$BlocksLanguage->create();
 				if (!$Faq->saveFaq($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Faq->rollback();
+
 					$message = $this->getLogArgument($nc2Faq) . "\n" .
 						var_export($Faq->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -142,6 +146,10 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				foreach ($nc2Questions as $nc2Question) {
 					$data = $this->generateNc3FaqQuestionData($nc3Faq, $nc2Question);
 					if (!$FaqQuestion->saveFaqQuestion($data)) {
+						// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+						// ここでrollback
+						$Faq->rollback();
+
 						$message = $this->getLogArgument($nc2Question) . "\n" .
 							var_export($Faq->validationErrors, true);
 						$this->writeMigrationLog($message);
@@ -202,6 +210,10 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				$this->writeCurrent($frameMap, 'faqs');
 
 				if (!$FaqFrameSetting->saveFaqFrameSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$FaqFrameSetting->rollback();
+
 					$message = $this->getLogArgument($nc2FaqBlock) . "\n" .
 						var_export($FaqFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);

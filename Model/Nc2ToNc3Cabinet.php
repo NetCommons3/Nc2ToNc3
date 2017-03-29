@@ -137,6 +137,10 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 				//error_log(print_r($data, true)."\n\n", 3, LOGS."/debug.log");
 				if (!$Cabinet->saveCabinet($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Cabinet->rollback();
+
 						// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 						// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -144,6 +148,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2CabinetManage) . "\n" .
 						var_export($Cabinet->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Cabinet->rollback();
 					continue;
 				}
 
@@ -231,7 +236,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2CabinetFile) . "\n" .
 						var_export($CabinetFile->validationErrors, true);
 					$this->writeMigrationLog($message);
-
+					$CabinetFile->rollback();
 					continue;
 				}
 

@@ -117,7 +117,6 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				}
 
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
-
 				$data = $this->generateNc3LinkBlockData($frameMap, $nc2Linklist);
 				if (!$data) {
 					$LinkBlock->rollback();
@@ -125,15 +124,16 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				}
 
 				$this->writeCurrent($frameMap, 'links');
-
 				$LinkBlock->create();
 				$BlocksLanguage->create();
 				if (!$LinkBlock->saveLinkBlock($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$LinkBlock->rollback();
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Linklist) . "\n" .
 						var_export($LinkBlock->validationErrors, true);
 					$this->writeMigrationLog($message);
-
 					$LinkBlock->rollback();
 					continue;
 				}
@@ -147,6 +147,10 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 						continue;
 					}
 					if (!$Link->saveLink($data)) {
+						// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+						// ここでrollback
+						$LinkBlock->rollback();
+
 						$message = $this->getLogArgument($nc2Link) . "\n" .
 							var_export($Link->validationErrors, true);
 						$this->writeMigrationLog($message);
@@ -225,6 +229,10 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				}
 
 				if (!$LinkFrameSetting->saveLinkFrameSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$LinkFrameSetting->rollback();
+
 					$message = $this->getLogArgument($nc2LinklistBlock) . "\n" .
 						var_export($LinkFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);

@@ -104,6 +104,10 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 
 				$Frame->create();
 				if (!$Iframe->saveIframe($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Iframe->rollback();
+
 					$message = $this->getLogArgument($nc2Iframe) . "\n" .
 						var_export($Iframe->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -120,6 +124,10 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 						],
 				];
 				if (!$IframeFrameSetting->saveIframeFrameSetting($frameSettingData)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Iframe->rollback();
+
 					$message = $this->getLogArgument($nc2Iframe) . "\n" .
 						var_export($Iframe->validationErrors, true);
 					$this->writeMigrationLog($message);

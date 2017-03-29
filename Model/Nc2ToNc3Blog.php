@@ -130,6 +130,9 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$Topic->create();
 
 				if (!$Blog->saveBlog($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Blog->rollback();
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -137,7 +140,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Journal) . "\n" .
 						var_export($Blog->validationErrors, true);
 					$this->writeMigrationLog($message);
-
+					$Blog->rollback();
 					continue;
 				}
 
@@ -226,6 +229,10 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$BlogEntry->validate = [];
 
 				if (!$BlogEntry->saveEntry($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$BlogEntry->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -233,6 +240,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
 						var_export($BlogEntry->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$BlogEntry->rollback();
 					continue;
 				}
 

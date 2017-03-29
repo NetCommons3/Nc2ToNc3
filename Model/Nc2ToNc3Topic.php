@@ -99,12 +99,16 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
 				$this->writeCurrent($frameMap, 'Topics');
 
 				if (!$TopicFrameSetting->saveTopicFrameSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$TopicFrameSetting->rollback();
+
 					$message = $this->getLogArgument($nc2WhatsnewBlock) . "\n" .
 						var_export($TopicFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
 					$TopicFrameSetting->rollback();
-					continue;	
+					continue;
 				}
 
 				// 登録処理で使用しているデータを空に戻す

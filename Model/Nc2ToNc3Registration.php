@@ -130,6 +130,10 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				$this->writeCurrent($frameMap, 'registrations');
 
 				if (!$Registration->saveRegistration($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Registration->rollback();
+
 					$message = $this->getLogArgument($nc2Registration) . "\n" .
 						var_export($Registration->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -257,7 +261,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				$message = $this->getLogArgument($nc2ItemDataFirst) . "\n" .
 					var_export($RegistrationAnswer->validationErrors, true);
 				$this->writeMigrationLog($message);
-				//$RegistrationAnswer->rollback();
+				$RegistrationAnswer->rollback();
 				return false;
 			}
 			//$RegistrationAnswer->commit();

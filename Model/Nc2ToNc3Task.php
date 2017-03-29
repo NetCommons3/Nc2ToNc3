@@ -124,10 +124,12 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$Block->create();
 				$BlocksLanguage->create();
 				if (!$Task->saveTask($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Task->rollback();
 					$message = $this->getLogArgument($nc2TodoData) . "\n" .
 						var_export($Task->validationErrors, true);
 					$this->writeMigrationLog($message);
-
 					$Task->rollback();
 					continue;
 				}
@@ -145,7 +147,6 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 						$message = $this->getLogArgument($nc2Task) . "\n" .
 							var_export($TaskContent->validationErrors, true);
 						$this->writeMigrationLog($message);
-
 						$Task->rollback();
 						continue;
 					}

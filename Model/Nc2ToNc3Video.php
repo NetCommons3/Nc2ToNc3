@@ -133,6 +133,10 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 				$Frame->create();
 
 				if (!$VideoSetting->saveVideoSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$VideoSetting->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -140,6 +144,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Multimedia) . "\n" .
 						var_export($VideoSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$VideoSetting->rollback();
 					continue;
 				}
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
@@ -200,6 +205,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 				$message = $this->getLogArgument($nc2Multimedia) . "\n" .
 					var_export($VideoFrameSetting->validationErrors, true);
 				$this->writeMigrationLog($message);
+				$VideoFrameSetting->rollback();
 				return false;
 			}
 
@@ -276,6 +282,10 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 				$Video->validate = [];
 
 				if (!$Video->saveVideo($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Video->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -283,6 +293,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2MultimediaItem) . "\n" .
 						var_export($Video->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Video->rollback();
 					continue;
 				}
 

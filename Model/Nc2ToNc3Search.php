@@ -103,6 +103,10 @@ class Nc2ToNc3Search extends Nc2ToNc3AppModel {
 
 				$Frame->create();
 				if (!$SearchFrameSetting->saveSearchFrameSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$SearchFrameSetting->rollback();
+
 					$message = $this->getLogArgument($nc2SearchBlock) . "\n" .
 						var_export($SearchFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);

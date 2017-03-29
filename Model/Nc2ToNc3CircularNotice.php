@@ -125,7 +125,6 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 				$nc3RoomId = $data['Block']['room_id'];
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
-
 				Current::write('Plugin.key', 'circular_notices');
 
 				$BlocksLanguage->create();
@@ -134,14 +133,16 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 				$Topic->create();
 
 				if (!$CircularNoticeFrame->saveCircularNoticeFrameSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$CircularNoticeFrame->rollback();
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-
 					$message = $this->getLogArgument($nc2CircularBlock) . "\n" .
 						var_export($CircularNoticeFrame->validationErrors, true);
 					$this->writeMigrationLog($message);
-
+					$CircularNoticeFrame->rollback();
 					continue;
 				}
 
@@ -234,6 +235,10 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 				$CircularNoticeCont->validate = [];
 
 				if (!$CircularNoticeCont->saveCircularNoticeContent($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$CircularNoticeCont->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -241,6 +246,7 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Circular) . "\n" .
 						var_export($CircularNoticeCont->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$CircularNoticeCont->rollback();
 					continue;
 				}
 

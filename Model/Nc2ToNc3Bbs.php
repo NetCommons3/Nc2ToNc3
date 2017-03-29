@@ -136,6 +136,10 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$Topic->create();
 
 				if (!$Bbs->saveBbs($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$Bbs->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -143,7 +147,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Bbs) . "\n" .
 						var_export($Bbs->validationErrors, true);
 					$this->writeMigrationLog($message);
-
+					$Bbs->rollback();
 					continue;
 				}
 
@@ -234,6 +238,9 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				//error_log(print_r('dddddddddddddddddddddddddddddddddddd', true)."\n\n", 3, LOGS."/debug.log");
 
 				if (!$BbsArticle->saveBbsArticle($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$BbsArticle->rollback();
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -241,6 +248,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2BbsPost) . "\n" .
 						var_export($BbsArticle->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$BbsArticle->rollback();
 					continue;
 				}
 
