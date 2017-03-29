@@ -189,18 +189,19 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			$nc3IsActive = '0';
 		}
 
-		if (!$nc2BbsPost['Nc2BbsPost']['parent_id']) {
+		$nc2ParentId = $nc2BbsPost['Nc2BbsPost']['parent_id'];
+		if (!$nc2ParentId) {
 			$nc3BbsParentId = '';
 			$nc3BbsRootId = '';
 			$nc3BbsArticleNo = '1';
 		} else {
-			$mapIdList = [];
-			//NC2 parent_idをgetMapに引き渡し、NC3 parent_idを取得する
-			$mapIdList = $Nc2ToNc3Map->getMapIdList('BbsArticle', $nc2BbsPost['Nc2BbsPost']['parent_id']);
-			$nc3BbsParentId = $mapIdList[$nc2BbsPost['Nc2BbsPost']['parent_id']];
-			//NC2 topic_idをgetMapに引き渡し、NC3 root_idを取得する
-			$mapIdList = $Nc2ToNc3Map->getMapIdList('BbsArticle', $nc2BbsPost['Nc2BbsPost']['topic_id']);
-			$nc3BbsRootId = $mapIdList[$nc2BbsPost['Nc2BbsPost']['topic_id']];
+			// PHPMD.ExcessiveMethodLength に引っかかるので別メソッド化
+			$nc3ParentArticle = $this->__getNc3ParentArticle($nc2ParentId);
+			$nc3BbsParentId = $nc3ParentArticle['BbsArticleTree']['id'];
+			$nc3BbsRootId = $nc3ParentArticle['BbsArticleTree']['root_id'];
+			if (!$nc3BbsRootId) {
+				$nc3BbsRootId = $nc3BbsParentId;
+			}
 
 			//現時点でのBbsArticleTreeでのroot_idごとのarticle_no最大値を取得して、1インクリメントする。
 			//ただし、root_idのみのときは、root_idがnullのもの(article_noは1)しかなく取得できないため、'2'とする
@@ -270,4 +271,35 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'post_id:' . $nc2Bbs['Nc2BbsPost']['post_id'];
 		}
 	}
+
+/**
+ * Get Nc3ParentArticle.
+ *
+ * @param string $nc2ParentId Nc2BbsPost parent_id.
+ * @return string Log argument
+ */
+	private function __getNc3ParentArticle($nc2ParentId) {
+		//NC2 parent_idをgetMapに引き渡し、NC3 parent_idを取得する
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $BbsArticle BbsArticle */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$BbsArticle = ClassRegistry::init('Bbses.BbsArticle');
+
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('BbsArticle', $nc2ParentId);
+		// BbsArticleTreeとLEFT JOINしているので取得可能
+		// @see https://github.com/NetCommons3/Bbses/blob/3.1.0/Model/BbsArticle.php#L127-L144
+		$nc3ParentArticle = $BbsArticle->findById(
+			$mapIdList[$nc2ParentId],
+			[
+				'BbsArticleTree.id',
+				'BbsArticleTree.root_id',
+			],
+			null,
+			null,
+			-1
+		);
+
+		return $nc3ParentArticle;
+	}
+
 }
