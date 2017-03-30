@@ -173,9 +173,11 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 			Current::remove('Room.id');
 			Current::remove('Plugin.key');
 
-			$this->writeMigrationLog(__d('nc2_to_nc3', '  Video Setting data Migration end.'));
-			return true;
 		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Video Setting data Migration end.'));
+
+		return true;
 	}
 
 /**
