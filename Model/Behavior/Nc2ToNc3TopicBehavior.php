@@ -60,7 +60,7 @@ class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('TopicFrameSetting', $nc2BlockId);
 		if ($mapIdList) {
 			// 移行済み
-			//return [];
+			return [];
 		}
 
 		//プラグインを配列化する

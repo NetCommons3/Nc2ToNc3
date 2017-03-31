@@ -110,7 +110,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 			$nc2CabinetBlock = $Nc2CabinetBlock->findByRoomId($nc2CabinetManage['Nc2CabinetManage']['room_id'], null, null, -1);
 			if (!$nc2CabinetBlock) {
-				$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2CabinetBlock));
+				$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CabinetBlock));
 				$this->_writeMigrationLog($message);
 				continue;
 			}

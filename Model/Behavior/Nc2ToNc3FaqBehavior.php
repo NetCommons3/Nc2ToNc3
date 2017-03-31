@@ -200,7 +200,7 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 		$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2FaqBlock));
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2FaqBlock));
 			$this->_writeMigrationLog($message);
 
 			return [];

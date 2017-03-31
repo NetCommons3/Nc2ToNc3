@@ -54,7 +54,7 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2CabinetBlock));
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CabinetBlock));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
