@@ -64,7 +64,8 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3Blog data.
  */
 
-	public function generateNc3BlogData(Model $model, $nc2Journal, $nc2JournalBlock) {
+	//$nc2JournalCategoryを追加
+	public function generateNc3BlogData(Model $model, $nc2Journal, $nc2JournalBlock, $nc2JournalCategory) {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
@@ -121,8 +122,13 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'use_unlike' => '0',
 				'use_comment' => $nc2Journal['Nc2Journal']['comment_flag'],
 				'use_sns' => $nc2Journal['Nc2Journal']['sns_flag'],
+			],
+			'Category' => [
+				'name' => $nc2JournalCategory['Nc2JournalCategory']['category_name']
 			]
 		];
+		//NC2で、「ニュース」カテゴリにしたはずだが、var_dumpで確認したところ、Category.nameが「"今日の出来事」になっていた。
+		var_dump($data);exit;
 		return $data;
 	}
 

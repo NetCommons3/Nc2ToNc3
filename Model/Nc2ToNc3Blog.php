@@ -97,6 +97,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
 
 		$Nc2JournalBlock = $this->getNc2Model('journal_block');
+		$Nc2JournalCategory = $this->getNc2Model('journal_category');
 
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
@@ -107,12 +108,14 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 			//var_dump($Nc2JournalBlock);exit;
 			//var_dump($nc2Journal['Nc2Journal']['journal_id']);exit;
 			$nc2JournalBlock = $Nc2JournalBlock->findByJournalId($nc2Journal['Nc2Journal']['journal_id'], null, null, -1);
+			//journal_block.journal_id からjournal_category.category_idとcategory_nameを取得するため
+			$nc2JournalCategory = $Nc2JournalCategory->findByJournalId($nc2Journal['Nc2Journal']['journal_id'], null, null, -1);
 			if (!$nc2JournalBlock) {
 				continue;
 			}
 			$Blog->begin();
 			try {
-				$data = $this->generateNc3BlogData($nc2Journal, $nc2JournalBlock);
+				$data = $this->generateNc3BlogData($nc2Journal, $nc2JournalBlock, $nc2JournalCategory);
 				if (!$data) {
 					$Blog->rollback();
 					continue;
@@ -150,7 +153,17 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$idMap = [
 					$nc2JournalId => $Blog->id
 				];
+
 				$this->saveMap('Blog', $idMap);
+
+				if ($data['Category']){
+					$Category = ClassRegistry::init('Categories.Category');
+					$idMap = [];
+					$idMap = [
+					$nc2JournalCategory['Nc2JournalCategory']['category_id']=> $Category->id
+					];
+					$this->saveMap('BlogCategory', $idMap);
+				}
 				$Blog->commit();
 
 			} catch (Exception $ex) {
