@@ -113,7 +113,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 			//var_dump($nc2Bbs);exit;
 			/** @var array $nc2BbsBlock */
 			$nc2BbsBlock = $Nc2BbsBlock->findByBbsId($nc2Bbs['Nc2Bb']['bbs_id'], null, null, -1);
-			if (!$Nc2BbsBlock) {
+			if (!$nc2BbsBlock) {
 				continue;
 			}
 			$Bbs->begin();

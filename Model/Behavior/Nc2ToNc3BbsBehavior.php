@@ -70,7 +70,7 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 		$nc2BlockId = $nc2BbsBlock['Nc2BbsBlock']['block_id'];
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2BbsBlock));
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2BbsBlock));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -173,6 +173,9 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		$nc3BbsIds = $Nc2ToNc3Map->getMapIdList('Bbs', $nc2BbsPost['Nc2BbsPost']['bbs_id']);
+		if (!$nc3BbsIds) {
+			return [];
+		}
 		$nc3BbsId = $nc3BbsIds[$nc2BbsPost['Nc2BbsPost']['bbs_id']];
 
 		$Bbs = ClassRegistry::init('Bbses.Bbs');
@@ -231,6 +234,7 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3Bbs['Bbs']['block_id'],
 				//'publish_start' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['bbs_date']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2BbsPost['Nc2BbsPost']),
+				'created' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['insert_time']),
 				'title_icon' => $this->_convertTitleIcon($nc2BbsPost['Nc2BbsPost']['icon_name'])
 			],
 			'Bbs' => [
