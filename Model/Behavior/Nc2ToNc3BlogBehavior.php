@@ -70,7 +70,7 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->_getLogArgument($nc2JournalBlock));
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2JournalBlock));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
