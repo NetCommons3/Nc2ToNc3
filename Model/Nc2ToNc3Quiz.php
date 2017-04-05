@@ -133,7 +133,12 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 				}
 
 				// PHPMD.ExcessiveMethodLength になるので、別メソッドにした。
-				$this->__setCurrentData($nc2QBlock);
+				if (!$this->__setCurrentData($nc2QBlock)) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Quiz));
+					$this->writeMigrationLog($message);
+					$Quiz->rollback();
+					continue;
+				}
 
 				// Model::idを初期化しないとUpdateになってしまう。
 				// @see https://github.com/NetCommons3/Quizzes/blob/3.1.0/Model/Quiz.php#L442
@@ -414,7 +419,7 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
  * Set Current data.
  *
  * @param array $nc2QBlock Nc2QuizBlock data.
- * @return void
+ * @return bool True on success
  */
 	private function __setCurrentData($nc2QBlock) {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
@@ -422,9 +427,14 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 
 		// QuizFrameDisplayQuiz::saveDisplayQuiz でFrameに割り当てられてしまうが、
 		// Nc2ToNc3Quiz::__saveQuizFrameSettingFromNc2で再登録を行うことで調整
+		// Frameデータ移行時にQuiz::afterFrameSaveでFrame.block_idが割り振られるはずだが、何かでNULLのまま。→要調査（とりあえず次へ進んどく）
 		// @see https://github.com/NetCommons3/Quizzes/blob/3.1.0/Model/Quiz.php#L577-L578
 		// @see https://github.com/NetCommons3/Quizzes/blob/3.1.0/Model/Quiz.php#L631-L634
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2QBlock['Nc2QuizBlock']['block_id']);
+		if (!isset($frameMap['Frame']['block_id'])) {
+			return false;
+		}
+
 		$nc3RoomId = $frameMap['Frame']['room_id'];
 		Current::write('Frame.key', $frameMap['Frame']['key']);
 		Current::write('Frame.room_id', $nc3RoomId);
@@ -445,6 +455,8 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 		Current::write('Room.id', $nc3RoomId);
 		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+		return true;
 	}
 
 /**
