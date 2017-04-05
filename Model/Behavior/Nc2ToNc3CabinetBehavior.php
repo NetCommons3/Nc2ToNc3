@@ -176,10 +176,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			$nc3CabinetFileTreeId = $nc3CabinetFile['CabinetFile']['cabinet_file_tree_id'];
 		}
 
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$data = [];
-
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		//ファイルの場合は、ファイルアップロードの準備
 		if (!$nc2CabinetFile['Nc2CabinetFile']['file_type']) {
 			$nc2UploadId = $nc2CabinetFile['Nc2CabinetFile']['upload_id'];
