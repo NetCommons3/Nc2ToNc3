@@ -197,6 +197,10 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 			try {
 				$nc2PhotoalbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['photoalbum_id'];
 				$nc2PhotoalbumBlock = $Nc2PhotoalbumBlock->findByPhotoalbumId($nc2PhotoalbumId);
+				if (!$nc2PhotoalbumBlock) {
+					$PhotoAlbum->rollback();
+					continue;
+				}
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
 
 				$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];

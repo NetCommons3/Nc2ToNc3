@@ -61,6 +61,10 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
+		if (!$frameMap) {
+			return [];
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data['Frame'] = [
@@ -183,7 +187,8 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 				'key' => '',
 				'block_id' => $nc3Task['Block']['id'],
 				'status' => '1',
-				'language_id' => $nc3Task['BlocksLanguage']['language_id'],
+				// BlocksLanguageは取得されない気がする
+				//'language_id' => $nc3Task['BlocksLanguage']['language_id'],
 				'category_id' => '0', // TODOカテゴリを設定する
 				'progress_rate' => $nc2Task['Nc2TodoTask']['progress'],
 				'title' => $nc2Task['Nc2TodoTask']['task_value'],

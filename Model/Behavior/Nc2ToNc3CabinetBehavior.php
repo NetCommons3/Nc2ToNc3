@@ -142,6 +142,9 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 
 		//キャビネットの枠は、generateNc3CabinetDataで移行したはずなので、移行したキャビネット枠の情報を取得
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('Cabinet', $nc2CabFileCabinetId);
+		if (!$mapIdList) {
+			return [];
+		}
 
 		$nc3CabinetId = $mapIdList[$nc2CabFileCabinetId];
 

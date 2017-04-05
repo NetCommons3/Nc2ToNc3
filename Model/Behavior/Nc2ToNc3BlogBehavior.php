@@ -157,6 +157,9 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		$nc3BlogIds = $Nc2ToNc3Map->getMapIdList('Blog', $nc2JournalPost['Nc2JournalPost']['journal_id']);
+		if (!$nc3BlogIds) {
+			return [];
+		}
 		$nc3BlogId = $nc3BlogIds[$nc2JournalPost['Nc2JournalPost']['journal_id']];
 
 		$Blog = ClassRegistry::init('Blogs.Blog');
