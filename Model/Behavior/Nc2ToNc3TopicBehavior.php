@@ -11,7 +11,7 @@
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
- * Nc2ToNc3FaqBehavior
+ * Nc2ToNc3TopicBehavior
  *
  */
 class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {

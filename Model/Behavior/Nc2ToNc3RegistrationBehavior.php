@@ -16,6 +16,11 @@ App::uses('Nc2ToNc3QuestionBaseBehavior', 'Nc2ToNc3.Model/Behavior');
  */
 class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 
+/**
+ * Answer count per user
+ *
+ * @var array
+ */
 	private $__answerCountPerUser = [];
 
 /**
