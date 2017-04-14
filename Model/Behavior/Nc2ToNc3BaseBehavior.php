@@ -12,7 +12,7 @@ App::uses('ModelBehavior', 'Model');
 App::uses('Nc2ToNc3', 'Nc2ToNc3.Model');
 
 /**
- * Nc2ToNc3MigrationBehavior
+ * Nc2ToNc3BaseBehavior
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
@@ -175,17 +175,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function restoreNc3CurrentLanguage() {
 		$this->_restoreNc3CurrentLanguage();
-	}
-
-/**
- * Convert nc2 display_days.
- *
- * @param Model $model Model using this behavior.
- * @param string $displayDays nc2 display_days.
- * @return string converted nc2 display_days.
- */
-	public function convertDisplayDays(Model $model, $displayDays) {
-		return $this->_convertDisplayDays($displayDays);
 	}
 
 /**
@@ -424,26 +413,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			Current::write('Language', $this->__nc3CurrentLanguage);
 			unset($this->__nc3CurrentLanguage);
 		}
-	}
-
-/**
- * Convert nc2 display_days.
- *
- * @param string $displayDays nc2 display_days.
- * @return string converted nc2 display_days.
- */
-	protected function _convertDisplayDays($displayDays) {
-		if (!$displayDays) {
-			return null;
-		}
-		$arr = [30, 14, 7, 3, 1];
-		foreach ($arr as $num) {
-			if ($displayDays >= $num) {
-				$displayDays = $num;
-				break;
-			}
-		}
-		return $displayDays;
 	}
 
 /**

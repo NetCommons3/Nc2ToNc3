@@ -16,6 +16,11 @@ App::uses('Nc2ToNc3QuestionBaseBehavior', 'Nc2ToNc3.Model/Behavior');
  */
 class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 
+/**
+ * Answer count per user
+ *
+ * @var array
+ */
 	private $__answerCountPerUser = [];
 
 /**
@@ -96,7 +101,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			'is_active' => '0',
 			'status' => '3',
 			'title' => $nc2Registration['Nc2Registration']['registration_name'],
-			'title_icon' => $this->_convertTitleIcon($nc2Registration['Nc2Registration']['title_icon']),
+			//'title_icon' => $this->_convertTitleIcon($nc2Registration['Nc2Registration']['title_icon']),
 			'is_total_show' => '0',
 			'answer_timing' => $answerTiming,
 			'is_key_pass_use' => RegistrationsComponent::USES_NOT_USE,
@@ -299,7 +304,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 				'question_sequence' => $nc3ItemSequence,
 				'question_value' => $nc2Item['Nc2RegistrationItem']['item_name'],
 				'question_type' => $this->_convertQuestionType($nc2ItemType),
-				'description' => $nc2Item['Nc2RegistrationItem']['question_value'],
+				'description' => $nc2Item['Nc2RegistrationItem']['description'],
 				'is_require' => $nc2Item['Nc2RegistrationItem']['require_flag'],
 				'question_type_option' => '',
 				'is_result_display' => $isNotTextType ? '1' : '0',
@@ -338,7 +343,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$data[] = [
 				'choice_sequence' => $nc3ChoiceSequence,
 				'choice_label' => $nc2Choice,
-				'graph_color' => $this->_getGraphColor($nc3ChoiceSequence),
+				//'graph_color' => $this->_getGraphColor($nc3ChoiceSequence),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Item['Nc2RegistrationItem']),
 				'created' => $this->_convertDate($nc2Item['Nc2RegistrationItem']['insert_time']),
 			];

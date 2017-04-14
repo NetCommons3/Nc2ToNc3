@@ -11,7 +11,7 @@
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
- * Nc2ToNc3FaqBehavior
+ * Nc2ToNc3TopicBehavior
  *
  */
 class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
@@ -42,7 +42,7 @@ class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param array $nc2WhatsnewBlock nc2WhatsnewBlock data.
- * @return array Nc3Faq data.
+ * @return array Nc3TopicFrameSetting data.
  */
 	public function generateNc3TopicFrameSettingData(Model $model, $nc2WhatsnewBlock) {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */

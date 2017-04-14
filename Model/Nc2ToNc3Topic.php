@@ -78,8 +78,6 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
  * @throws Exception
  */
 	private function __saveTopicBlockFromNc2($nc2WhatsnewBlocks) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  TopicFrameSetting data Migration start.'));
-
 		/* @var $TopicFrameSetting TopicFrameSetting */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		$TopicFrameSetting = ClassRegistry::init('Topics.TopicFrameSetting');
@@ -129,8 +127,7 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
 		}
 		$this->removeUseCurrent();
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  TopicFrameSetting data Migration end.'));
-
 		return true;
 	}
+
 }

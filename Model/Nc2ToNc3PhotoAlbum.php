@@ -173,9 +173,13 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 /**
  * Save PhotoAlbum from Nc2.
  *
+ * PHPMD.ExcessiveMethodLengthに引っかかるが、PhotoAlbum::saveAlbumForAddとPhotoAlbumPhoto::savePhotoを
+ * 分けたいので、とりあえずSuppressWarningsの定義で回避
+ *
  * @param array $nc2PhotoalbumAlbums Nc2PhotoalbumAlbum data.
  * @return bool True on success
  * @throws Exception
+ * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  */
 	private function __savePhotoAlbumFromNc2($nc2PhotoalbumAlbums) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  PhotoAlbum data Migration start.'));
@@ -197,6 +201,10 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 			try {
 				$nc2PhotoalbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['photoalbum_id'];
 				$nc2PhotoalbumBlock = $Nc2PhotoalbumBlock->findByPhotoalbumId($nc2PhotoalbumId);
+				if (!$nc2PhotoalbumBlock) {
+					$PhotoAlbum->rollback();
+					continue;
+				}
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
 
 				$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];

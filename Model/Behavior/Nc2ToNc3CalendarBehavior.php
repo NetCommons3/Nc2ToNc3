@@ -105,8 +105,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		if ($nc2CalendarManage['Nc2CalendarManage']['add_authority_id'] == '2') {
 			$nc3PermissionValue = '1';
 		}
-		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+
 		$nc3PermissionData = [
 			'roles_room_id' => $nc3RolesRoom['RolesRoom']['id'],
 			'permission' => 'content_creatable',
