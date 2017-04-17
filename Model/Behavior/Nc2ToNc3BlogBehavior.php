@@ -63,15 +63,24 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
  * @param array $nc2JournalBlock Nc2JournalBlock data.
  * @return array Nc3Blog data.
  */
+	public function generateNc3BlogData(Model $model, $nc2Journal, $nc2JournalCategory) {
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$roomMap = $Nc2ToNc3Room->getMap($nc2Journal['Nc2Journal']['room_id']);
+		if (!$roomMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Journal));
+			$this->_writeMigrationLog($message);
+			return [];
+		}
 
-	//$nc2JournalCategoryを追加
-	public function generateNc3BlogData(Model $model, $nc2Journal, $nc2JournalBlock, $nc2JournalCategory) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2JournalBlock));
+		// NC2に配置されていないと登録できない。とりあえずRoom.room_idから取得できる先頭のFrame.idを使用しとく
+		// @see https://github.com/NetCommons3/NetCommons3/issues/811
+		/* @var $Frame Frame */
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$nc3RoomId = $roomMap['Room']['id'];
+		$nc3Frame = $Frame->findByRoomIdAndPluginKey($nc3RoomId, 'blogs', 'id', null, -1);
+		if (!$nc3Frame) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Journal));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -85,17 +94,15 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$data = [];
-
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
 			'Frame' => [
-				'id' => $frameMap['Frame']['id']
+				'id' => $nc3Frame['Frame']['id']
 			],
 			'Block' => [
 				'id' => '',
-				'room_id' => $frameMap['Frame']['room_id'],
+				'room_id' => $nc3RoomId,
 				'plugin_key' => 'blogs',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
 				'public_type' => $nc2Journal['Nc2Journal']['active_flag']
@@ -104,14 +111,7 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'id' => '',
 				'key' => '',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
-				'created' => $this->_convertDate($nc2JournalBlock['Nc2JournalBlock']['insert_time']),
-			],
-			'BlogFrameSetting' => [
-				'id' => '',
-				'frame_key' => $frameMap['Frame']['key'],
-				'articles_per_page' => $nc2JournalBlock['Nc2JournalBlock']['visible_item'],
-				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalBlock['Nc2JournalBlock']),
-				'created' => $this->_convertDate($nc2JournalBlock['Nc2JournalBlock']['insert_time']),
+				'created' => $this->_convertDate($nc2Journal['Nc2Journal']['insert_time']),
 			],
 			'BlocksLanguage' => [
 				'language_id' => '',
@@ -127,8 +127,62 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'name' => $nc2JournalCategory['Nc2JournalCategory']['category_name']
 			]
 		];
-		//NC2で、「ニュース」カテゴリにしたはずだが、var_dumpで確認したところ、Category.nameが「"今日の出来事」になっていた。
-		var_dump($data);exit;
+
+		return $data;
+	}
+
+/**
+ * Generate Nc3BlogFameSettingData data.
+ *
+ * Data sample
+ * data[BlogFrameSetting][id]:
+ * data[BlogFrameSetting][frame_key]:
+ * data[BlogFrameSetting][articles_per_page]:10
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2JournalBlock Nc2JournalBlock data.
+ * @return array Nc3BlogFameSetting data.
+ */
+	public function generateNc3BlogFrameSettingData(Model $model, $nc2JournalBlock) {
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$nc2BlockId = $nc2JournalBlock['Nc2JournalBlock']['block_id'];
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if (!$frameMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2JournalBlock));
+			$this->_writeMigrationLog($message);
+			return [];
+		}
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogFrameSetting', $nc2BlockId);
+		if ($mapIdList) {
+			return [];	// 移行済み
+		}
+
+		$nc2JournalId = $nc2JournalBlock['Nc2JournalBlock']['journal_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Blog', $nc2JournalId);
+
+		/* @var $Blog Blog */
+		$Blog = ClassRegistry::init('Blogs.Blog');
+		$nc3BlogId = Hash::get($mapIdList, [$nc2JournalId]);
+		$nc3Blog = $Blog->findById($nc3BlogId, 'block_id', null, -1);
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$data['BlogFrameSetting'] = [
+			'frame_key' => $frameMap['Frame']['key'],
+			'articles_per_page' => $nc2JournalBlock['Nc2JournalBlock']['visible_item'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalBlock['Nc2JournalBlock']),
+			'created' => $this->_convertDate($nc2JournalBlock['Nc2JournalBlock']['insert_time']),
+		];
+		$data['Frame'] = [
+			'id' => $frameMap['Frame']['id'],
+			'plugin_key' => 'blogs',
+			'block_id' => Hash::get($nc3Blog, ['Blog', 'block_id']),
+		];
+
 		return $data;
 	}
 
@@ -222,6 +276,11 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		if (isset($nc2Journal['Nc2Journal'])) {
 			return 'Nc2Journal ' .
 				'journal_id:' . $nc2Journal['Nc2Journal']['journal_id'];
+		}
+
+		if (isset($nc2Journal['Nc2JournalBlock'])) {
+			return 'Nc2JournalBlock ' .
+				'block_id:' . $nc2Journal['Nc2JournalBlock']['block_id'];
 		}
 
 		if (isset($nc2Journal['Nc2JournalPost'])) {
