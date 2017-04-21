@@ -265,7 +265,9 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration start.'));
 
 		/* @var $JournalFrameSetting JournalFrameSetting */
+		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
 		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 
 		Current::write('Plugin.key', 'blogs');
 		//Announcement モデルで	BlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
@@ -295,9 +297,12 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$BlogEntry->rollback();
 					continue;
 				}
+				$nc3BlockId = $data['Block']['id'];
+				$nc2CategoryId = $nc2JournalPost['Nc2JournalPost']['category_id'];
+				$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
 
 				$Block = ClassRegistry::init('Blocks.Block');
-				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
+				$Blocks = $Block->findById($nc3BlockId, null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 
 				Current::write('Room.id', $nc3RoomId);

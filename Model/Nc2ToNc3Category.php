@@ -132,7 +132,7 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 		}
 
 		$nc2CategoryIds = array_keys($nc2CategoryList);
-		$dummyModelName = Inflector::classify($nc3Block['Block']['plugin_key']) . 'Category';
+		$dummyModelName = $this->__getDummyModelName($nc3Block);
 		for ($key = 0; $key < $categoryCount; $key++) {
 			$idMap = [
 				$nc2CategoryIds[$key] => $nc3Categories[$key]['Category']['id']
@@ -141,6 +141,35 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 		}
 
 		return true;
+	}
+
+/**
+ * Get Nc3Category id.
+ *
+ * @param string $Nc3BlockId Nc3Block id.
+ * @param string $nc2CategoryId Nc2Category id.
+ * @return array Nc3Category id.
+ */
+	public function getNc3CategoryId($Nc3BlockId, $nc2CategoryId) {
+		/* @var $Block Block */
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Block = ClassRegistry::init('Blocks.Block');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$nc3Block = $Block->findById($Nc3BlockId, 'plugin_key', null, -1);
+		$dummyModelName = $this->__getDummyModelName($nc3Block);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList($dummyModelName, $nc2CategoryId);
+
+		return Hash::get($mapIdList, [$nc2CategoryId]);
+	}
+
+/**
+ * Get dummy model name.
+ *
+ * @param array $nc3Block Nc3Block data.
+ * @return string Dummy model name.
+ */
+	private function __getDummyModelName($nc3Block) {
+		return Inflector::classify($nc3Block['Block']['plugin_key']) . 'Category';
 	}
 
 }

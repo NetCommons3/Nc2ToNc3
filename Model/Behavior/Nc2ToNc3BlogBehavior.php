@@ -107,20 +107,20 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'plugin_key' => 'blogs',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
 				'public_type' => $nc2Journal['Nc2Journal']['active_flag'],
-				'created_user' =>$nc3CreatedUser,
+				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
 			],
 			'Blog' => [
 				'id' => '',
 				'key' => '',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
-				'created_user' =>$nc3CreatedUser,
+				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
 			],
 			'BlocksLanguage' => [
 				'language_id' => '',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
-				'created_user' =>$nc3CreatedUser,
+				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
 			],
 			'BlogSetting' => [
@@ -128,7 +128,7 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'use_unlike' => '0',
 				'use_comment' => $nc2Journal['Nc2Journal']['comment_flag'],
 				'use_sns' => $nc2Journal['Nc2Journal']['sns_flag'],
-				'created_user' =>$nc3CreatedUser,
+				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
 			],
 		];
@@ -253,7 +253,6 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		$data = [
 			'BlogEntry' => [
 				'blog_key' => $nc3Blog['Blog']['key'],
-				//'category_id' => $this->__getNc3CategoryId($nc2JournalPost, $nc3Blog),
 				'status' => $nc3Status,
 				'is_active' => $nc3IsActive,
 				'language_id' => $nc3Blog['Blog']['language_id'],
@@ -296,40 +295,5 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'post_id:' . $nc2Journal['Nc2JournalPost']['post_id'];
 		}
 	}
-
-/**
- * Get Nc3Category id.
- *
- * @param array $nc2JournalPost Nc2JournalPost data.
- * @param array $nc3Blog Nc3Blog data.
- * @return array Nc3Category id.
- */
-	//private function __getNc3CategoryId($nc2JournalPost, $nc3Blog) {
-		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		/*$Nc2JournalCategory = $this->_getNc2Model('journal_category');
-		$nc2JournalCategory = $Nc2JournalCategory->findByCategoryId(
-			$nc2JournalPost['Nc2JournalPost']['category_id'],
-			'category_name',
-			'display_sequence',
-			null,
-			null,
-			-1
-		);
-
-		$weight = 1;
-		foreach ($nc2JournalCategories as $nc2JournalCategory) {
-			$data[] = [
-				'CategoryOrder' => [
-					'weight' => $weight,
-				],
-				'CategoriesLanguage' => [
-					'name' => $nc2JournalCategory['Nc2JournalCategory']['category_name'],
-				],
-			];
-			$weight++;
-		}
-
-		return $data;
-	}*/
 
 }
