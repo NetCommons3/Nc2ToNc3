@@ -60,10 +60,9 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
  *
  * @param Model $model Model using this behavior.
  * @param array $nc2Journal Nc2Journal data.
- * @param array $nc2JournalBlock Nc2JournalBlock data.
  * @return array Nc3Blog data.
  */
-	public function generateNc3BlogData(Model $model, $nc2Journal, $nc2JournalCategory) {
+	public function generateNc3BlogData(Model $model, $nc2Journal) {
 		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$roomMap = $Nc2ToNc3Room->getMap($nc2Journal['Nc2Journal']['room_id']);
@@ -96,6 +95,8 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2Journal['Nc2Journal']);
+		$nc3Created = $this->_convertDate($nc2Journal['Nc2Journal']['insert_time']);
 		$data = [
 			'Frame' => [
 				'id' => $nc3Frame['Frame']['id']
@@ -105,27 +106,31 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'room_id' => $nc3RoomId,
 				'plugin_key' => 'blogs',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
-				'public_type' => $nc2Journal['Nc2Journal']['active_flag']
+				'public_type' => $nc2Journal['Nc2Journal']['active_flag'],
+				'created_user' =>$nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'Blog' => [
 				'id' => '',
 				'key' => '',
 				'name' => $nc2Journal['Nc2Journal']['journal_name'],
-				'created' => $this->_convertDate($nc2Journal['Nc2Journal']['insert_time']),
+				'created_user' =>$nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'BlocksLanguage' => [
 				'language_id' => '',
-				'name' => $nc2Journal['Nc2Journal']['journal_name']
+				'name' => $nc2Journal['Nc2Journal']['journal_name'],
+				'created_user' =>$nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'BlogSetting' => [
 				'use_like' => $nc2Journal['Nc2Journal']['vote_flag'],
 				'use_unlike' => '0',
 				'use_comment' => $nc2Journal['Nc2Journal']['comment_flag'],
 				'use_sns' => $nc2Journal['Nc2Journal']['sns_flag'],
+				'created_user' =>$nc3CreatedUser,
+				'created' => $nc3Created,
 			],
-			'Category' => [
-				'name' => $nc2JournalCategory['Nc2JournalCategory']['category_name']
-			]
 		];
 
 		return $data;
@@ -168,6 +173,9 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		$Blog = ClassRegistry::init('Blogs.Blog');
 		$nc3BlogId = Hash::get($mapIdList, [$nc2JournalId]);
 		$nc3Blog = $Blog->findById($nc3BlogId, 'block_id', null, -1);
+		if (!$nc3Blog) {
+			return [];	// Nc3Blogデータなし
+		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
@@ -242,22 +250,22 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-
-		$data = [];
 		$data = [
 			'BlogEntry' => [
-				'title' => $nc2JournalPost['Nc2JournalPost']['title'],
-				'body1' => $this->_convertWYSIWYG($nc2JournalPost['Nc2JournalPost']['content']),
-				'body2' => $this->_convertWYSIWYG($nc2JournalPost['Nc2JournalPost']['more_content']),
 				'blog_key' => $nc3Blog['Blog']['key'],
+				//'category_id' => $this->__getNc3CategoryId($nc2JournalPost, $nc3Blog),
 				'status' => $nc3Status,
 				'is_active' => $nc3IsActive,
 				'language_id' => $nc3Blog['Blog']['language_id'],
-				'block_id' => $nc3Blog['Blog']['block_id'],
+				'title' => $nc2JournalPost['Nc2JournalPost']['title'],
+				'body1' => $this->_convertWYSIWYG($nc2JournalPost['Nc2JournalPost']['content']),
+				'body2' => $this->_convertWYSIWYG($nc2JournalPost['Nc2JournalPost']['more_content']),
 				'publish_start' => $this->_convertDate($nc2JournalPost['Nc2JournalPost']['journal_date']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalPost['Nc2JournalPost']),
-				'title_icon' => $this->_convertTitleIcon($nc2JournalPost['Nc2JournalPost']['icon_name'])
-				],
+				'created' => $this->_convertDate($nc2JournalPost['Nc2JournalPost']['insert_time']),
+				'block_id' => $nc3Blog['Blog']['block_id'],
+				'title_icon' => $this->_convertTitleIcon($nc2JournalPost['Nc2JournalPost']['icon_name']),
+			],
 			'Block' => [
 				'id' => $nc3Blog['Blog']['block_id'],
 				'key' => $nc3BlockKey
@@ -288,4 +296,40 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'post_id:' . $nc2Journal['Nc2JournalPost']['post_id'];
 		}
 	}
+
+/**
+ * Get Nc3Category id.
+ *
+ * @param array $nc2JournalPost Nc2JournalPost data.
+ * @param array $nc3Blog Nc3Blog data.
+ * @return array Nc3Category id.
+ */
+	//private function __getNc3CategoryId($nc2JournalPost, $nc3Blog) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/*$Nc2JournalCategory = $this->_getNc2Model('journal_category');
+		$nc2JournalCategory = $Nc2JournalCategory->findByCategoryId(
+			$nc2JournalPost['Nc2JournalPost']['category_id'],
+			'category_name',
+			'display_sequence',
+			null,
+			null,
+			-1
+		);
+
+		$weight = 1;
+		foreach ($nc2JournalCategories as $nc2JournalCategory) {
+			$data[] = [
+				'CategoryOrder' => [
+					'weight' => $weight,
+				],
+				'CategoriesLanguage' => [
+					'name' => $nc2JournalCategory['Nc2JournalCategory']['category_name'],
+				],
+			];
+			$weight++;
+		}
+
+		return $data;
+	}*/
+
 }

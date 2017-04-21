@@ -89,8 +89,10 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 	private function __saveNc3BlogFromNc2($nc2Journals) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog data Migration start.'));
 
-		/* @var $JournalFrameSetting JournalFrameSetting */
+		/* @var $Blog Blog */
+		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
 		$Blog = ClassRegistry::init('Blogs.Blog');
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 
 		Current::write('Plugin.key', 'blogs');
 		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
@@ -100,27 +102,26 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
 		$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
 
-		$Nc2JournalCategory = $this->getNc2Model('journal_category');
-
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
 
 		foreach ($nc2Journals as $nc2Journal) {
-			//journal_block.journal_id からjournal_category.category_idとcategory_nameを取得するため
-			$nc2JournalCategory = $Nc2JournalCategory->findByJournalId($nc2Journal['Nc2Journal']['journal_id'], null, null, -1);
-
 			$Blog->begin();
 			try {
-				$data = $this->generateNc3BlogData($nc2Journal, $nc2JournalCategory);
+				$data = $this->generateNc3BlogData($nc2Journal);
 				if (!$data) {
 					$Blog->rollback();
 					continue;
 				}
+				$query['conditions'] = [
+					'journal_id' => $nc2Journal['Nc2Journal']['journal_id']
+				];
+				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('journal_category', $query);
+				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
 
-				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
-				$nc3Room = $Nc2ToNc3Room->getMap($nc2Journal['Nc2Journal']['room_id']);
-				$nc3RoomId = $nc3Room['Room']['id'];
+				// いる？
+				$nc3RoomId = $data['Block']['room_id'];
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
@@ -130,13 +131,11 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$Topic->create();
 
 				if (!$Blog->saveBlog($data)) {
-					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
-					// ここでrollback
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Blog->rollback();
-					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
-					// var_exportは大丈夫らしい。。。
-					// @see https://phpmd.org/rules/design.html
 
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Journal) . "\n" .
 						var_export($Blog->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -150,17 +149,18 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$idMap = [
 					$nc2JournalId => $Blog->id
 				];
-
 				$this->saveMap('Blog', $idMap);
 
-				if ($data['Category']){
-					$Category = ClassRegistry::init('Categories.Category');
-					$idMap = [];
-					$idMap = [
-					$nc2JournalCategory['Nc2JournalCategory']['category_id']=> $Category->id
-					];
-					$this->saveMap('BlogCategory', $idMap);
+				$nc3Blog = $Blog->findById($Blog->id, 'block_id', null, -1);
+				if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Blog['Blog']['block_id'])) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Journal);
+					$this->writeMigrationLog($message);
+					$Blog->rollback();
+					continue;
 				}
+
 				$Blog->commit();
 
 			} catch (Exception $ex) {
@@ -170,6 +170,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
+
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
