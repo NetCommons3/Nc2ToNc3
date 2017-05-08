@@ -221,7 +221,9 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		Current::write('Room.id', $roomMap['Room']['id']);
 
 		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/Controller/WysiwygFileController.php#L88
-		$data = $UploadFile->registByFile($fileData['tmp_name'], 'wysiwyg', null, 'Wysiwyg.file', $nc3UploadFile);
+		// @see https://github.com/NetCommons3/Files/blob/3.1.0/Model/UploadFile.php#L260-L263
+		$CakeFile = new File($fileData['tmp_name']);
+		$data = $UploadFile->registByFile($CakeFile, 'wysiwyg', null, 'Wysiwyg.file', $nc3UploadFile);
 		// Room.idを戻す
 		Current::write('Room.id', $contentRoomId);
 		if (!$data) {
