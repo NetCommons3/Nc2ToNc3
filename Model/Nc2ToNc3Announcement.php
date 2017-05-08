@@ -25,6 +25,9 @@ App::uses('Current', 'NetCommons.Utility');
  * @method void changeNc3CurrentLanguage($langDirName = null)
  * @method void restoreNc3CurrentLanguage()
  *
+ * @see Nc2ToNc3BaseBehavior
+ * @method string convertWYSIWYG($content)
+ *
  */
 class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 
@@ -43,7 +46,10 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Base'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Base',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
 
 /**
  * Migration method.
@@ -82,7 +88,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			$data = [
 				'Announcement' => [
 					'status' => '1',
-					'content' => $nc2Announcement['Nc2Announcement']['content']
+					'content' => $this->convertWYSIWYG($nc2Announcement['Nc2Announcement']['content']),
 				],
 				'Block' => [
 					'room_id' => $nc3RoomId,

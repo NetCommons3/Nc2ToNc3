@@ -62,20 +62,19 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			return $data;
 		}
 
-		$Nc2Upload = $this->getNc2Model('uploads');
-		$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
+		$nc2Upload = $this->getNc2UploadByUploadId($nc2UploadId);
 		if (!$nc2Upload) {
 			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload:' . $nc2UploadId);
 			$this->writeMigrationLog($message);
 			return $data;
 		}
 
-		$name = $nc2Upload['Nc2Upload']['physical_file_name'];
+		$name = $nc2Upload['Nc2Upload']['file_name'];
 
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$tmpName = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'upload_path']) .
 			$nc2Upload['Nc2Upload']['file_path'] .
-			$name;
+			$nc2Upload['Nc2Upload']['physical_file_name'];
 
 		if (!is_readable($tmpName)) {
 			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload upload_id:' . $nc2Upload['Nc2Upload']['upload_id']);
@@ -102,4 +101,20 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 
 		return $data;
 	}
+
+/**
+ * Generate Nc3Upload data for Files.AttachmentBehavior.
+ * Copy target file to temporary folder.
+ *
+ * @param string $nc2UploadId Nc2Upload.id.
+ * @return array avatar data
+ */
+	public function getNc2UploadByUploadId($nc2UploadId) {
+		/* @var $Nc2Upload AppModel */
+		$Nc2Upload = $this->getNc2Model('uploads');
+		$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
+
+		return $nc2Upload;
+	}
+
 }
