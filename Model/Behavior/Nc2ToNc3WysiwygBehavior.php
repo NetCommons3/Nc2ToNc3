@@ -10,6 +10,7 @@
 
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 App::uses('WysiwygBehavior', 'Wysiwyg.Model/Behavior');
+App::uses('File', 'Utility');
 
 /**
  * Nc2ToNc3WysiwygBehavior
