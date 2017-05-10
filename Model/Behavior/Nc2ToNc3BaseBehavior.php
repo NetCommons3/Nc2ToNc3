@@ -442,10 +442,11 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * Convert nc2 title_icon.
  *
  * @param string $titleIcon Nc2 title_icon.
+ * @param string $prefixPath Prefix path.
  * @return string converted nc3 title_icon.
  * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  */
-	protected function _convertTitleIcon($titleIcon) {
+	protected function _convertTitleIcon($titleIcon, $prefixPath = '/') {
 		$map = [
 			'smiley/smiley-smile1.gif' => '40_010_smile.svg',
 			'smiley/smiley-smile2.gif' => '40_011_laugh.svg',
@@ -554,7 +555,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		$titleIcon = Hash::get($map, [$titleIcon]);
 		if ($titleIcon) {
 			// @see https://github.com/NetCommons3/NetCommons/blob/3.1.0/View/Helper/TitleIconHelper.php#L211
-			$titleIcon = '/net_commons/img/title_icon/' . $titleIcon;
+			$titleIcon = $prefixPath . 'net_commons/img/title_icon/' . $titleIcon;
 		}
 
 		return $titleIcon;

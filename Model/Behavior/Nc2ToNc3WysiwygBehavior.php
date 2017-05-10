@@ -35,29 +35,17 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
 		}
 
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfTitleIcon($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
+
 		$content = str_replace($searches, $replaces, $content);
 
 		return $content;
 
 		/*
-		$replace = './images/comp/textarea/';
-		$pattern = '/["\']&XOOPS_URL;\/images\/icon\/(\S*)["\']/';
-		preg_match_all($pattern, $str, $matches, PREG_SET_ORDER);
-		foreach ($matches as $match) {
-			$lastCharacter = substr($match[1], -1);
-			if ($lastCharacter == '"' || $lastCharacter == '\'') {
-				$match[0] = substr($match[0], 0, -1);
-				$match[1] = substr($match[1], 0, -1);
-			}
-
-			if (in_array($match[0], $searches)) {
-				continue;
-			}
-
-			$searches[] = $match[0];
-			$replaces[] = '"' . $replace . Utility::convertIconPath($match[1]) . '"';
-		}
-
 		$page =& Page::getInstance();
 		$replace = './?action=pages_view_main&page_id=';
 		$pattern = '/["\']&XOOPS_URL;\/modules\/menu\/main\.php\?page_id=(\S*)&op=change_page["\']/';
@@ -143,7 +131,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
  * Convert nc2 content.
  *
  * @param string $content Nc2 content.
- * @return string converted nc3 body.
+ * @return array str_replace arguments.(0:$search,1:$replace)
  */
 	private function __getStrReplaceArgumentsOfDownloadAction($content) {
 		$strReplaceArguments = [];
@@ -155,7 +143,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		//$replace = WysiwygBehavior::REPLACE_BASE_URL . './?action=common_download_main&upload_id=';
 		$replaceUrl = Router::url('/', true);
 
-		$pattern = '/(src|href)="\.\/\?action=common_download_main&(?:amp;)?+upload_id=(\d+)"/';
+		$pattern = '/(src|href)="\.\/\?action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[2]);
@@ -265,6 +253,59 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		return 'big';
+	}
+
+/**
+ * Convert nc2 content.
+ *
+ * @param string $content Nc2 content.
+ * @return array str_replace arguments.(0:$search,1:$replace)
+ */
+	private function __getStrReplaceArgumentsOfTitleIcon($content) {
+		$strReplaceArguments = [];
+
+		// PCRE_UNGREEDYパターン修飾子と.*?のどっちが良いのかわからんので、とりあえず.*?
+		// あと、style属性はそのままにしとく。
+		$pattern = '/src=".*?\/images\/comp\/textarea\/((?:titleicon|smiley)\/.*?\.gif)"/';
+
+		// src属性のURLに Router::url('/') を使用している。
+		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/View/Helper/WysiwygHelper.php#L92
+		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/View/Helper/WysiwygHelper.php#L152-L162
+		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/webroot/js/plugins/titleicons/plugin.js#L25-L32
+		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/webroot/js/plugins/titleicons/plugin.js#L52-L56
+		$prefixPath = $this->__getSubDirectory();
+
+		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+		foreach ($matches as $match) {
+			$strReplaceArguments[0][] = $match[0];
+
+			// class属性は最後になっているが、挿入された結果が先頭になっているので、src属性の前に設定
+			// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/webroot/js/plugins/titleicons/plugin.js#L55
+			$strReplaceArguments[1][] = 'class="nc-title-icon" src=' .
+				'"' . $this->_convertTitleIcon($match[1], $prefixPath) . '"';
+		}
+
+		return $strReplaceArguments;
+	}
+
+/**
+ * Get sub directory
+ *
+ * @return string sub directory
+ */
+	private function __getSubDirectory() {
+		/* @var $RequestObject CakeRequest */
+		$RequestObject = Router::getRequest();
+
+		if (!$RequestObject->requested) {
+			// Consoleから CakeObject::requestAction で呼び出しているので、CakeRequest::requested で判断
+			// Consoleで呼び出される判断方法はほかにあるかも。
+			return Router::url('/');
+		}
+
+		// Consoleで実行すると Router::url('/') で問題発生
+		// @see Nc2ToNc3Shell::main
+		return Router::url('/');
 	}
 
 }

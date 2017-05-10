@@ -31,6 +31,26 @@ class Nc2ToNc3Shell extends AppShell {
  * @return void
  */
 	public function main() {
+		// Router::url('/') で取得する値が、cakeコマンドのパスになってしまうので、オプションにした。
+		// 定数ROOT,WWW_ROOT,APP_DIR,WEBROOT_DIR を駆使すればいけそうな気がしたが、VirtualHostの設定があった場合は無理。
+		// CakePHPのDocumentにも「ドメインを手作業で設定する必要があります。」とある。
+		// @see https://book.cakephp.org/2.0/ja/console-and-shells.html#cli
+		//
+		// 問題発生個所
+		// Nc2ToNc3WysiwygBehavior::__getStrReplaceArgumentsOfTitleIcon:WysiwygのTitleIconのURL取得処理
+		//
+		// 何か情報あれば対応する。
+		//
+		// 以下、参考にしたソースコードのURL
+		// @see https://github.com/NetCommons3/NetCommons3/blob/3.1.0/app/Console/cake#L37-L40
+		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Console/ShellDispatcher.php#L283-L322
+		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Console/ShellDispatcher.php#L122-L138
+		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Network/CakeRequest.php#L307-L328
+		if (!isset($this->params['base'])) {
+			$this->out('--base option is required.Example "/dirname1/dirname2".If root is top, enter "/".');
+			return;
+		}
+
 		$Nc2ToNc3Controller = new Nc2ToNc3Controller();
 		$Nc2ToNc3Controller->constructClasses();
 
@@ -40,6 +60,8 @@ class Nc2ToNc3Shell extends AppShell {
 		$Nc2ToNc3Controller->Auth->login($user['User']);
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
+		Configure::write('App.base', $this->params['base']);
+
 		// CakeObject::requestActionを使用すると、AuthComponent::_isAllowedでredirectされる
 		// $Nc2ToNc3Controller::migrationを呼び出した方が良いのか？
 		// Model呼び出し(Nc2ToNc3::migration)の方が良いのか？
@@ -72,6 +94,11 @@ class Nc2ToNc3Shell extends AppShell {
 	public function getOptionParser() {
 		$parser = parent::getOptionParser();
 		$parser->addOption(
+			'base',
+			[
+				'help' => 'sub directory name.Example "/dirname1/dirname2".If root is top, enter "/".',
+			]
+		)->addOption(
 			'database',
 			[
 				'help' => 'database name of nc2',
