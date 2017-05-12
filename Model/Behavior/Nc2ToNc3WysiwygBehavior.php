@@ -41,39 +41,17 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
 		}
 
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfBaseUrlLink($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
+
 		$content = str_replace($searches, $replaces, $content);
 
 		return $content;
 
 		/*
-		$page =& Page::getInstance();
-		$replace = './?action=pages_view_main&page_id=';
-		$pattern = '/["\']&XOOPS_URL;\/modules\/menu\/main\.php\?page_id=(\S*)&op=change_page["\']/';
-		preg_match_all($pattern, $str, $matches, PREG_SET_ORDER);
-		foreach ($matches as $match) {
-			$lastCharacter = substr($match[1], -1);
-			if ($lastCharacter == '"' || $lastCharacter == '\'') {
-				$match[0] = substr($match[0], 0, -1);
-				$match[1] = substr($match[1], 0, -1);
-			}
-
-			if (in_array($match[0], $searches)) {
-				continue;
-			}
-
-			$searches[] = $match[0];
-
-			$match[1] = urldecode($match[1]);
-
-			$pageAssociation = $page->getPageAssociation($match[1]);
-
-			if (empty($pageAssociation)) {
-				$replaces[] = '"' . $replace . '"';
-			} else {
-				$replaces[] = '"' . $replace . $pageAssociation['pageID'] . '"';
-			}
-		}
-
 		$cabinet =& Cabinet::getInstance();
 		$block =& Block::getInstance();
 		$replace1 = './?action=pages_view_main&active_action=cabinet_view_main_init&folder_id=';
@@ -128,7 +106,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Convert nc2 content.
+ * Get str_replace arguments of download action.
  *
  * @param string $content Nc2 content.
  * @return array str_replace arguments.(0:$search,1:$replace)
@@ -256,7 +234,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Convert nc2 content.
+ * Get str_replace arguments of title icon.
  *
  * @param string $content Nc2 content.
  * @return array str_replace arguments.(0:$search,1:$replace)
@@ -306,6 +284,42 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		// Consoleで実行すると Router::url('/') で問題発生
 		// @see Nc2ToNc3Shell::main
 		return Router::url('/');
+	}
+
+/**
+ * Get str_replace arguments of page link.
+ *
+ * @param string $content Nc2 content.
+ * @return array str_replace arguments.(0:$search,1:$replace)
+ */
+	private function __getStrReplaceArgumentsOfBaseUrlLink($content) {
+		$strReplaceArguments = [];
+
+		/* @var $Nc2ToNc3 Nc2ToNc3 */
+		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
+		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
+		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
+
+		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
+		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
+		$replaceBaseUrl = Router::url('/', true);
+
+		$pattern = '/href="' . $nc2BaseUrl . '\/(.*?)"/';
+		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+		foreach ($matches as $match) {
+			$replacePath = $match[1];
+
+			preg_match('/page_id=(\d+)/', $replacePath, $pageIdMatches);
+			if ($pageIdMatches) {
+				$pageMap = $Nc2ToNc3Page->getMap($pageIdMatches[1]);
+				$replacePath = $pageMap['Page']['permalink'];
+			}
+
+			$strReplaceArguments[0][] = $match[0];
+			$strReplaceArguments[1][] = 'href="' . $replaceBaseUrl . $replacePath . '"';
+		}
+
+		return $strReplaceArguments;
 	}
 
 }

@@ -72,6 +72,7 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$query = [
 			'fields' => [
 				'Page.id',
+				'Page.permalink',
 				'Box.id',
 				'Box.room_id',
 			],

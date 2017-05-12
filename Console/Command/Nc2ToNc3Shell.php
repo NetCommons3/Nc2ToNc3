@@ -47,7 +47,7 @@ class Nc2ToNc3Shell extends AppShell {
 		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Console/ShellDispatcher.php#L122-L138
 		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Network/CakeRequest.php#L307-L328
 		if (!isset($this->params['nc3base'])) {
-			$this->out('--base option is required.Example "/dirname1/dirname2".If root is top, enter "/".');
+			$this->out('--nc3base option is required.Example "/dirname1/dirname2".If root is top, enter "/".');
 			return;
 		}
 
@@ -115,6 +115,12 @@ class Nc2ToNc3Shell extends AppShell {
 			[
 				'help' => 'upload path of nc2',
 				'short' => 'u'
+			]
+		)->addOption(
+			'base_url',
+			[
+				'help' => 'url of nc2 for converting link in WYSIWYG content.(ex.http://example.com/nc2)',
+				'short' => 'b'
 			]
 		)->addOption(
 			'host',
