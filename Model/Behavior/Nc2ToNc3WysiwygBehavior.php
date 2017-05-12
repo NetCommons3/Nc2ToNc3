@@ -47,62 +47,15 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
 		}
 
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfCabinetFile($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
+
 		$content = str_replace($searches, $replaces, $content);
 
 		return $content;
-
-		/*
-		$cabinet =& Cabinet::getInstance();
-		$block =& Block::getInstance();
-		$replace1 = './?action=pages_view_main&active_action=cabinet_view_main_init&folder_id=';
-		$replace2 = '&block_id=';
-		$replace3 = '#_';
-		$pattern = '/["\']&XOOPS_URL;\/modules\/cabinet\/cabinet_main\.php\?block_id=(\S*)&folder_id=(\S*)#(\S*)["\']/';
-		preg_match_all($pattern, $str, $matches, PREG_SET_ORDER);
-		foreach ($matches as $match) {
-			$replace = '';
-			$lastCharacter = substr($match[3], -1);
-			if ($lastCharacter == '"' || $lastCharacter == '\'') {
-				$match[0] = substr($match[0], 0, -1);
-				$match[3] = substr($match[3], 0, -1);
-			}
-
-			if (in_array($match[0], $searches)) {
-				continue;
-			}
-
-			$searches[] = $match[0];
-
-			$match[1] = urldecode($match[1]);
-			$match[2] = urldecode($match[2]);
-			$match[3] = urldecode($match[3]);
-
-			$cabinetAssociation = $cabinet->getAssociation($match[2]);
-			$blockAssociation = $block->getAssociation($match[1]);
-			if (empty($cabinetAssociation) || empty($blockAssociation)) {
-				$replace = '"' . $replace1 . $replace2 . $replace3 . '"';
-			} else {
-				$replace = '"' . $replace1 . $cabinetAssociation['fileID']
-				. $replace2 . $blockAssociation['blockID']
-				. $replace3 . $blockAssociation['blockID'] . '"';
-			}
-
-			$replaces[] = $replace;
-		}
-
-		$searches[] = '&XOOPS_URL;/include/comp/textarea/tex.php?';
-		$replaces[] = './?action=common_tex_main&';
-
-		$searches[] = '&XOOPS_URL;';
-		$replaces[] = './nc1Files';
-
-		$str = str_replace($searches, $replaces, $str);
-
-		return $str;
-
-		$body = $content;
-
-		return $body;*/
 	}
 
 /**
@@ -318,6 +271,73 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			$strReplaceArguments[0][] = $match[0];
 			$strReplaceArguments[1][] = 'href="' . $replaceBaseUrl . $replacePath . '"';
 		}
+
+		return $strReplaceArguments;
+	}
+
+/**
+ * Get str_replace arguments of cabinet file.
+ *
+ * @param string $content Nc2 content.
+ * @return array str_replace arguments.(0:$search,1:$replace)
+ */
+	private function __getStrReplaceArgumentsOfCabinetFile($content) {
+		$strReplaceArguments = [];
+
+		// cabinet_action_main_downloadアクションの処理
+		// 以下、NC1からの移行処理を参考
+		/*
+		 $cabinet =& Cabinet::getInstance();
+		 $block =& Block::getInstance();
+		 $replace1 = './?action=pages_view_main&active_action=cabinet_view_main_init&folder_id=';
+		 $replace2 = '&block_id=';
+		 $replace3 = '#_';
+		 $pattern = '/["\']&XOOPS_URL;\/modules\/cabinet\/cabinet_main\.php\?block_id=(\S*)&folder_id=(\S*)#(\S*)["\']/';
+		 preg_match_all($pattern, $str, $matches, PREG_SET_ORDER);
+		 foreach ($matches as $match) {
+		 $replace = '';
+		 $lastCharacter = substr($match[3], -1);
+		 if ($lastCharacter == '"' || $lastCharacter == '\'') {
+		 $match[0] = substr($match[0], 0, -1);
+		 $match[3] = substr($match[3], 0, -1);
+		 }
+
+		 if (in_array($match[0], $searches)) {
+		 continue;
+		 }
+
+		 $searches[] = $match[0];
+
+		 $match[1] = urldecode($match[1]);
+		 $match[2] = urldecode($match[2]);
+		 $match[3] = urldecode($match[3]);
+
+		 $cabinetAssociation = $cabinet->getAssociation($match[2]);
+		 $blockAssociation = $block->getAssociation($match[1]);
+		 if (empty($cabinetAssociation) || empty($blockAssociation)) {
+		 $replace = '"' . $replace1 . $replace2 . $replace3 . '"';
+		 } else {
+		 $replace = '"' . $replace1 . $cabinetAssociation['fileID']
+		 . $replace2 . $blockAssociation['blockID']
+		 . $replace3 . $blockAssociation['blockID'] . '"';
+		 }
+
+		 $replaces[] = $replace;
+		 }
+
+		 $searches[] = '&XOOPS_URL;/include/comp/textarea/tex.php?';
+		 $replaces[] = './?action=common_tex_main&';
+
+		 $searches[] = '&XOOPS_URL;';
+		 $replaces[] = './nc1Files';
+
+		 $str = str_replace($searches, $replaces, $str);
+
+		 return $str;
+
+		 $body = $content;
+
+		 return $body;*/
 
 		return $strReplaceArguments;
 	}
