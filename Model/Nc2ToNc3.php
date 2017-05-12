@@ -122,7 +122,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 						'required' => true,
 					],
 					'url' => [
-						'rule' => array('url'),
+						'rule' => ['url'],
 						'message' => sprintf(
 							__d('net_commons', 'Unauthorized pattern for %s. Please input the data in %s format.'),
 							__d('net_commons', 'URL'),
