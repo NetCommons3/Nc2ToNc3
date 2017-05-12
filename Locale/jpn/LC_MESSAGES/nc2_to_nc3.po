@@ -85,4 +85,4 @@ msgid "Base url"
 msgstr "NC2のURL"
 
 msgid "Input URL of NetCommons2 for converting link in WYSIWYG content."
-msgstr "NC2のWYSIWYGエディターで登録されているリンクのURLを変換して移行します。"
+msgstr "NC2のWYSIWYGエディターで登録されているリンクのURLを変換して移行します。(ex.http://example.com/nc2)"
