@@ -46,7 +46,7 @@ class Nc2ToNc3Shell extends AppShell {
 		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Console/ShellDispatcher.php#L283-L322
 		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Console/ShellDispatcher.php#L122-L138
 		// @see https://github.com/cakephp/cakephp/blob/2.9.8/lib/Cake/Network/CakeRequest.php#L307-L328
-		if (!isset($this->params['base'])) {
+		if (!isset($this->params['nc3base'])) {
 			$this->out('--base option is required.Example "/dirname1/dirname2".If root is top, enter "/".');
 			return;
 		}
@@ -60,7 +60,7 @@ class Nc2ToNc3Shell extends AppShell {
 		$Nc2ToNc3Controller->Auth->login($user['User']);
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-		Configure::write('App.base', $this->params['base']);
+		Configure::write('App.base', $this->params['nc3base']);
 
 		// CakeObject::requestActionを使用すると、AuthComponent::_isAllowedでredirectされる
 		// $Nc2ToNc3Controller::migrationを呼び出した方が良いのか？
@@ -94,7 +94,7 @@ class Nc2ToNc3Shell extends AppShell {
 	public function getOptionParser() {
 		$parser = parent::getOptionParser();
 		$parser->addOption(
-			'base',
+			'nc3base',
 			[
 				'help' => 'sub directory name.Example "/dirname1/dirname2".If root is top, enter "/".',
 			]
