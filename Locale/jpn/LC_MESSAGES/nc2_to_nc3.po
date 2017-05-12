@@ -60,8 +60,8 @@ msgstr "NetCommons2データベース接続情報"
 msgid "Upload file path configuration"
 msgstr "NetCommons2アップロードファイルパス情報"
 
-msgid "Input the file path of NetCommons2."
-msgstr "NetCommons2のファイルパス情報を入力してください。"
+msgid "Input the site information of NetCommons2."
+msgstr "NetCommons2のサイト情報を入力してください。"
 
 msgid "Upload file path"
 msgstr "アップロードファイルパス"
@@ -80,3 +80,9 @@ msgstr "NetCommons2のバージョンが%sではありません。"
 
 msgid "The above Upload file path does not exist."
 msgstr "上記のアップロードファイルパスは存在しません。"
+
+msgid "Base url"
+msgstr "NC2のURL"
+
+msgid "Input URL of NetCommons2 for converting link in WYSIWYG content."
+msgstr "NC2のWYSIWYGエディターで登録されているリンクのURLを変換して移行します。"

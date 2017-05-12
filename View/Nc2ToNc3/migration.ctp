@@ -64,12 +64,26 @@
 
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<?php echo __d('nc2_to_nc3', 'Input the file path of NetCommons2.'); ?>
+			<?php echo __d('nc2_to_nc3', 'Input the site information of NetCommons2.'); ?>
 		</div>
 
 		<div class="panel-body">
 			<?php
-				echo $this->NetCommonsForm->input('upload_path', ['label' => __d('nc2_to_nc3', 'Upload file path')]);
+				echo $this->NetCommonsForm->input('upload_path',
+					[
+						'label' => __d('nc2_to_nc3', 'Upload file path'),
+						'required' => true,
+					]
+				);
+
+				echo $this->NetCommonsForm->input(
+					'base_url',
+					[
+						'label' => __d('nc2_to_nc3', 'Base url'),
+						'required' => true,
+						'help' => __d('nc2_to_nc3', 'Input URL of NetCommons2 for converting link in WYSIWYG content.')
+					]
+				);
 
 				// item.iniファイル定数取得処理未実装
 				echo $this->Form->hidden('items_ini_path');

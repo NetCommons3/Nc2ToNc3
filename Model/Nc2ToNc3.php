@@ -77,22 +77,6 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		$this->validate = Hash::merge(
 			$this->validate,
 			[
-				'upload_path' => [
-					'notBlank' => [
-						'rule' => ['notBlank'],
-						'message' => sprintf(
-							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Upload file path')
-						),
-					'allowEmpty' => false,
-					'required' => true,
-					],
-					'isUploadPath' => [
-						'rule' => ['isUploadPath'],
-						'message' => sprintf(
-							__d('nc2_to_nc3', 'The above Upload file path does not exist.')
-						),
-					]
-				],
 				'database' => [
 					'notBlank' => [
 						'rule' => ['notBlank'],
@@ -111,6 +95,40 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 						// 'message' => isValidNc2Dataでメッセージを返す
 					],
 					// TODOーNC3のバージョン、状態（サイト閉鎖）をチェック
+				],
+				'upload_path' => [
+					'notBlank' => [
+						'rule' => ['notBlank'],
+						'message' => sprintf(
+							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Upload file path')
+						),
+						'allowEmpty' => false,
+						'required' => true,
+					],
+					'isUploadPath' => [
+						'rule' => ['isUploadPath'],
+						'message' => sprintf(
+							__d('nc2_to_nc3', 'The above Upload file path does not exist.')
+						),
+					]
+				],
+				'base_url' => [
+					'notBlank' => [
+						'rule' => ['notBlank'],
+						'message' => sprintf(
+							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Base url')
+						),
+						'allowEmpty' => false,
+						'required' => true,
+					],
+					'url' => [
+						'rule' => array('url'),
+						'message' => sprintf(
+							__d('net_commons', 'Unauthorized pattern for %s. Please input the data in %s format.'),
+							__d('net_commons', 'URL'),
+							__d('net_commons', 'URL')
+						),
+					],
 				],
 			]
 		);
@@ -188,6 +206,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		$connectionObjects = ConnectionManager::enumConnectionObjects();
 		$nc3config = $connectionObjects['master'];
 		unset($nc3config['database'], $nc3config['prefix']);
+		$nc3config['base_url'] = 'http://';
 
 		// TODOー開発用データ
 		$nc3config['database'] = 'netcommons';
