@@ -84,11 +84,13 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				continue;
 			}
 
+			$nc3Content = $nc2Announcement['Nc2Announcement']['content'] . '<br>' .
+				$nc2Announcement['Nc2Announcement']['more_content'];
 			$nc3RoomId = $nc3Frame['Frame']['room_id'];
 			$data = [
 				'Announcement' => [
 					'status' => '1',
-					'content' => $this->convertWYSIWYG($nc2Announcement['Nc2Announcement']['content']),
+					'content' => $this->convertWYSIWYG($nc3Content),
 				],
 				'Block' => [
 					'room_id' => $nc3RoomId,
@@ -173,15 +175,15 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$AnnouncementMap = $this->__getMap($nc2Announcement['Nc2Announcement']['block_id']);
 		if ($AnnouncementMap) {
 			// 移行済み
-			return [];
+			//return [];
 
-			/*$nc3Announcement['Announcement']['id'] = $AnnouncementMap['Announcement']['id'];
+			//$nc3Announcement['Announcement']['id'] = $AnnouncementMap['Announcement']['id'];
 			$nc3Announcement['Announcement']['block_id'] = $AnnouncementMap['Announcement']['block_id'];
 			// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L345
 			$nc3Announcement['Announcement']['key'] = $AnnouncementMap['Announcement']['key'];
 
 			$nc3Announcement['Block']['id'] = $AnnouncementMap['Announcement']['block_id'];
-			$nc3Announcement['Block']['key'] = $AnnouncementMap['Block']['key'];*/
+			$nc3Announcement['Block']['key'] = $AnnouncementMap['Block']['key'];
 		}
 
 		return $nc3Announcement;
