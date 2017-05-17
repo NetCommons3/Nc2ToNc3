@@ -195,6 +195,14 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
  * @return array Nc3Faq data.
  */
 	public function generateNc3FaqFrameSettingData(Model $model, $nc2FaqBlock) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('FaqFrameSetting', $nc2FaqBlock['Nc2FaqBlock']['block_id']);
+		if ($mapIdList) {
+			// 移行済みの場合
+			return [];
+		}
+
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
