@@ -25,6 +25,8 @@ App::uses('Current', 'NetCommons.Utility');
  * @method void changeNc3CurrentLanguage($langDirName = null)
  * @method void restoreNc3CurrentLanguage()
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)]
+ *
  */
 class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
@@ -68,9 +70,22 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		}
 
 		$Nc2JournalPost = $this->getNc2Model('journal_post');
-		$nc2JournalPosts = $Nc2JournalPost->find('all');
+		$nc2JournalPosts = $Nc2JournalPost->findAllByParentId('0', null, null, null, null, -1);
 
 		if (!$this->__saveNc3BlogEntryFromNc2($nc2JournalPosts)) {
+			return false;
+		}
+
+		$query = [
+			'conditions' => [
+				'NOT' => [
+					'parent_id' => '0'
+				]
+			],
+			'recursive' => -1
+		];
+		$nc2JournalPosts = $Nc2JournalPost->find('all', $query);
+		if (!$this->__saveNc3ContentCommentFromNc2($nc2JournalPosts)) {
 			return false;
 		}
 
@@ -254,17 +269,16 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save JournalPost from Nc2.
+ * Save BlogEntry from Nc2.
  *
  * @param array $nc2JournalPosts Nc2JournalPost data.
  * @return bool True on success
  * @throws Exception
  */
-
 	private function __saveNc3BlogEntryFromNc2($nc2JournalPosts) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration start.'));
 
-		/* @var $JournalFrameSetting JournalFrameSetting */
+		/* @var $BlogEntry BlogEntry */
 		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
 		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
@@ -283,13 +297,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$Topic = ClassRegistry::init('Topics.Topic');
 
 		foreach ($nc2JournalPosts as $nc2JournalPost) {
-
-			//root_idが0以外は、コメントデータにあたり、NC3-content_commentsへ移行する。
-			//Nc2ToNc3Commentクラス追加までは、暫定対応として処理しないようにする
-			if ($nc2JournalPost['Nc2JournalPost']['root_id']) {
-				continue;
-			}
-
 			$BlogEntry->begin();
 			try {
 				$data = $this->generateNc3BlogEntryData($nc2JournalPost);
@@ -312,7 +319,9 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$Block->create();
 				$Topic->create();
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+				$nc3Status = $data['BlogEntry']['status'];
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
 				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
@@ -356,6 +365,88 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		Current::remove('Plugin.key');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration end.'));
+		return true;
+	}
+
+/**
+ * Save ContentComment from Nc2.
+ *
+ * @param array $nc2JournalPosts Nc2JournalPost data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveNc3ContentCommentFromNc2($nc2JournalPosts) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Content Comment data Migration start.'));
+
+		/* @var $ContentComment ContentComment */
+		/* @var $Nc2ToNc3Comment Nc2ToNc3ContentComment */
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$ContentComment = ClassRegistry::init('ContentComments.ContentComment');
+		$Nc2ToNc3Comment = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3ContentComment');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+
+		foreach ($nc2JournalPosts as $nc2JournalPost) {
+			$ContentComment->begin();
+			try {
+				$data = $this->generateNc3ContentCommentData($nc2JournalPost);
+				if (!$data) {
+					$ContentComment->rollback();
+					continue;
+				}
+
+				$nc2RoomId = $nc2JournalPost['Nc2JournalPost']['room_id'];
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
+				$nc3RoomId = $mapIdList[$nc2RoomId];
+				$nc3Status = $data['ContentComment']['status'];
+
+				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+				Current::write('Room.id', $nc3RoomId);
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+
+				$ContentComment->create();
+				// 一応Model::validatの初期化
+				$ContentComment->validate = [];
+
+				if (!$ContentComment->saveContentComment($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
+						var_export($ContentComment->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$ContentComment->rollback();
+					continue;
+				}
+
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+				$idMap = [
+					$nc2PostId => $ContentComment->id
+				];
+				if (!$Nc2ToNc3Comment->saveContentCommentMap($idMap, $data['ContentComment']['block_key'])) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2JournalPost);
+					$this->writeMigrationLog($message);
+
+					$ContentComment->rollback();
+					continue;
+				}
+
+				$ContentComment->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				$ContentComment->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		Current::remove('Room.id');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Content Comment Migration end.'));
+
 		return true;
 	}
 

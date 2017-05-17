@@ -274,6 +274,83 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Generate Nc3ContentComment data.
+ *
+ * Data sample
+ * data[ContentComment][plugin_key]:blogs
+ * data[ContentComment][content_key]:aaa
+ * data[ContentComment][status]:1
+ * data[ContentComment][comment]:コメント００１
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2JournalPost Nc2JournalPost data.
+ * @return array Nc3ContentComment data.
+ */
+	public function generateNc3ContentCommentData(Model $model, $nc2JournalPost) {
+		if (!$nc2JournalPost['Nc2JournalPost']['content']) {
+			// トラックバック送信データはNc2JournalPost.contentが空
+			return [];
+		}
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+
+		$nc2ParentId = $nc2JournalPost['Nc2JournalPost']['parent_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogEntry', $nc2ParentId);
+		if (!$mapIdList) {
+			// 親の記事の対応データ無し
+			return [];
+		}
+
+		/* @var $BlogEntry BlogEntry */
+		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
+		$nc3BlogEntry = $BlogEntry->findById($mapIdList[$nc2ParentId], ['key', 'block_id'], null, -1);
+		if (!$nc3BlogEntry) {
+			// 親の記事無し
+			return [];
+		}
+
+		/* @var $BlogEntry BlogEntry */
+		$Block = ClassRegistry::init('Blocks.Block');
+		$nc3Block = $Block->findById($nc3BlogEntry['BlogEntry']['block_id'], 'key', null, -1);
+		if (!$nc3Block) {
+			// ブロックデータ無し（あり得ない）
+			return [];
+		}
+		$nc3BlockKey = $nc3Block['Block']['key'];
+
+		/* @var $Nc2ToNc3Comment Nc2ToNc3ContentComment */
+		$Nc2ToNc3Comment = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3ContentComment');
+		$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+		$nc3ContentCommentId = $Nc2ToNc3Comment->getNc3ContentCommentId($nc3BlockKey, $nc2PostId);
+		if ($nc3ContentCommentId) {
+			// 移行済み
+			return [];
+		}
+
+		//'status' に入れる値の場合分け処理
+		if ($nc2JournalPost['Nc2JournalPost']['status'] == '0' && $nc2JournalPost['Nc2JournalPost']['agree_flag'] == '0') {
+			$nc3Status = '1';
+		} elseif ($nc2JournalPost['Nc2JournalPost']['agree_flag'] == '1') {
+			$nc3Status = '2';
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$data['ContentComment'] = [
+			'block_key' => $nc3BlockKey,
+			'plugin_key' => 'blogs',
+			'content_key' => $nc3BlogEntry['BlogEntry']['key'],
+			'status' => $nc3Status,
+			'comment' => $nc2JournalPost['Nc2JournalPost']['content'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalPost['Nc2JournalPost']),
+			'created' => $this->_convertDate($nc2JournalPost['Nc2JournalPost']['insert_time']),
+		];
+
+		return $data;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2Journal Array data of Nc2CalendarManage, Nc2CalendarBlock and Nc2CalendarPlan.
