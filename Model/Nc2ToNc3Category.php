@@ -114,7 +114,7 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
  *
  * @param array $nc2CategoryList Nc2Category list data with category_id as key and category_name as value.
  * @param string $Nc3BlockId Nc3Block id.
- * @return array Nc3Category data.
+ * @return bool True on success
  */
 	public function saveCategoryMap($nc2CategoryList, $Nc3BlockId) {
 		/* @var $Block Block */
