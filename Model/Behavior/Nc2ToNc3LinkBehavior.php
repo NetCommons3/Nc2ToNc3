@@ -222,13 +222,6 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
-		// display_type更新
-		$displayType = $nc2LinklistBlock['Nc2LinklistBlock']['display'];
-		if ($displayType === LinkFrameSetting::TYPE_LIST_ONLY_TITLE
-			&& $nc2LinklistBlock['Nc2LinklistBlock']['has_description'] === '1'
-		) {
-			$displayType = LinkFrameSetting::TYPE_LIST_WITH_DESCRIPTION;
-		}
 		$listStyle = $nc2LinklistBlock['Nc2LinklistBlock']['mark'];
 		if ($listStyle === 'none') {
 			$listStyle = '';
@@ -239,7 +232,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 		$data['LinkFrameSetting'] = [
 			'id' => '',
 			'frame_key' => $frameMap['Frame']['key'],
-			'display_type' => $displayType,
+			'display_type' => $nc2LinklistBlock['Nc2LinklistBlock']['display'],
 			'category_separator_line' => $nc2LinklistBlock['Nc2LinklistBlock']['line'],
 			'list_style' => $listStyle,
 			'open_new_tab' => $nc2LinklistBlock['Nc2LinklistBlock']['target_blank_flag'],
@@ -248,9 +241,13 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 			'created' => $this->_convertDate($nc2LinklistBlock['Nc2LinklistBlock']['insert_time']),
 		];
 
-		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
-		$data['Topic'] = [
-			'plugin_key' => 'Links',
+		$nc2LinklistId = $nc2LinklistBlock['Nc2LinklistBlock']['linklist_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Link', $nc2LinklistId);
+		$nc3LinkBlockId = Hash::get($mapIdList, [$nc2LinklistId]);
+		$data['Frame'] = [
+			'id' => $frameMap['Frame']['id'],
+			'plugin_key' => 'links',
+			'block_id' => $nc3LinkBlockId,
 		];
 
 		return $data;
@@ -263,9 +260,9 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2LinkBlock) {
-		if (isset($nc2LinkBlock['Nc2LinkBlock'])) {
+		if (isset($nc2LinkBlock['Nc2LinklistBlock'])) {
 			return 'Nc2LinkBlock ' .
-				'block_id:' . $nc2LinkBlock['Nc2LinkBlock']['block_id'];
+				'block_id:' . $nc2LinkBlock['Nc2LinklistBlock']['block_id'];
 		}
 
 		return 'Nc2Link ' .

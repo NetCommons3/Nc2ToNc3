@@ -196,10 +196,10 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 
 		/* @var $LinkFrameSetting LinkFrameSetting */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		/* @var $Block Block */
+		/* @var $Frame Frame */
 		$LinkFrameSetting = ClassRegistry::init('Links.LinkFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$Block = ClassRegistry::init('Blocks.Block');
+		$Frame = ClassRegistry::init('Frames.Frame');
 		foreach ($nc2LinklistBlocks as $nc2LinklistBlock) {
 			$LinkFrameSetting->begin();
 			try {
@@ -211,16 +211,6 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					$LinkFrameSetting->rollback();
 					continue;
 				}
-				Current::write('Frame.key', $frameMap['Frame']['key']);
-
-				$nc3Block = $Block->findByRoomIdAndPluginKey(
-					$frameMap['Frame']['room_id'],
-					'links',
-					'id',
-					null,
-					-1
-				);
-				Current::write('Block.id', $nc3Block['Block']['id']);
 
 				$data = $this->generateNc3LinkFrameSettingData($frameMap, $nc2LinklistBlock);
 				if (!$data) {
@@ -241,6 +231,17 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				if (!$Frame->saveFrame($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2LinklistBlock) . "\n" .
+						var_export($Frame->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$LinkFrameSetting->rollback();
+					continue;
+				}
+
 				$idMap = [
 					$nc2BlockId => $LinkFrameSetting->id,
 				];
@@ -255,8 +256,6 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
-
-		$this->removeUseCurrent();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  LinkFrameSetting data Migration end.'));
 
