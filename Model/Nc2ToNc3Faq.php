@@ -48,7 +48,10 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Faq'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Faq',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
 
 /**
  * Migration method.

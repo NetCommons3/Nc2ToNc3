@@ -146,7 +146,7 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 				'language_id' => '',
 				'category_id' => '',
 				'question' => $nc2FaqQuestion['Nc2FaqQuestion']['question_name'],
-				'answer' => $nc2FaqQuestion['Nc2FaqQuestion']['question_answer'],
+				'answer' => $model->convertWYSIWYG($nc2FaqQuestion['Nc2FaqQuestion']['question_answer']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2FaqQuestion['Nc2FaqQuestion']),
 				'created' => $this->_convertDate($nc2FaqQuestion['Nc2FaqQuestion']['insert_time']),
 			],
