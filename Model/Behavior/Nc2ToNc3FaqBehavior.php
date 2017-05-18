@@ -80,53 +80,12 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 			'created' => $this->_convertDate($nc2Faq['Nc2Faq']['insert_time']),
 		];
 
-		/* @var $Nc2FaqCategory AppModel */
-		$Nc2FaqCategory = $this->getNc2Model($model, 'faq_category');
-		$nc2Categories = $Nc2FaqCategory->findAllByFaqId(
-			$nc2Faq['Nc2Faq']['faq_id'],
-			null,
-			['display_sequence' => 'ASC'],
-			-1
-		);
-		$data['Categories'] = $this->_generateNc3CategoryData($nc2Categories);
-
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
 		$data['Topic'] = [
 			'plugin_key' => 'faqs',
 		];
 
 		return $data;
-	}
-
-/**
- * Get Nc2 Model.
- *
- * @param array $nc2Categories Nc2Categories table name.
- * @return array Category model.
- */
-	protected function _generateNc3CategoryData($nc2Categories) {
-		$result = [];
-		foreach ($nc2Categories as $nc2Category) {
-			$data = [
-				'Category' => [
-					'id' => '',
-					'block_id' => '',
-					'key' => '',
-				],
-				'CategoriesLanguage' => [
-					'id' => '',
-					'name' => $nc2Category['Nc2FaqCategory']['category_name'],
-				],
-				'CategoryOrder' => [
-					'id' => '',
-					'weight' => $nc2Category['Nc2FaqCategory']['display_sequence'],
-					'block_key' => '',
-				],
-			];
-			$result[] = $data;
-		}
-
-		return $result;
 	}
 
 /**
@@ -147,11 +106,33 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
  * data[FaqQuestionOrder][faq_question_key]:
  *
  * @param Model $model Model using this behavior.
- * @param array $nc3Faq Faq data.
  * @param array $nc2FaqQuestion Nc2FaqQuestion data.
  * @return array Nc3FaqQuestion data.
  */
-	public function generateNc3FaqQuestionData(Model $model, $nc3Faq, $nc2FaqQuestion) {
+	public function generateNc3FaqQuestionData(Model $model, $nc2FaqQuestion) {
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+
+		$nc2QuestionId = $nc2FaqQuestion['Nc2FaqQuestion']['question_id'];
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('FaqQuestion', $nc2QuestionId);
+		if ($mapIdList) {
+			return [];	// 移行済み
+		}
+
+		$nc2FaqId = $nc2FaqQuestion['Nc2FaqQuestion']['faq_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Faq', $nc2FaqId);
+		if (!$mapIdList) {
+			return [];	// ブロックデータなし
+		}
+		$nc3FaqId = $mapIdList[$nc2FaqId];
+
+		/* @var $Faq Faq */
+		$Faq = ClassRegistry::init('Faqs.Faq');
+		$nc3Faq = $Faq->findById($nc3FaqId, ['key', 'block_id'], null, -1);
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
 			'Faq' => [
 				'key' => $nc3Faq['Faq']['key'],
@@ -160,12 +141,14 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 				'id' => '',
 				'faq_key' => $nc3Faq['Faq']['key'],
 				'key' => '',
-				'block_id' => $nc3Faq['Block']['id'],
+				'block_id' => $nc3Faq['Faq']['block_id'],
 				'status' => '1',
 				'language_id' => '',
-				'category_id' => '', // TODOーカテゴリを設定する
+				'category_id' => '',
 				'question' => $nc2FaqQuestion['Nc2FaqQuestion']['question_name'],
 				'answer' => $nc2FaqQuestion['Nc2FaqQuestion']['question_answer'],
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2FaqQuestion['Nc2FaqQuestion']),
+				'created' => $this->_convertDate($nc2FaqQuestion['Nc2FaqQuestion']['insert_time']),
 			],
 			'FaqQuestionOrder' => [
 				'id' => '',
