@@ -84,9 +84,13 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			$nc3Content = $nc2Announcement['Nc2Announcement']['content'] . '<br>' .
-				$nc2Announcement['Nc2Announcement']['more_content'];
+			$nc3Content = $nc2Announcement['Nc2Announcement']['content'];
+			if ($nc2Announcement['Nc2Announcement']['more_content']) {
+				$nc3Content .= "\n<br><br>\n" . $nc2Announcement['Nc2Announcement']['more_content'];
+			}
+
 			$nc3RoomId = $nc3Frame['Frame']['room_id'];
+
 			$data = [
 				'Announcement' => [
 					'status' => '1',
@@ -177,6 +181,8 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			// 移行済み
 			//return [];
 
+			// Debug用
+			/*
 			//$nc3Announcement['Announcement']['id'] = $AnnouncementMap['Announcement']['id'];
 			$nc3Announcement['Announcement']['block_id'] = $AnnouncementMap['Announcement']['block_id'];
 			// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L345
@@ -184,6 +190,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 
 			$nc3Announcement['Block']['id'] = $AnnouncementMap['Announcement']['block_id'];
 			$nc3Announcement['Block']['key'] = $AnnouncementMap['Block']['key'];
+			*/
 		}
 
 		return $nc3Announcement;
