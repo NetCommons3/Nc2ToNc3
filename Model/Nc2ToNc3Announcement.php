@@ -126,7 +126,6 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			$Block->create();
 			$BlocksLanguage->create();
 			$Topic->create();
-
 			if (!$Announcement->saveAnnouncement($data)) {
 				// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 				// ここでrollback
