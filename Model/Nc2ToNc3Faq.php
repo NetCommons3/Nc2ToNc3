@@ -194,8 +194,9 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
 		/* @var $FaqFrameSetting FaqFrameSetting */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Frame Frame */
 		$FaqFrameSetting = ClassRegistry::init('Faqs.FaqFrameSetting');
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Frame = ClassRegistry::init('Frames.Frame');
 		foreach ($nc2FaqBlocks as $nc2FaqBlock) {
 			$FaqFrameSetting->begin();
 			try {
@@ -204,10 +205,6 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 					$FaqFrameSetting->rollback();
 					continue;
 				}
-
-				$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-				$this->writeCurrent($frameMap, 'faqs');
 
 				if (!$FaqFrameSetting->saveFaqFrameSetting($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
@@ -222,10 +219,18 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// 登録処理で使用しているデータを空に戻す
-				$nc3RoomId = $frameMap['Frame']['room_id'];
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				if (!$Frame->saveFrame($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2FaqBlock) . "\n" .
+						var_export($Frame->validationErrors, true);
+					$this->writeMigrationLog($message);
 
+					$FaqFrameSetting->rollback();
+					continue;
+				}
+
+				$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
 				$idMap = [
 					$nc2BlockId => $FaqFrameSetting->id,
 				];
@@ -238,7 +243,6 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
-		$this->removeUseCurrent();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  FaqFrameSetting data Migration end.'));
 

@@ -214,6 +214,17 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
+		$nc2FaqId = $nc2FaqBlock['Nc2FaqBlock']['faq_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Faq', $nc2FaqId);
+
+		/* @var $Faq Faq */
+		$Faq = ClassRegistry::init('Faqs.Faq');
+		$nc3FaqId = Hash::get($mapIdList, [$nc2FaqId]);
+		$nc3Faq = $Faq->findById($nc3FaqId, 'block_id', null, -1);
+		if (!$nc3Faq) {
+			return [];	// Nc3Faqデータなし
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data['FaqFrameSetting'] = [
@@ -223,10 +234,10 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2FaqBlock['Nc2FaqBlock']),
 			'created' => $this->_convertDate($nc2FaqBlock['Nc2FaqBlock']['insert_time']),
 		];
-		$data['FaqSetting'] = [
-			'use_workflow' => '0',
-			'use_like' => '0',
-			'use_unlike' => '0',
+		$data['Frame'] = [
+			'id' => $frameMap['Frame']['id'],
+			'plugin_key' => 'faqs',
+			'block_id' => Hash::get($nc3Faq, ['Faq', 'block_id']),
 		];
 
 		return $data;
