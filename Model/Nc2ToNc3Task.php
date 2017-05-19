@@ -64,6 +64,13 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* @var $Nc2TodoBlock AppModel */
+		$Nc2TodoBlock = $this->getNc2Model('todo_block');
+		$nc2TodoBlocks = $Nc2TodoBlock->find('all');
+		if (!$this->__saveFrameFromNc2($nc2TodoBlocks)) {
+			return false;
+		}
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Task Migration end.'));
 
 		return true;
@@ -120,7 +127,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 
 				$this->writeCurrent($frameMap, 'tasks');
 
-				$Task->create();
+				$Task->create(false);
 				$Block->create();
 				$BlocksLanguage->create();
 				if (!$Task->saveTask($data)) {
@@ -175,5 +182,91 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 
 		return true;
 	}
+
+/**
+ * Save Frame from Nc2.
+ *
+ * @param array $nc2TodoBlocks Nc2TodoBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveFrameFromNc2($nc2TodoBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Frame data Migration start.'));
+
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Frame Frame */
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $Task Task */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Task = ClassRegistry::init('Tasks.Task');
+		foreach ($nc2TodoBlocks as $nc2TodoBlock) {
+			$Frame->begin();
+			try {
+				$nc2BlockId = $nc2TodoBlock['Nc2TodoBlock']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!$frameMap) {
+					$message = $this->getLogArgument($nc2TodoBlocks) . "\n" .
+						var_export($Frame->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$Frame->rollback();
+					continue;
+				}
+
+				// TaskFrameModelは存在しないが、移行済みデータのためにDummyModel名で取得
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('TaskFrame', $nc2BlockId);
+				if ($mapIdList) {
+					$Frame->rollback();	// 移行済み
+					continue;
+				}
+
+				$nc2TodoId = $nc2TodoBlock['Nc2TodoBlock']['todo_id'];
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('Task', $nc2TodoId);
+				$nc3TaskId = Hash::get($mapIdList, [$nc2TodoId]);
+				$nc3Task = $Task->findById($nc3TaskId, ['block_id'], null, -1);
+				if (!$nc3Task) {
+					$Frame->rollback();	// ブロックデータなし
+					continue;
+				}
+
+				$data['Frame'] = [
+					'id' => $frameMap['Frame']['id'],
+					'plugin_key' => 'tasks',
+					'block_id' => $nc3Task['Task']['block_id'],
+				];
+				if (!$Frame->saveFrame($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2TodoBlocks) . "\n" .
+						var_export($Frame->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$Frame->rollback();
+					continue;
+				}
+
+				$idMap = [
+					$nc2BlockId => $frameMap['Frame']['id'],
+				];
+				// TaskFrameModelは存在しないが、移行済みデータのためにDummyModel名で登録
+				$this->saveMap('TaskFrame', $idMap);
+
+				$Frame->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Frame->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Frame data Migration end.'));
+
+		return true;
+	}
+
 }
 
