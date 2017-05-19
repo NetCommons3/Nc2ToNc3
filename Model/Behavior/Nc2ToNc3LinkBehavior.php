@@ -79,53 +79,8 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 		$data['LinkSetting'] = [
 			'use_workflow' => '0',
 		];
-		/* @var $Nc2LinklistCategory AppModel */
-		$Nc2LinklistCategory = $this->getNc2Model($model, 'linklist_category');
-		$nc2Categories = $Nc2LinklistCategory->findAllByLinklistId(
-			$nc2Linklist['Nc2Linklist']['linklist_id'],
-			null,
-			['category_sequence' => 'ASC'],
-			-1
-		);
-		$data['Categories'] = $this->_generateNc3CategoryData($nc2Categories);
-
-		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
-		$data['Topic'] = [
-			'plugin_key' => 'links',
-		];
 
 		return $data;
-	}
-
-/**
- * Get Nc2 Model.
- *
- * @param array $nc2Categories Nc2Categories table name.
- * @return array Category model.
- */
-	protected function _generateNc3CategoryData($nc2Categories) {
-		$result = [];
-		foreach ($nc2Categories as $nc2Category) {
-			$data = [
-				'Category' => [
-					'id' => '',
-					'block_id' => '',
-					'key' => '',
-				],
-				'CategoriesLanguage' => [
-					'id' => '',
-					'name' => $nc2Category['Nc2LinklistCategory']['category_name'],
-				],
-				'CategoryOrder' => [
-					'id' => '',
-					'weight' => $nc2Category['Nc2LinklistCategory']['category_sequence'],
-					'block_key' => '',
-				],
-			];
-			$result[] = $data;
-		}
-
-		return $result;
 	}
 
 /**
@@ -148,45 +103,51 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * data[LinkOrder][category_key]:
  *
  * @param Model $model Model using this behavior.
- * @param array $nc3Link Link data.
  * @param array $nc2LinklistLink Nc2LinklistLink data.
  * @return array Nc3Link data.
  */
-	public function generateNc3LinkData(Model $model, $nc3Link, $nc2LinklistLink) {
+	public function generateNc3LinkData(Model $model, $nc2LinklistLink) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$nc2LinkId = $nc2LinklistLink['Nc2LinklistLink']['link_id'];
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('LinkLink', $nc2LinkId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Link', $nc2LinkId);
 		if ($mapIdList) {
-			// 移行済みの場合
-			return [];
+			return [];	// 移行済み
 		}
 
+		$nc2LinklistId = $nc2LinklistLink['Nc2LinklistLink']['linklist_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('LinkBlock', $nc2LinklistId);
+		if (!$mapIdList) {
+			return [];	// ブロックデータなし
+		}
+		$nc3BlockId = $mapIdList[$nc2LinklistId];
+
+		/* @var $LinkBlock LinkBlock */
+		$LinkBlock = ClassRegistry::init('Links.LinkBlock');
+		$nc3LinkBlock = $LinkBlock->findById($nc3BlockId, null, null);
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
-			'Frame' => [
-				'id' => $nc3Link['Frame']['id'],
-			],
-			'Block' => [
-				'id' => $nc3Link['Block']['id'],
-				'key' => $nc3Link['Block']['key'],
-			],
 			'Link' => [
 				'id' => '',
 				'key' => '',
-				'block_id' => $nc3Link['Block']['id'],
+				'block_id' => $nc3BlockId,
 				'status' => '1',
-				'language_id' => $nc3Link['BlocksLanguage']['language_id'],
-				'category_id' => '', // TODOーカテゴリを設定する
+				'language_id' => $nc3LinkBlock['LinkBlocksLanguage']['language_id'],
 				'url' => $nc2LinklistLink['Nc2LinklistLink']['url'],
 				'title' => $nc2LinklistLink['Nc2LinklistLink']['title'],
 				'description' => $nc2LinklistLink['Nc2LinklistLink']['description'],
 				'click_count' => $nc2LinklistLink['Nc2LinklistLink']['view_count'],
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2LinklistLink['Nc2LinklistLink']),
+				'created' => $this->_convertDate($nc2LinklistLink['Nc2LinklistLink']['insert_time']),
 			],
 			'LinkOrder' => [
 				'id' => '',
-				'block_key' => $nc3Link['Block']['key'],
+				'block_key' => $nc3LinkBlock['LinkBlock']['key'],
 				'link_key' => '',
-				'category_key' => '', // TODOーカテゴリ
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2LinklistLink['Nc2LinklistLink']),
+				'created' => $this->_convertDate($nc2LinklistLink['Nc2LinklistLink']['insert_time']),
 			],
 		];
 
@@ -242,7 +203,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 		];
 
 		$nc2LinklistId = $nc2LinklistBlock['Nc2LinklistBlock']['linklist_id'];
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('Link', $nc2LinklistId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('LinkBlock', $nc2LinklistId);
 		$nc3LinkBlockId = Hash::get($mapIdList, [$nc2LinklistId]);
 		$data['Frame'] = [
 			'id' => $frameMap['Frame']['id'],
@@ -256,18 +217,22 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get Log argument.
  *
- * @param array $nc2LinkBlock Array data of Nc2LinkBlock and Nc2Link.
+ * @param array $Nc2Linklist Array data of Nc2Linklist, Nc2LinklistBlock and Nc2LinklistLink.
  * @return string Log argument
  */
-	private function __getLogArgument($nc2LinkBlock) {
-		if (isset($nc2LinkBlock['Nc2LinklistBlock'])) {
+	private function __getLogArgument($Nc2Linklist) {
+		if (isset($Nc2Linklist['Nc2LinklistBlock'])) {
 			return 'Nc2LinkBlock ' .
-				'block_id:' . $nc2LinkBlock['Nc2LinklistBlock']['block_id'];
+				'block_id:' . $Nc2Linklist['Nc2LinklistBlock']['block_id'];
 		}
 
-		return 'Nc2Link ' .
-			'link_id:' . $nc2LinkBlock['Nc2Link']['link_id'] . ',' .
-			'link_name:' . $nc2LinkBlock['Nc2Link']['link_name'];
+		if (isset($Nc2Linklist['Nc2Linklist'])) {
+			return 'Nc2Linklist ' .
+				'linklist_id:' . $Nc2Linklist['Nc2Linklist']['linklist_id'];
+		}
+
+		return 'Nc2LinklistLink ' .
+			'link_id:' . $Nc2Linklist['Nc2LinklistLink']['link_id'];
 	}
 
 /**
@@ -282,7 +247,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$LinkBlock = ClassRegistry::init('Links.LinkBlock');
 
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('Link', $nc2LinklistIds);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('LinkBlock', $nc2LinklistIds);
 		$query = [
 			'fields' => [
 				'LinkBlock.id',
