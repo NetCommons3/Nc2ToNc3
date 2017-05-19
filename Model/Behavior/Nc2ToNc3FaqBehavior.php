@@ -112,9 +112,7 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 	public function generateNc3FaqQuestionData(Model $model, $nc2FaqQuestion) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-
 		$nc2QuestionId = $nc2FaqQuestion['Nc2FaqQuestion']['question_id'];
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('FaqQuestion', $nc2QuestionId);
 		if ($mapIdList) {
 			return [];	// 移行済み
