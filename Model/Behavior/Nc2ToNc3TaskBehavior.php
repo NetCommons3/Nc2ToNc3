@@ -174,6 +174,8 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 				strtotime($nc2Task['Nc2TodoTask']['period'] . ' -1 second'));
 			$isDateSet = '1';
 		}
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
 			'Frame' => [
 				'id' => $frameMap['Frame']['id'],
@@ -199,6 +201,8 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 				'content' => '',
 				'is_enable_mail' => '0',
 				'task_key' => $nc3Task['Task']['key'],
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Task['Nc2TodoTask']),
+				'created' => $this->_convertDate($nc2Task['Nc2TodoTask']['insert_time']),
 			],
 		];
 
