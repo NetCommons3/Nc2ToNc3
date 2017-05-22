@@ -169,6 +169,9 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 				'task_key' => $nc3Task['Task']['key'],
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2TodoTask['Nc2TodoTask']),
 				'created' => $this->_convertDate($nc2TodoTask['Nc2TodoTask']['insert_time']),
+				// 新着用に更新日を移行
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+				'modified' => $this->_convertDate($nc2TodoTask['Nc2TodoTask']['update_time']),
 			],
 		];
 

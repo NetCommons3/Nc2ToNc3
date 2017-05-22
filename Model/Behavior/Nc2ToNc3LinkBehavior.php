@@ -141,6 +141,9 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 				'click_count' => $nc2LinklistLink['Nc2LinklistLink']['view_count'],
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2LinklistLink['Nc2LinklistLink']),
 				'created' => $this->_convertDate($nc2LinklistLink['Nc2LinklistLink']['insert_time']),
+				// 新着用に更新日を移行
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+				'modified' => $this->_convertDate($nc2LinklistLink['Nc2LinklistLink']['update_time']),
 			],
 			'LinkOrder' => [
 				'id' => '',

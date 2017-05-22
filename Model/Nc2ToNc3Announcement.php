@@ -63,17 +63,16 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$Nc2Announcement = $this->getNc2Model('announcement');
 		$nc2Announcements = $Nc2Announcement->find('all');
 
-		/* @var $nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Announcement = ClassRegistry::init('Announcements.Announcement');
-
 		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
 		$Announcement->Behaviors->Block->settings = $Announcement->actsAs['Blocks.Block'];
 
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		foreach ($nc2Announcements as $nc2Announcement) {
 			$Announcement->begin();
 
@@ -88,13 +87,17 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			if ($nc2Announcement['Nc2Announcement']['more_content']) {
 				$nc3Content .= "\n<br><br>\n" . $nc2Announcement['Nc2Announcement']['more_content'];
 			}
-
 			$nc3RoomId = $nc3Frame['Frame']['room_id'];
 
 			$data = [
 				'Announcement' => [
 					'status' => '1',
 					'content' => $this->convertWYSIWYG($nc3Content),
+					'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Announcement['Nc2Announcement']),
+					'created' => $this->convertDate($nc2Announcement['Nc2Announcement']['insert_time']),
+					// 新着用に更新日を移行
+					// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+					'modified' => $this->convertDate($nc2Announcement['Nc2Announcement']['update_time']),
 				],
 				'Block' => [
 					'room_id' => $nc3RoomId,
@@ -104,7 +107,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 					'id' => $nc3Frame['Frame']['id']
 				],
 				'Topic' => [
-					'plugin_key' => 'announcements'
+					'plugin_key' => 'announcements',
 				]
 			];
 
@@ -114,11 +117,9 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			//Announcement テーブルの移行を実施
-			//SAVE前にCurrentのデータを書き換えが必要なため
+			//Announcement テーブルの移行を実施。AVE前にCurrentのデータを書き換えが必要なため
 			Current::write('Plugin.key', 'announcements');
 			Current::write('Room.id', $nc3RoomId);
-
 			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 			// Model::idを初期化しないとUpdateになってしまう。
@@ -127,8 +128,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			$BlocksLanguage->create();
 			$Topic->create();
 			if (!$Announcement->saveAnnouncement($data)) {
-				// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
-				// ここでrollback
+				// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、 ここでrollback
 				$Announcement->rollback();
 
 				$message = $this->getLogArgument($nc2Announcement) . "\n" .
@@ -178,7 +178,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$AnnouncementMap = $this->__getMap($nc2Announcement['Nc2Announcement']['block_id']);
 		if ($AnnouncementMap) {
 			// 移行済み
-			//return [];
+			return [];
 
 			// Debug用
 			/*

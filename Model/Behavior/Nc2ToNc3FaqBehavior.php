@@ -147,6 +147,9 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 				'answer' => $model->convertWYSIWYG($nc2FaqQuestion['Nc2FaqQuestion']['question_answer']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2FaqQuestion['Nc2FaqQuestion']),
 				'created' => $this->_convertDate($nc2FaqQuestion['Nc2FaqQuestion']['insert_time']),
+				// 新着用に更新日を移行
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+				'modified' => $this->_convertDate($nc2FaqQuestion['Nc2FaqQuestion']['update_time']),
 			],
 			'FaqQuestionOrder' => [
 				'id' => '',
