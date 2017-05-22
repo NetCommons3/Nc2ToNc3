@@ -87,8 +87,13 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 		// @see https://github.com/cakephp/cakephp/blob/2.9.7/lib/Cake/Model/Validator/CakeValidationSet.php#L126
 		// @see https://github.com/cakephp/cakephp/blob/2.9.7/lib/Cake/Model/Validator/CakeValidationRule.php#L194
 
+		$data = [];
 		$weight = 1;
 		foreach ($nc2CategoryList as $nc2CategoryName) {
+			if (strlen($nc2CategoryName) === 0) {
+				continue;
+			}
+
 			$data[] = [
 				'Category' => [
 					'id' => null,
@@ -125,6 +130,9 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 		$Category = ClassRegistry::init('Categories.Category');
 		$nc3Categories = $Category->getCategories($nc3BlockId, $nc3Block['Block']['room_id']);
 
+		// Nc2TodoCategory.category_id でカテゴリーなしが'0' のデータは移行しない
+		unset($nc2CategoryList[0]);
+
 		$categoryCount = count($nc2CategoryList);
 		//　あり得ないが一応
 		if ($categoryCount != count($nc3Categories)) {
@@ -159,7 +167,7 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 		$dummyModelName = $this->__getDummyModelName($nc3Block);
 		$mapIdList = $Nc2ToNc3Map->getMapIdList($dummyModelName, $nc2CategoryId);
 
-		return Hash::get($mapIdList, [$nc2CategoryId]);
+		return Hash::get($mapIdList, [$nc2CategoryId], '0');
 	}
 
 /**

@@ -64,6 +64,17 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* @var $Nc2TodoTask AppModel */
+		$Nc2TodoTask = $this->getNc2Model('todo_task');
+		$query['order'] = [
+			'todo_id',
+			'task_sequence'
+		];
+		$nc2TodoTasks = $Nc2TodoTask->find('all', $query);
+		if (!$this->__saveTaskContentFromNc2($nc2TodoTasks)) {
+			return false;
+		}
+
 		/* @var $Nc2TodoBlock AppModel */
 		$Nc2TodoBlock = $this->getNc2Model('todo_block');
 		$nc2TodoBlocks = $Nc2TodoBlock->find('all');
@@ -87,24 +98,20 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Task data Migration start.'));
 
 		/* @var $Task Task */
-		/* @var $TaskContent TaskContent */
 		/* @var $Nc2TodoBlock AppModel */
-		/* @var $Nc2TodoTask AppModel */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		/* @var $Block Block */
-		/* @var $BlocksLanguage BlocksLanguage */
+		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
 		$Task = ClassRegistry::init('Tasks.Task');
 
 		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
 		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
 		$Task->Behaviors->Block->settings = $Task->actsAs['Blocks.Block'];
 
-		$TaskContent = ClassRegistry::init('Tasks.TaskContent');
 		$Nc2TodoBlock = $this->getNc2Model('todo_block');
-		$Nc2TodoTask = $this->getNc2Model('todo_task');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 		foreach ($nc2TodoDatas as $nc2TodoData) {
 			$Task->begin();
 			try {
@@ -118,12 +125,17 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				}
 
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2TodoBlock['Nc2TodoBlock']['block_id']);
-
 				$data = $this->generateNc3TaskData($frameMap, $nc2TodoData);
 				if (!$data) {
 					$Task->rollback();
 					continue;
 				}
+
+				$query['conditions'] = [
+					'todo_id' => $nc2TodoData['Nc2Todo']['todo_id']
+				];
+				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('todo_category', $query);
+				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
 
 				$this->writeCurrent($frameMap, 'tasks');
 
@@ -141,32 +153,26 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$nc2TodoId = $nc2TodoData['Nc2Todo']['todo_id'];
-				$nc2Tasks = $Nc2TodoTask->findAllByTodoId($nc2TodoId, null, ['task_sequence' => 'ASC'], -1);
-				$nc3Task = $Task->read();
-				foreach ($nc2Tasks as $nc2Task) {
-					$data = $this->generateNc3TaskContentsData($frameMap, $nc3Task, $nc2Task);
-					if (!$data) {
-						continue;
-					}
-					$TaskContent->validate = [];
-					if (!$TaskContent->saveContent($data)) {
-						$message = $this->getLogArgument($nc2Task) . "\n" .
-							var_export($TaskContent->validationErrors, true);
-						$this->writeMigrationLog($message);
-						$Task->rollback();
-						continue;
-					}
-				}
-
 				// 登録処理で使用しているデータを空に戻す
 				$nc3RoomId = $frameMap['Frame']['room_id'];
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
+				$nc2TodoId = $nc2TodoData['Nc2Todo']['todo_id'];
 				$idMap = [
 					$nc2TodoId => $Task->id,
 				];
 				$this->saveMap('Task', $idMap);
+
+				$nc3Task = $Task->findById($Task->id, 'block_id', null, -1);
+				if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Task['Task']['block_id'])) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2TodoData);
+					$this->writeMigrationLog($message);
+
+					$Task->rollback();
+					continue;
+				}
 
 				$Task->commit();
 
@@ -179,6 +185,80 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 		$this->removeUseCurrent();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Task data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Save TaskContent from Nc2.
+ *
+ * @param array $nc2TodoTasks Nc2TodoTask data.
+ * @return bool true on success
+ * @throws Exception
+ */
+	private function __saveTaskContentFromNc2($nc2TodoTasks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  TaskContent data Migration start.'));
+
+		/* @var $TaskContent TaskContent */
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
+		$TaskContent = ClassRegistry::init('Tasks.TaskContent');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+
+		Current::write('Plugin.key', 'tasks');
+		foreach ($nc2TodoTasks as $nc2TodoTask) {
+			$TaskContent->begin();
+			try {
+				$data = $this->generateNc3TaskContentData($nc2TodoTask);
+				if (!$data) {
+					$TaskContent->rollback();
+					continue;
+				}
+
+				$nc3BlockId = $data['TaskContent']['block_id'];
+				$nc2CategoryId = $nc2TodoTask['Nc2TodoTask']['category_id'];
+				$data['TaskContent']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
+
+				$nc2RoomId = $nc2TodoTask['Nc2TodoTask']['room_id'];
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
+				$nc3RoomId = $mapIdList[$nc2RoomId];
+				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+				Current::write('Room.id', $nc3RoomId);
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+				// 一応Model::validatの初期化
+				$TaskContent->validate = [];
+
+				if (!$TaskContent->saveContent($data)) {
+					$message = $this->getLogArgument($nc2TodoTask) . "\n" .
+						var_export($TaskContent->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$TaskContent->rollback();
+					continue;
+				}
+
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2TaskId = $nc2TodoTask['Nc2TodoTask']['task_id'];
+				$idMap = [
+					$nc2TaskId => $TaskContent->id,
+				];
+				$this->saveMap('TaskContent', $idMap);
+
+				$TaskContent->commit();
+
+			} catch (Exception $ex) {
+				$TaskContent->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  TaskContent data Migration end.'));
 
 		return true;
 	}
