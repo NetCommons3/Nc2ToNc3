@@ -230,6 +230,9 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					$data['LinkOrder']['category_key'] = $nc3Category['Category']['key'];
 				}
 
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				Current::write('Block.id', $nc3BlockId);
+
 				$nc2RoomId = $nc2LinklistLink['Nc2LinklistLink']['room_id'];
 				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
 				$nc3RoomId = $mapIdList[$nc2RoomId];
@@ -268,7 +271,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
-
+		Current::remove('Block.id');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 

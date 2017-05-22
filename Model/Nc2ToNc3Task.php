@@ -220,6 +220,9 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$nc2CategoryId = $nc2TodoTask['Nc2TodoTask']['category_id'];
 				$data['TaskContent']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
 
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				Current::write('Block.id', $nc3BlockId);
+
 				$nc2RoomId = $nc2TodoTask['Nc2TodoTask']['room_id'];
 				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
 				$nc3RoomId = $mapIdList[$nc2RoomId];
@@ -254,7 +257,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
-
+		Current::remove('Block.id');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 

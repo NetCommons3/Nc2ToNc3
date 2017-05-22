@@ -220,9 +220,9 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				}
 
 				$Block = ClassRegistry::init('Blocks.Block');
-
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
-
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				Current::write('Block.id', $Blocks['Block']['id']);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 				Current::write('Plugin.key', 'cabinets');
 				Current::write('Room.id', $nc3RoomId);
@@ -232,8 +232,6 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$CabinetFile->create();
 				$Block->create();
 				$Topic->create();
-
-				//error_log(print_r($data, true)."\n\n", 3, LOGS."/debug.log");
 				if (!$CabinetFile->saveFile($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
@@ -263,6 +261,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
+		Current::remove('Block.id');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
