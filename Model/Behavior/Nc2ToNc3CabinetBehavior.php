@@ -197,7 +197,10 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 					'cabinet_key' => $Cabinets['Cabinet']['key'],
 					'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CabinetFile['Nc2CabinetFile']),
 					'created' => $this->_convertDate($nc2CabinetFile['Nc2CabinetFile']['insert_time']),
-					'file' => $nc3CabinetFile
+					'file' => $nc3CabinetFile,
+					// 新着用に更新日を移行
+					// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+					'modified' => $this->_convertDate($nc2CabinetFile['Nc2CabinetFile']['update_time']),
 				],
 				'CabinetFileTree' => [
 					'parent_id' => $nc3CabinetFileTreeId
@@ -218,6 +221,9 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 					'cabinet_key' => $Cabinets['Cabinet']['key'],
 					'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CabinetFile['Nc2CabinetFile']),
 					'created' => $this->_convertDate($nc2CabinetFile['Nc2CabinetFile']['insert_time']),
+					// 新着用に更新日を移行
+					// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+					'modified' => $this->_convertDate($nc2CabinetFile['Nc2CabinetFile']['update_time']),
 				],
 				'CabinetFileTree' => [
 					'parent_id' => $nc3CabinetFileTreeId

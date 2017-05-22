@@ -224,7 +224,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 
 				$nc3RoomId = $Blocks['Block']['room_id'];
-				Current::write('Plugin.key', 'cabinet');
+				Current::write('Plugin.key', 'cabinets');
 				Current::write('Room.id', $nc3RoomId);
 				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
