@@ -157,6 +157,7 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3Task['Task']['block_id'],
 				'status' => '1',
 				'language_id' => $nc3Task['Task']['language_id'],
+				'is_completion' => $nc2TodoTask['Nc2TodoTask']['state'],
 				'progress_rate' => $nc2TodoTask['Nc2TodoTask']['progress'],
 				'title' => $nc2TodoTask['Nc2TodoTask']['task_value'],
 				'priority' => $this->_convertPriority($nc2TodoTask['Nc2TodoTask']['priority']),
