@@ -43,7 +43,10 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Bbs'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Bbs',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
 
 /**
  * Migration method.
@@ -74,6 +77,13 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 		$nc2BbsPosts = $Nc2BbsPost->find('all', $query);
 
 		if (!$this->__saveNc3BbsArticleFromNc2($nc2BbsPosts)) {
+			return false;
+		}
+
+		/* @var $Nc2BbsBlock AppModel */
+		$Nc2BbsBlock = $this->getNc2Model('bbs_block');
+		$nc2BbsBlocks = $Nc2BbsBlock->find('all');
+		if (!$this->__saveNc3BbsFrameSettingFromNc2($nc2BbsBlocks)) {
 			return false;
 		}
 
@@ -124,6 +134,9 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				Current::write('Block.id', $data['Block']['id']);
+
 				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 				$nc3Room = $Nc2ToNc3Room->getMap($nc2Bbs['Nc2Bb']['room_id']);
 				$nc3RoomId = $nc3Room['Room']['id'];
@@ -167,6 +180,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
+		Current::remove('Block.id');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
@@ -273,6 +287,81 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 		Current::remove('Plugin.key');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Bbs Article data Migration end.'));
+		return true;
+	}
+
+/**
+ * Save BbsFrameSetting from Nc2.
+ *
+ * @param array $nc2BbsBlocks Nc2BbsBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveNc3BbsFrameSettingFromNc2($nc2BbsBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  BbsFrameSetting data Migration start.'));
+
+		/* @var $BbsFrameSetting BbsFrameSetting */
+		/* @var $Frame Frame */
+		$BbsFrameSetting = ClassRegistry::init('Bbses.BbsFrameSetting');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		foreach ($nc2BbsBlocks as $nc2BbsBlock) {
+			$BbsFrameSetting->begin();
+			try {
+				$data = $this->generateNc3BbsFrameSettingData($nc2BbsBlock);
+				if (!$data) {
+					$BbsFrameSetting->rollback();
+					continue;
+				}
+
+				$BbsFrameSetting->create();
+				if (!$BbsFrameSetting->saveBbsFrameSetting($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2BbsBlock) . "\n" .
+						var_export($BbsFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$BbsFrameSetting->rollback();
+					continue;
+				}
+
+				if (!$Frame->saveFrame($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2BbsBlock) . "\n" .
+						var_export($BbsFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$BbsFrameSetting->rollback();
+					continue;
+				}
+
+				$nc2BlockId = $nc2BbsBlock['Nc2BbsBlock']['block_id'];
+				$idMap = [
+					$nc2BlockId => $BbsFrameSetting->id
+				];
+				$this->saveMap('BbsFrameSetting', $idMap);
+
+				$BbsFrameSetting->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BbsFrameSetting::saveBbsFrameSetting()でthrowされるとこの処理に入ってこない
+				$BbsFrameSetting->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		/*
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Block.id');
+		*/
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  BbsFrameSetting data Migration end.'));
+
 		return true;
 	}
 

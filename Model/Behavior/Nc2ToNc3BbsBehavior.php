@@ -226,16 +226,18 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'bbs_id' => $nc3BbsId,
 				'bbs_key' => $nc3Bbs['Bbs']['key'],
 				'title' => $nc2BbsPost['Nc2BbsPost']['subject'],
-				'content' => $this->_convertWYSIWYG($nc2BbsPostBody['Nc2BbsPostBody']['body']),
+				'content' => $model->convertWYSIWYG($nc2BbsPostBody['Nc2BbsPostBody']['body']),
 				'status' => $nc3Status,
 				'is_active' => $nc3IsActive,
 				'is_latest' => '1',
 				'language_id' => $nc3Bbs['Bbs']['language_id'],
 				'block_id' => $nc3Bbs['Bbs']['block_id'],
-				//'publish_start' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['bbs_date']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2BbsPost['Nc2BbsPost']),
 				'created' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['insert_time']),
-				'title_icon' => $this->_convertTitleIcon($nc2BbsPost['Nc2BbsPost']['icon_name'])
+				'title_icon' => $this->_convertTitleIcon($nc2BbsPost['Nc2BbsPost']['icon_name']),
+				// 新着用に更新日を移行
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+				'modified' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['update_time']),
 			],
 			'Bbs' => [
 				'id' => $nc3BbsId,
@@ -259,6 +261,64 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Generate Nc3BbsFameSettingData data.
+ *
+ * Data sample
+ * data[BbsFrameSetting][id]:
+ * data[BbsFrameSetting][frame_key]:
+ * data[BbsFrameSetting][articles_per_page]:10
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2BbsBlock Nc2BbsBlock data.
+ * @return array Nc3BbsFameSetting data.
+ */
+	public function generateNc3BbsFrameSettingData(Model $model, $nc2BbsBlock) {
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$nc2BlockId = $nc2BbsBlock['Nc2BbsBlock']['block_id'];
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if (!$frameMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2BbsBlock));
+			$this->_writeMigrationLog($message);
+			return [];
+		}
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('BbsFrameSetting', $nc2BlockId);
+		if ($mapIdList) {
+			return [];	// 移行済み
+		}
+
+		$nc2BbsId = $nc2BbsBlock['Nc2BbsBlock']['bbs_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Bbs', $nc2BbsId);
+
+		/* @var $Bbs Bbs */
+		$Bbs = ClassRegistry::init('Bbses.Bbs');
+		$nc3BbsId = Hash::get($mapIdList, [$nc2BbsId]);
+		$nc3Bbs = $Bbs->findById($nc3BbsId, 'block_id', null, -1);
+		if (!$nc3Bbs) {
+			return [];	// Nc3Bbsデータなし
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$data['BbsFrameSetting'] = [
+			'frame_key' => $frameMap['Frame']['key'],
+			'articles_per_page' => $nc2BbsBlock['Nc2BbsBlock']['visible_row'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2BbsBlock['Nc2BbsBlock']),
+			'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
+		];
+		$data['Frame'] = [
+			'id' => $frameMap['Frame']['id'],
+			'plugin_key' => 'bbses',
+			'block_id' => Hash::get($nc3Bbs, ['Bbs', 'block_id']),
+		];
+
+		return $data;
+	}
+
+/**
  * Get Log argument.
  *
  * @param array $nc2Bbs Array data of Nc2Bbs, Nc2BbsPost.
@@ -270,10 +330,13 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'Bbs_id:' . $nc2Bbs['Nc2Bb']['bbs_id'];
 		}
 
-		if (isset($nc2Bbs['Nc2BbsPost'])) {
+		if (isset($nc2Bbs['Nc2BbsBlock'])) {
 			return 'Nc2BbsPost ' .
-				'post_id:' . $nc2Bbs['Nc2BbsPost']['post_id'];
+				'block_id:' . $nc2Bbs['Nc2BbsBlock']['block_id'];
 		}
+
+		return 'Nc2BbsPost ' .
+			'post_id:' . $nc2Bbs['Nc2BbsPost']['post_id'];
 	}
 
 /**
