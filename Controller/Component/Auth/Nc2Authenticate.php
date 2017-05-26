@@ -27,9 +27,16 @@ class Nc2Authenticate extends FormAuthenticate {
 		$userModel = $this->settings['userModel'];
 		list(, $model) = pluginSplit($userModel);
 		$passwordfield = $this->settings['fields']['password'];
+		$password = $request->data[$model][$passwordfield];
 		$request->data[$model][$passwordfield] = md5($request->data[$model][$passwordfield]);
 
-		return parent::authenticate($request, $response);
+		$result = parent::authenticate($request, $response);
+		if (!empty($result) && is_array($result)) {
+			return $result;
+		}
+
+		$request->data[$model][$passwordfield] = $password;
+		return $result;
 	}
 
 }
