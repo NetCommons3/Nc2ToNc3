@@ -90,7 +90,7 @@ class Nc2ToNc3QuestionBaseBehavior extends Nc2ToNc3BaseBehavior {
 			"#be5945",
 			"#cccccc"
 		];
-		$choiceSequence = (int)$choiceSequence;
+		$choiceSequence = (int)($choiceSequence % count($colors));
 
 		return $colors[$choiceSequence];
 	}
