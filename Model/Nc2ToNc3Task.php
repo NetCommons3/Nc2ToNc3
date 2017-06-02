@@ -164,7 +164,13 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$this->saveMap('Task', $idMap);
 
 				$nc3Task = $Task->findById($Task->id, 'block_id', null, -1);
-				if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Task['Task']['block_id'])) {
+				unset($nc2CategoryList['0']);	// Nc2TodoCategory.category_id でカテゴリーなしが'0' のデータは移行しない
+				$nc2CategoryListAsUnique = [];
+				foreach ($nc2CategoryList as $nc2CategoryId => $nc2CategoryName) {
+					$uniqueKey = $nc2CategoryId . '-' . $nc2TodoData['Nc2Todo']['todo_id'];
+					$nc2CategoryListAsUnique[$uniqueKey] = $nc2CategoryName;
+				}
+				if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryListAsUnique, $nc3Task['Task']['block_id'])) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2TodoData);
@@ -202,10 +208,9 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 		/* @var $TaskContent TaskContent */
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
-		$TaskContent = ClassRegistry::init('Tasks.TaskContent');
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
-
+		$TaskContent = ClassRegistry::init('Tasks.TaskContent');
 		Current::write('Plugin.key', 'tasks');
 		foreach ($nc2TodoTasks as $nc2TodoTask) {
 			$TaskContent->begin();
@@ -217,11 +222,15 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				}
 
 				$nc3BlockId = $data['TaskContent']['block_id'];
-				$nc2CategoryId = $nc2TodoTask['Nc2TodoTask']['category_id'];
-				$data['TaskContent']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
-
+				$uniqueKey = $nc2TodoTask['Nc2TodoTask']['category_id'] . '-' . $nc2TodoTask['Nc2TodoTask']['todo_id'];
+				$data['TaskContent']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $uniqueKey);
 				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
 				Current::write('Block.id', $nc3BlockId);
+
+				// コンストラクタで初期設定を行っているため、毎回removeObject
+				// @see https://github.com/NetCommons3/Tasks/blob/3.1.2/Model/TaskContent.php#L209
+				ClassRegistry::removeObject('TaskContent');
+				$TaskContent = ClassRegistry::init('Tasks.TaskContent');
 
 				$nc2RoomId = $nc2TodoTask['Nc2TodoTask']['room_id'];
 				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
@@ -290,8 +299,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$nc2BlockId = $nc2TodoBlock['Nc2TodoBlock']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 				if (!$frameMap) {
-					$message = $this->getLogArgument($nc2TodoBlocks) . "\n" .
-						var_export($Frame->validationErrors, true);
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2TodoBlock));
 					$this->writeMigrationLog($message);
 
 					$Frame->rollback();

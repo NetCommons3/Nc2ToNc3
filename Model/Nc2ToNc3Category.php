@@ -130,9 +130,6 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 		$Category = ClassRegistry::init('Categories.Category');
 		$nc3Categories = $Category->getCategories($nc3BlockId, $nc3Block['Block']['room_id']);
 
-		// Nc2TodoCategory.category_id でカテゴリーなしが'0' のデータは移行しない
-		unset($nc2CategoryList[0]);
-
 		$categoryCount = count($nc2CategoryList);
 		//　あり得ないが一応
 		if ($categoryCount != count($nc3Categories)) {
