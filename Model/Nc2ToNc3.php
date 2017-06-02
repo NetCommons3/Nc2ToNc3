@@ -116,7 +116,8 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 					'notBlank' => [
 						'rule' => ['notBlank'],
 						'message' => sprintf(
-							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Base url')
+							__d('net_commons', 'Please input %s.'), __d('nc2_to_nc3', 'Base url') . "\n" .
+							__d('nc2_to_nc3', 'Input URL of NetCommons2 for converting link in WYSIWYG content.')
 						),
 						'allowEmpty' => false,
 						'required' => true,
