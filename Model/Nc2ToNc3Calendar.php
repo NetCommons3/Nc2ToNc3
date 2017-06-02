@@ -54,7 +54,10 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Calendar'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Calendar',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
 
 /**
  * Migration method.
@@ -186,7 +189,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2CalendarBlocks) . "\n" .
+					$message = $this->getLogArgument($nc2CalendarBlock) . "\n" .
 						var_export($CalendarFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -243,9 +246,10 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 
 		// コード補完のため、@var宣言すると、PHPMDで coupling between objects に引っかかる（1クラスにオブジェクト参照は13個までらしい）。
 		// PHPMDのどのルールかは不明。なので、コメントにしとく
-		///* @var $Frame Frame */
 		///* @var $Block Block */
-		$Frame = ClassRegistry::init('Frames.Frame');
+		/* @var $CalendarActionPlan CalendarActionPlan */
+		/* @var $CalendarEvent CalendarEvent */
+		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
 		$Block = ClassRegistry::init('Blocks.Block');
 		foreach ($nc2CalendarPlans as $nc2CalendarPlan) {
 			$CalendarActionPlan->begin();
@@ -261,27 +265,51 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L545
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Calendar.php#L153-L155
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Behavior/CalendarInsertPlanBehavior.php#L97
-				$nc3Frame = $Frame->findByRoomIdAndPluginKey(
-					$data['CalendarActionPlan']['plan_room_id'],
+				$nc3RoomId = $data['CalendarActionPlan']['plan_room_id'];
+				$nc3Block = $Block->findByRoomIdAndPluginKey(
+					$nc3RoomId,
 					'calendars',
 					[
-						'room_id',
-						'block_id',
+						'id',
+						'key',
 					],
 					null,
 					-1
 				);
-				Current::write('Frame.block_id', $nc3Frame['Frame']['block_id']);
-				Current::write('Room.id', $nc3Frame['Frame']['room_id']);
+
+				Current::write('Frame.block_id', $nc3Block['Block']['id']);
+				Current::write('Frame.room_id', $nc3RoomId);
+				Current::write('Frame.plugin_key', 'calendars');
+				Current::write('Room.id', $nc3RoomId);
 
 				// Block.keyは、配置してあるルームのブロックっぽいが、Nc2CalendarPlanから配置場所がたどれないため、予定のroom_idのブロックを設定しとく
-				$nc3Block = $Block->findById($nc3Frame['Frame']['block_id'], 'key', null, -1);
+				$data['Block']['id'] = $nc3Block['Block']['id'];
 				$data['Block']['key'] = $nc3Block['Block']['key'];
 
-				if (!$this->__saveCalendarEventFromGeneratedData($nc2CalendarPlan, $data)) {
+				// Validation で throw されるため、事前にチェック
+				$validationData = $CalendarActionPlan->convertToPlanParamFormat($data);
+				if (!$CalendarEvent->checkMaxMinDate([$validationData['start_date']], 'start') ||
+					!$CalendarEvent->checkMaxMinDate([$validationData['end_date']], 'end')
+				) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CalendarPlan));
+					$this->writeMigrationLog($message);
+
 					$CalendarActionPlan->rollback();
 					continue;
 				}
+
+				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarEvent.php#L313
+				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Utility/CalendarPermissiveRooms.php#L202-L203
+				$creatableValue = CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'];
+				CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'] = true;
+
+				if (!$this->__saveCalendarEventFromGeneratedData($nc2CalendarPlan, $data)) {
+					$CalendarActionPlan->rollback();
+					CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'] = $creatableValue;
+					continue;
+				}
+
+				CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'] = $creatableValue;
 
 				// CalendarActionPlan::saveCalendarPlan から、まわりまわってCalendarEvent::save が呼ばれるので、
 				// CalendarEvent::idで取得できる
@@ -303,6 +331,8 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 
 		// 予定登録処理で使用しているデータを空に戻す
 		Current::remove('Frame.block_id');
+		Current::remove('Frame.room_id');
+		Current::remove('Frame.plugin_key');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
@@ -361,7 +391,6 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Controller/CalendarPlansController.php#L589-L596
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Behavior/CalendarPlanGenerationBehavior.php#L276-L283
 		$nc3PivateRoomId = null;
-
 		$nc3EventId = $CalendarActionPlan->saveCalendarPlan(
 			$nc3ActionPlan,
 			$addOrEdit,

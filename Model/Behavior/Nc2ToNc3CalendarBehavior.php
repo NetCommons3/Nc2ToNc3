@@ -313,7 +313,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			'plan_room_id' => $roomMap['Room']['id'],
 			'location' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['location'],
 			'contact' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['contact'],
-			'description' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['description'],
+			'description' => $model->convertWYSIWYG($nc2CalendarPDetail['Nc2CalendarPlanDetail']['description']),
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CalendarPlan['Nc2CalendarPlan']),
 			'created' => $this->_convertDate($nc2CalendarPlan['Nc2CalendarPlan']['insert_time']),
 			// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/View/Elements/CalendarPlans/detail_edit_mail.ctp#L20-L21
