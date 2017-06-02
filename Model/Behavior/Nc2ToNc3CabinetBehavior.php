@@ -165,6 +165,12 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			$nc3CabinetFileTreeId = $nc3CabinetFileTrees['CabinetFileTree']['id'];
 		} else {
 			$mapIdList = $Nc2ToNc3Map->getMapIdList('CabinetFile', $nc2CabFileParentId);
+			if (!isset($mapIdList[$nc2CabFileParentId])) {
+				$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CabinetFile));
+				$this->_writeMigrationLog($message);
+				return [];
+			}
+
 			/* @var $CabinetFile CabinetFile */
 			$CabinetFile = ClassRegistry::init('Cabinets.CabinetFile');
 			$nc3CabinetFile = $CabinetFile->findById(
@@ -183,12 +189,15 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			$nc2UploadId = $nc2CabinetFile['Nc2CabinetFile']['upload_id'];
 			$nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
 			$nc3CabinetFile = $nc2ToNc3Upload->generateUploadFile($nc2UploadId);
+			if (!$nc3CabinetFile) {
+				return [];
+			}
 
 			$data['CabinetFile'] = [
 				'key' => '',
 				'is_folder' => $nc2CabinetFile['Nc2CabinetFile']['file_type'],
 				'filename' => $nc2CabinetFile['Nc2CabinetFile']['file_name'] . '.' . $nc2CabinetFile['Nc2CabinetFile']['extension'],
-				'description' => $nc2CabinetComment['Nc2CabinetComment']['comment'],
+				'description' => Hash::get($nc2CabinetComment, ['Nc2CabinetComment', 'comment']),
 				'status' => '1',
 				'cabinet_key' => $Cabinets['Cabinet']['key'],
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CabinetFile['Nc2CabinetFile']),
@@ -204,7 +213,7 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				'key' => '',
 				'is_folder' => $nc2CabinetFile['Nc2CabinetFile']['file_type'],
 				'filename' => $nc2CabinetFile['Nc2CabinetFile']['file_name'],
-				'description' => $nc2CabinetComment['Nc2CabinetComment']['comment'],
+				'description' => Hash::get($nc2CabinetComment, ['Nc2CabinetComment', 'comment']),
 				'status' => '1',
 				'cabinet_key' => $Cabinets['Cabinet']['key'],
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CabinetFile['Nc2CabinetFile']),
@@ -233,12 +242,12 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 	private function __getLogArgument($nc2Cabinet) {
 		if (isset($nc2Cabinet['Nc2CabinetBlock'])) {
 			return 'CabinetBlock ' .
-				'block_id:' . $nc2Cabinet['CabinetBlock']['block_id'];
+				'block_id:' . $nc2Cabinet['Nc2CabinetBlock']['block_id'];
 		}
 
 		if (isset($nc2Cabinet['Nc2CabinetManage'])) {
 			return 'CabinetManage ' .
-				'cabinet_id:' . $nc2Cabinet['CabinetManage']['cabinet_id'];
+				'cabinet_id:' . $nc2Cabinet['Nc2CabinetManage']['cabinet_id'];
 		}
 
 		if (isset($nc2Cabinet['Nc2CabinetFile'])) {

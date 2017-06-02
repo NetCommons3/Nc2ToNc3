@@ -116,7 +116,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 			$nc2CabinetBlock = $Nc2CabinetBlock->findByRoomId($nc2CabinetManage['Nc2CabinetManage']['room_id'], null, null, -1);
 			if (!$nc2CabinetBlock) {
-				$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CabinetBlock));
+				$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CabinetManage));
 				$this->writeMigrationLog($message);
 				continue;
 			}
@@ -293,8 +293,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$nc2BlockId = $nc2CabinetBlock['Nc2CabinetBlock']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 				if (!$frameMap) {
-					$message = $this->getLogArgument($nc2CabinetBlocks) . "\n" .
-						var_export($Frame->validationErrors, true);
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CabinetBlock));
 					$this->writeMigrationLog($message);
 
 					$Frame->rollback();
@@ -325,7 +324,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				if (!$Frame->saveFrame($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2CabinetBlocks) . "\n" .
+					$message = $this->getLogArgument($nc2CabinetBlock) . "\n" .
 						var_export($Frame->validationErrors, true);
 					$this->writeMigrationLog($message);
 
