@@ -128,6 +128,12 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				}
 
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2FaqBlock['Nc2FaqBlock']['block_id']);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Faq));
+					$this->writeMigrationLog($message);
+					$Faq->rollback();
+					continue;
+				}
 
 				$data = $this->generateNc3FaqData($frameMap, $nc2Faq);
 				if (!$data) {

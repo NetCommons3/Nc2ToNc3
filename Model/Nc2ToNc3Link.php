@@ -126,6 +126,13 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				}
 
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
+					$this->writeMigrationLog($message);
+					$LinkBlock->rollback();
+					continue;
+				}
+
 				$data = $this->generateNc3LinkBlockData($frameMap, $nc2Linklist);
 				if (!$data) {
 					$LinkBlock->rollback();

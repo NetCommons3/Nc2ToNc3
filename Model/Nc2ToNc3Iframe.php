@@ -100,6 +100,13 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 
 				$nc2BlockId = $nc2Iframe['Nc2Iframe']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Iframe));
+					$this->writeMigrationLog($message);
+					$Iframe->rollback();
+					continue;
+				}
+				
 				$this->writeCurrent($frameMap, 'iframes');
 
 				$Frame->create();
