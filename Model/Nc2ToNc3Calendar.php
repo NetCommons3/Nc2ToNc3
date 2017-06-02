@@ -249,6 +249,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		///* @var $Block Block */
 		/* @var $CalendarActionPlan CalendarActionPlan */
 		/* @var $CalendarEvent CalendarEvent */
+		$CalendarActionPlan = ClassRegistry::init('Calendars.CalendarActionPlan');
 		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
 		$Block = ClassRegistry::init('Blocks.Block');
 		foreach ($nc2CalendarPlans as $nc2CalendarPlan) {
