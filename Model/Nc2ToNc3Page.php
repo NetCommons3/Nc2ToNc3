@@ -288,6 +288,11 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$roomMap = $Nc2ToNc3Room->getMap($nc2Page['Nc2Page']['room_id']);
+		if (!$roomMap) {
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Page));
+			$this->writeMigrationLog($message);
+			return [];
+		}
 		$map = $this->getMap($nc2Page['Nc2Page']['parent_id']);
 		if (!$map) {
 			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Page));
