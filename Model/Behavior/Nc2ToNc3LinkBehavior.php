@@ -186,8 +186,11 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
+		// @see https://github.com/NetCommons3/Links/blob/3.1.2/Model/LinkFrameSetting.php#L119-L145
 		$listStyle = $nc2LinklistBlock['Nc2LinklistBlock']['mark'];
-		if ($listStyle === 'none') {
+		if ($listStyle === 'none' ||
+			$listStyle === 'square'
+		) {
 			$listStyle = '';
 		}
 
