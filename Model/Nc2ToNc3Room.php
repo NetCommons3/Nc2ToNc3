@@ -501,6 +501,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 			// 不参加のデータ
 			if (!$nc2RoleAuthotityId &&
+				!$nc3RolesRoomsUserId
+			) {
+				continue;
+			}
+			if (!$nc2RoleAuthotityId &&
 				$nc3RolesRoomsUserId
 			) {
 				$nc3RoleRoomUser = [
