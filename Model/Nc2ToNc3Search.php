@@ -93,6 +93,14 @@ class Nc2ToNc3Search extends Nc2ToNc3AppModel {
 			try {
 				$nc2BlockId = $nc2SearchBlock['Nc2SearchBlock']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2SearchBlock));
+					$this->writeMigrationLog($message);
+
+					$SearchFrameSetting->rollback();
+					continue;
+				}
+
 				$this->writeCurrent($frameMap, 'searches');
 
 				$data = $this->generateNc3FrameSettingData($frameMap, $nc2SearchBlock);
