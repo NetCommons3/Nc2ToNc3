@@ -56,7 +56,10 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Questionnaire'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Questionnaire',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
 
 /**
  * Migration method.
@@ -138,6 +141,12 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L577-L578
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L631-L634
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2QBlock['Nc2QuestionnaireBlock']['block_id']);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Questionnaire));
+					$this->writeMigrationLog($message);
+					$Questionnaire->rollback();
+					continue;
+				}
 				$nc3RoomId = $frameMap['Frame']['room_id'];
 				Current::write('Frame.key', $frameMap['Frame']['key']);
 				Current::write('Frame.room_id', $nc3RoomId);

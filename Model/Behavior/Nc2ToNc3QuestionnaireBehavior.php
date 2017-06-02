@@ -129,7 +129,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$data['AuthorizationKey']['authorization_key'] = $nc2Questionnaire['Nc2Questionnaire']['keypass_phrase'];
 		}
 
-		$data['QuestionnairePage'] = $this->__generateNc3QuestionnairePageData($nc2Questionnaire);
+		$data['QuestionnairePage'] = $this->__generateNc3QuestionnairePageData($model, $nc2Questionnaire);
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
 		$data['Topic'] = [
@@ -337,10 +337,11 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 /**
  * Generate Nc3CalendarFrameSettingSelectRoom data.
  *
+ * @param Model $model Model using this behavior.
  * @param array $nc2Questionnaire Nc2Questionnaire data.
  * @return array Nc3QuestionnairePage data.
  */
-	private function __generateNc3QuestionnairePageData($nc2Questionnaire) {
+	private function __generateNc3QuestionnairePageData(Model $model, $nc2Questionnaire) {
 		/* @var $Nc2Question AppModel */
 		$Nc2Question = $this->_getNc2Model('questionnaire_question');
 		$nc2Questions = $Nc2Question->findAllByQuestionnaireId(
@@ -366,7 +367,7 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 				'question_sequence' => $nc3QuestionSequence,
 				'question_value' => '質問',	// TODOー英語の場合はQuestionにする
 				'question_type' => $this->_convertQuestionType($nc2QuestionType),
-				'description' => $nc2Question['Nc2QuestionnaireQuestion']['question_value'],
+				'description' => $model->convertWYSIWYG($nc2Question['Nc2QuestionnaireQuestion']['question_value']),
 				'is_require' => $nc2Question['Nc2QuestionnaireQuestion']['require_flag'],
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireQuestion.php#L232-L240
 				'is_result_display' => $isNotTextType ? '1' : '0',

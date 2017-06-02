@@ -116,7 +116,7 @@ class Nc2ToNc3QuizBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$data['Quiz']['is_page_random'] = '1';
 		}
 
-		$data['QuizPage'] = $this->__generateNc3QuizPageData($nc2Quiz);
+		$data['QuizPage'] = $this->__generateNc3QuizPageData($model, $nc2Quiz);
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Topic.php#L388-L393
 		$data['Topic'] = [
@@ -334,10 +334,11 @@ class Nc2ToNc3QuizBehavior extends Nc2ToNc3QuestionBaseBehavior {
 /**
  * Generate Nc3CalendarFrameSettingSelectRoom data.
  *
+ * @param Model $model Model using this behavior.
  * @param array $nc2Quiz Nc2Quiz data.
  * @return array Nc3QuizPage data.
  */
-	private function __generateNc3QuizPageData($nc2Quiz) {
+	private function __generateNc3QuizPageData(Model $model, $nc2Quiz) {
 		/* @var $Nc2Question AppModel */
 		$Nc2Question = $this->_getNc2Model('quiz_question');
 		$nc2Questions = $Nc2Question->findAllByQuizId(
@@ -360,10 +361,10 @@ class Nc2ToNc3QuizBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$nc2QuestionType = $nc2Question['Nc2QuizQuestion']['question_type'];
 			$nc3Question = [
 				'question_sequence' => $nc3QuestionSequence,
-				'question_value' => $nc2Question['Nc2QuizQuestion']['question_value'],
+				'question_value' => $model->convertWYSIWYG($nc2Question['Nc2QuizQuestion']['question_value']),
 				'question_type' => $this->_convertQuestionType($nc2QuestionType),
 				'allotment' => $nc2Question['Nc2QuizQuestion']['allotment'],
-				'commentary' => $nc2Question['Nc2QuizQuestion']['description'],
+				'commentary' => $model->convertWYSIWYG($nc2Question['Nc2QuizQuestion']['description']),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Question['Nc2QuizQuestion']),
 				'created' => $this->_convertDate($nc2Question['Nc2QuizQuestion']['insert_time']),
 			];
