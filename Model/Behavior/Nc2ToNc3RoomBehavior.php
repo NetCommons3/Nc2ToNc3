@@ -212,21 +212,10 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
  * @return void
  */
 	public function saveExistingMap(Model $model, $nc2Pages) {
-		// パブリックルームのmapデータ作成。Nc2のパブリックルーム取得条件が良く分からない。とりあえずの条件で取得
 		// パブリックルーム以外の対応するルームが既存の処理について、対応させるデータが名前くらいしかない気がする。。。名前でマージして良いのか微妙なので保留
 
 		/* @var $Nc2Page AppModel */
-		$Nc2Page = $this->_getNc2Model('pages');
-		$nc2Page = $Nc2Page->findByRootIdAndSpaceType(
-			'0',
-			'1',
-			[
-				'Nc2Page.page_id',
-				'Nc2Page.room_id',
-			],
-			null,
-			-1
-		);
+		$nc2Page = $this->getNc2PublicTopRoom();
 		$nc2Id = $nc2Page['Nc2Page']['room_id'];
 
 		/* @var $Room Room */
@@ -273,6 +262,30 @@ class Nc2ToNc3RoomBehavior extends Nc2ToNc3RoomBaseBehavior {
 		];
 
 		return $conditions;
+	}
+
+/**
+ * Get public top room data.
+ *
+ * @return string Nc2 public top room data.
+ */
+	public function getNc2PublicTopRoom() {
+		// パブリックルームのmapデータ作成。Nc2のパブリックルーム取得条件が良く分からない。多分あってる。
+
+		/* @var $Nc2Page AppModel */
+		$Nc2Page = $this->_getNc2Model('pages');
+		$nc2Page = $Nc2Page->findByRootIdAndSpaceType(
+			'0',
+			'1',
+			[
+				'Nc2Page.page_id',
+				'Nc2Page.room_id',
+			],
+			null,
+			-1
+		);
+
+		return $nc2Page;
 	}
 
 }

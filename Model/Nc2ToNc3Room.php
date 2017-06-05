@@ -134,7 +134,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save UserAttribue from Nc2.
+ * Save Room from Nc2.
  *
  * @param string $nc2LangDirName Nc2Page lang_dirname.
  * @return bool True on success.
@@ -161,7 +161,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$Room = ClassRegistry::init('Rooms.Room');
 		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
 
-		$this->saveExistingMap($nc2Pages);
+		if (!$this->__savePublicTopRoomFromNc2()) {
+			return false;
+		}
+		$this->saveExistingMap($nc2Pages);	// 既存のパブリックルームのTopを対応付け
+
 		foreach ($nc2Pages as $nc2Page) {
 			/*
 			if (!$this->isMigrationRow($nc2User)) {
@@ -222,6 +226,55 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				$Room->rollback($ex);
 				throw $ex;
 			}
+		}
+
+		return true;
+	}
+
+/**
+ * Save public top Room from Nc2.
+ *
+ * @return bool True on success.
+ * @throws Exception
+ */
+	private function __savePublicTopRoomFromNc2() {
+		/* @var $Nc2Page AppModel */
+		/* @var $Room Room */
+		/* @var $RolesRoomsUser RolesRoomsUser */
+		$Nc2Page = $this->getNc2Model('pages');
+		$Room = ClassRegistry::init('Rooms.Room');
+		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
+
+		$nc2Page = $this->getNc2PublicTopRoom();
+		$nc2Page = $Nc2Page->findByPageId($nc2Page['Nc2Page']['page_id'], null, null, -1);
+		if ($this->getMap($nc2Page['Nc2Page']['room_id'])) {
+			$message = __d('nc2_to_nc3', '%s is not migration.', $this->getLogArgument($nc2Page));
+			$this->writeMigrationLog($message);
+			return true;	// 移行済み
+		}
+
+		$spaces = $Room->getSpaces();
+		$nc3RoomId = $spaces[Space::PUBLIC_SPACE_ID]['Space']['room_id_root'];
+		$nc3Room = $Room->findById($nc3RoomId, null, null, -1);
+
+		// 既存のパブリックルームのTopの参加者情報を移行する。
+		try {
+			$Room->begin();
+
+			$data = $this->__generateNc3RolesRoomsUser($nc3Room, $nc2Page);
+			if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
+				// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
+				$Room->rollback();
+				continue;
+			}
+
+			$Room->commit();
+
+		} catch (Exception $ex) {
+			// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+			// $Room::saveRoom()でthrowされるとこの処理に入ってこない
+			$Room->rollback($ex);
+			throw $ex;
 		}
 
 		return true;
