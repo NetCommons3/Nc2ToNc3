@@ -78,9 +78,6 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
  * Generate Nc3MenuFramePage or Nc3MenuFrameRoom data.
  *
  * Data sample
- * data[MenuRooms][1][MenuFramesRoom][room_id]:1
- * data[MenuRooms][1][MenuFramesRoom][frame_key]:
- * data[MenuRooms][1][MenuFramesRoom][is_hidden]:0
  * data[Menus][1][4][MenuFramesPage][id]:1
  * data[Menus][1][4][MenuFramesPage][frame_key]:
  * data[Menus][1][4][MenuFramesPage][page_id]:
@@ -113,19 +110,7 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 
-		$nc2RoomId = $nc2MenuDetail['Nc2MenuDetail']['room_id'];
 		$nc3RoomId = $pageMap['Box']['room_id'];
-		if ($nc2PageId == $nc2RoomId) {
-			$nc3MenuFrameSetting['MenuRooms'][$nc3RoomId]['MenuFramesRoom'] = [
-				'frame_key' => $nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
-				'room_id' => $nc3RoomId,
-				'is_hidden' => '1',
-				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2MenuDetail['Nc2MenuDetail']),
-				'created' => $this->_convertDate($nc2MenuDetail['Nc2MenuDetail']['insert_time']),
-			];
-
-			return $nc3MenuFrameSetting;
-		}
 
 		$nc3PageId = $pageMap['Page']['id'];
 		$nc3MenuFrameSetting['Menus'][$nc3RoomId][$nc3PageId]['MenuFramesPage'] = [
