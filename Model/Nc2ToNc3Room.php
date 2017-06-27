@@ -265,7 +265,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 				// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 				$Room->rollback();
-				continue;
+				return true;
 			}
 
 			$Room->commit();
