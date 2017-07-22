@@ -130,7 +130,7 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 			'registration_view_main_init' => 'registrations',
 			'quiz_view_main_init' => 'quizzes',
 			'rss_view_main_init' => 'rss_readers',
-			//'reservation_view_main_init' => null,
+			'reservation_view_main_init' => 'reservations',
 			'search_view_main_init' => 'searches',
 			'todo_view_main_init' => 'tasks',
 			'whatsnew_view_main_init' => 'topics',
