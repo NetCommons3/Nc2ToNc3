@@ -65,6 +65,15 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		if (!$this->_migrateBlockToFrameSetting()) {
+			return false;
+		}
+
+		if (!$this->_migrateReservation()) {
+			return false;
+		}
+
+
 		return true;
 
 		/* @var $Nc2Blog AppModel */
@@ -103,6 +112,250 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration end.'));
 		return true;
+	}
+
+/**
+ * NC3のreservationsテーブルの移行
+ *
+ * @return bool
+ */
+	protected function _migrateReservation() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Reservation start.'));
+
+		// すでにreservationsテーブルにレコードあれば何もしない
+		$Reservation = ClassRegistry::init('Reservations.Reservation');
+		$count = $Reservation->find('count', []);
+		if ($count) {
+			$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Reservation is exist.'));
+			return true;
+		}
+
+		// NC3に移行されたblockテーブルのレコードからreservationsテーブルにインサートする
+		$Block = ClassRegistry::init('Blocks.Block');
+		$data = $Block->findByPluginKey('reservations');
+		if ($data) {
+			// あれば取得したデータをつかう
+		} else {
+			// なかったら1つブロックをつくる
+			$data = [
+				'Block' => [
+					'room_id' => 1,
+					'plugin_key' => 'reservations',
+					'public_type' => 1
+				]
+			];
+			$Block->create();
+			$Block->begin();
+			if (!$data = $Block->save($data)) {
+				$Block->rollback();
+				return false;
+			}
+			$Block->commit();
+		}
+		$reservation = [
+			'Reservation' => [
+				'block_key' => $data['Block']['key']
+			]
+		];
+		$Reservation->create();
+		$Reservation->begin();
+		if (!$Reservation->save($reservation)){
+			$Reservation->rollback();
+			return false;
+		}
+		$Reservation->commit();
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Reservation end.'));
+		return true;
+	}
+
+	protected function _migrateBlockToFrameSetting() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation FrameSetting start.'));
+
+
+		$Nc2Model = $this->getNc2Model('reservation_block');
+		$nc2Records = $Nc2Model->find('all');
+		if (!$this->_saveNc3ReservationFrameSettingFromNc2($nc2Records)) {
+			return false;
+		}
+
+		return true;
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation FrameSetting end.'));
+	}
+	protected function _saveNc3ReservationFrameSettingFromNc2($nc2Records) {
+
+		/* @var $Nc3Model ReservationFrameSetting */
+		$Nc3Model = ClassRegistry::init('Reservations.ReservationFrameSetting');
+
+		Current::write('Plugin.key', 'reservations');
+
+		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
+		//$Blog->Behaviors->Block->settings['nameHtml'] = false;
+
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		//$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
+
+		//$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		//$Block = ClassRegistry::init('Blocks.Block');
+		//$Topic = ClassRegistry::init('Topics.Topic');
+
+		foreach ($nc2Records as $nc2Record) {
+			$Nc3Model->begin();
+			try {
+				$data = $this->_generateNc3ReservationFrameSetting($nc2Record);
+				if (!$data) {
+					$Nc3Model->rollback();
+					continue;
+				}
+				//$query['conditions'] = [
+				//	'journal_id' => $nc2Journal['Nc2Journal']['journal_id']
+				//];
+				//$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('journal_category', $query);
+				//$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
+				//
+				//// いる？
+				//$nc3RoomId = $data['Block']['room_id'];
+				//Current::write('Room.id', $nc3RoomId);
+				// TODO 権限セット必要だったらやる
+				//CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+				//$BlocksLanguage->create();
+				$Nc3Model->create();
+				//$Block->create();
+				//$Topic->create();
+
+				//if (!$Timeframe->saveTimeframe($data)) {
+				if (!$Nc3Model->save($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$Nc3Model->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Record) . "\n" .
+						var_export($Nc3Model->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Nc3Model->rollback();
+					continue;
+				}
+				// TODO　権限セットしてたらここで解除
+				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2Id = $nc2Record['Nc2ReservationBlock']['block_id'];
+				$idMap = [
+					$nc2Id => $Nc3Model->id
+				];
+				$this->saveMap('ReservationFrameSetting', $idMap);
+
+				// これはブログのカテゴリ移行か
+				//$nc3Blog = $Blog->findById($Blog->id, 'block_id', null, -1);
+				//if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Blog['Blog']['block_id'])) {
+				//	// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+				//	// @see https://phpmd.org/rules/design.html
+				//	$message = $this->getLogArgument($nc2Journal);
+				//	$this->writeMigrationLog($message);
+				//	$Blog->rollback();
+				//	continue;
+				//}
+
+				$Nc3Model->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Nc3Model->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		//Current::remove('Room.id');
+		//Current::remove('Plugin.key');
+
+		return true;
+	}
+
+	protected function _generateNc3ReservationFrameSetting($nc2Record) {
+
+		$nc2Id = $nc2Record['Nc2ReservationBlock']['block_id'];
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationFrameSetting', $nc2Id);
+		if ($mapIdList) {
+			// 移行済み
+			return [];
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+
+		// NC2 display_start_time = defalt なら閲覧時刻により変動　固定なら0800 形式で時刻
+		if ($nc2Record['Nc2ReservationBlock']['display_start_time'] == 'default') {
+			// 開始時刻変動
+			$displayStartTimeType = 0; // 変動
+			$timelineBaseTime = 8; // 初期値は8時
+		} else {
+			// 開始時刻固定
+			$displayStartTimeType = 1; // 固定
+			// NC2は0800 形式だがNC3は数値（8時なら 8)
+			$timelineBaseTime = (int) substr($nc2Record['Nc2ReservationBlock']['display_start_time'], 0, 2);
+		}
+
+		// $roomId
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$room = $Nc2ToNc3Room->getMap($nc2Record['Nc2ReservationBlock']['room_id']);
+		$roomId = $room['Room']['id'];
+		//$roomIdList = $Nc2ToNc3Map->getMapIdList('Room');
+		//$roomId = $roomIdList[$nc2Record['Nc2ReservationBlock']['room_id']];
+		//$roomId = Hash::get($roomIdList, $nc2Record['Nc2ReservationBlock']['room_id'], $nc2Record['Nc2ReservationBlock']['room_id']);
+		// TODO ルーム1とかデフォルトのルームは移行してないのかな？
+		// $frameKey
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$frame = $Nc2ToNc3Frame->getMap($nc2Record['Nc2ReservationBlock']['block_id']);
+		$frameKey = $frame['Frame']['key'];
+
+		// $categoryId
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		$categoryId = $Nc2ToNc3Category->getNc3CategoryId(
+			$frame['Frame']['block_id'],
+			$nc2Record['Nc2ReservationBlock']['category_id']);
+
+		//  TODO $locationKey
+		$locationKey = ''; // 一時的
+
+		switch($nc2Record['Nc2ReservationBlock']['display_type']) {
+			case 1:
+				// 月　施設別
+				$displayType = 3;
+				break;
+			case 2:
+				// 週　施設別
+				$displayType = 4;
+				break;
+			case 3 :
+				// 日　カテゴリ別
+				$displayType = 2;
+				break;
+		}
+
+		$data = [
+			'ReservationFrameSetting' => [
+				'frame_key' => $frameKey,
+				'display_type' => $displayType,
+				'location_key' => $locationKey,
+				'category_id' => $categoryId,
+				'display_timeframe' => $nc2Record['Nc2ReservationBlock']['display_timeframe'],
+				'display_start_time_type' => $displayStartTimeType,
+				'start_pos' => 0,
+				'display_count' => 0,
+				'is_myroom' => 0,
+				'is_select_room' => 0,
+				'room_id' => $roomId,
+				'timeline_base_time' => $timelineBaseTime,
+				'display_interval' => $nc2Record['Nc2ReservationBlock']['display_interval'],
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Record['Nc2ReservationBlock']),
+				'created' => $this->convertDate($nc2Record['Nc2ReservationBlock']['insert_time']),
+			],
+		];
+		return $data;
 	}
 
 	protected function _saveNc3ReservationTimeframeFromNc2($nc2Timeframes) {
