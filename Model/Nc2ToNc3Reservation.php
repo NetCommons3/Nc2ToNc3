@@ -58,7 +58,14 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Migration start.'));
 
-		// ためしにtimeframeを移行してみる。
+		if (!$this->_migrateReservation()) {
+			return false;
+		}
+
+		if (!$this->_migrateCategory()) {
+			return false;
+		}
+
 		$Nc2Timeframe = $this->getNc2Model('reservation_timeframe');
 		$nc2Timeframes = $Nc2Timeframe->find('all');
 		if (!$this->_saveNc3ReservationTimeframeFromNc2($nc2Timeframes)) {
@@ -66,10 +73,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		}
 
 		if (!$this->_migrateBlockToFrameSetting()) {
-			return false;
-		}
-
-		if (!$this->_migrateReservation()) {
 			return false;
 		}
 
@@ -152,6 +155,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			}
 			$Block->commit();
 		}
+		$this->_blockId = $data['Block']['id'];
+
 		$reservation = [
 			'Reservation' => [
 				'block_key' => $data['Block']['key']
@@ -166,6 +171,31 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$Reservation->commit();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Reservation end.'));
+		return true;
+	}
+
+	protected function _migrateCategory() {
+
+		$Reservation = ClassRegistry::init('Reservations.Reservation');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$block = $Block->findByPluginKey('reservations');
+
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		// カテゴリID1は「カテゴリなし」として使われてるので移行しない
+		$query['conditions'] = [
+			'category_id > ' => 1
+		];
+
+		$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('reservation_category', $query);
+
+		$data = $Reservation->find('first', []);
+		$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList, $block['Block']['id']);
+		$Reservation->save($data); // CategoryBehaviorを使ってカテゴリデータを保存する
+
+		if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $block['Block']['id'])) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -306,7 +336,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		//$roomIdList = $Nc2ToNc3Map->getMapIdList('Room');
 		//$roomId = $roomIdList[$nc2Record['Nc2ReservationBlock']['room_id']];
 		//$roomId = Hash::get($roomIdList, $nc2Record['Nc2ReservationBlock']['room_id'], $nc2Record['Nc2ReservationBlock']['room_id']);
-		// TODO ルーム1とかデフォルトのルームは移行してないのかな？
 		// $frameKey
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$frame = $Nc2ToNc3Frame->getMap($nc2Record['Nc2ReservationBlock']['block_id']);

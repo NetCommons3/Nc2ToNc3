@@ -78,9 +78,10 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
  * data[Categories][1][CategoriesLanguage][name]:カテゴリ０１
  *
  * @param array $nc2CategoryList Nc2Category list data with category_id as key and category_name as value.
+ * @param int $blockId ブロックID 指定したいときだけ
  * @return array Nc3Category data.
  */
-	public function generateNc3CategoryData($nc2CategoryList) {
+	public function generateNc3CategoryData($nc2CategoryList, $blockId = null) {
 		// CategoryBehaviorの処理に引っかかるので、idをnullでセットしとく
 		// Model::createで初期化した方が良いかも。
 		// @see https://github.com/NetCommons3/Categories/blob/3.1.0/Model/Behavior/CategoryBehavior.php#L49-L70
@@ -97,7 +98,7 @@ class Nc2ToNc3Category extends Nc2ToNc3AppModel {
 			$data[] = [
 				'Category' => [
 					'id' => null,
-					'block_id' => null,
+					'block_id' => $blockId,
 				],
 				'CategoryOrder' => [
 					'id' => null,
