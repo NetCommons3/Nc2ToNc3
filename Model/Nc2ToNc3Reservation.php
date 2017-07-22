@@ -78,6 +78,14 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		if (!$this->_migrateRrule()) {
+			return false;
+		}
+
+		if (!$this->_migrateEvent()) {
+			return false;
+		}
+
 		$Nc2Timeframe = $this->getNc2Model('reservation_timeframe');
 		$nc2Timeframes = $Nc2Timeframe->find('all');
 		if (!$this->_saveNc3ReservationTimeframeFromNc2($nc2Timeframes)) {
@@ -201,7 +209,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					continue;
 				}
 				$Nc3Model->create();
-				if (!$nc3Location = $Nc3Model->save($data)) {
+				if (!$Nc3Model->save($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Nc3Model->rollback();
 
@@ -249,8 +257,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			return [];
 		}
 
-		$Nc2LocationDetailModel = $this->getNc2Model('reservation_location_details');
-		$detail = $Nc2LocationDetailModel->findByLocationId($nc2Record['Nc2ReservationLocation']['location_id']);
+		$Nc2LocationDetail = $this->getNc2Model('reservation_location_details');
+		$detail = $Nc2LocationDetail->findByLocationId($nc2Record['Nc2ReservationLocation']['location_id']);
 
 		$Block = ClassRegistry::init('Blocks.Block');
 		$block = $Block->findByPluginKey('reservations');
@@ -373,12 +381,12 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		// データあるならINSERTしない
 		// なければデータ返す
-		$ReservationLocationsRoom = ClassRegistry::init('Reservations.ReservationLocationsRoom');
+		$LocationsRoom = ClassRegistry::init('Reservations.ReservationLocationsRoom');
 		$conditions = [
 			'ReservationLocationsRoom.reservation_location_key' => $nc3LocationKey,
 			'ReservationLocationsRoom.room_id' => $nc3RoomId
 		];
-		if ($ReservationLocationsRoom->find('count', ['conditions' => $conditions])){
+		if ($LocationsRoom->find('count', ['conditions' => $conditions])){
 			return [];
 		}
 		$data = [
@@ -393,6 +401,12 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		return $data;
 	}
 
+/**
+ * Migrate LocationReservable
+ *
+ * @return bool
+ * @throws Exception
+ */
 	protected function _migrateLocationReservable() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation LocationReservable start.'));
 
@@ -400,57 +414,19 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$nc2Records = $Nc2Model->find('all');
 
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
-		$LocationsRoom = ClassRegistry::init('Reservations.ReservationLocationsRoom');
 		$LocationsReservable = ClassRegistry::init('Reservations.ReservationLocationReservable');
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
+		//$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		//$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
 
-		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
 
 		foreach ($nc2Records as $nc2Record) {
 			$Nc3Model->begin();
 			try {
-				$data = [];
-				$location = $Nc3Model->findById($mapIdList[$nc2Record['Nc2ReservationLocation']['location_id']]);
-				$data['ReservationLocation'] = $location['ReservationLocation'];
-				$locationKey = $location['ReservationLocation']['key'];
+				$data = $this->_generateNc3LocationReservable($nc2Record);
 
-				$locationRooms = $LocationsRoom->find('all', ['conditions' => [
-					'ReservationLocationsRoom.reservation_location_key' => $locationKey
-				]]);
-				if ($locationRooms){
-					$roomIdList = Hash::combine($locationRooms,
-						'{n}.ReservationLocationsRoom.id', '{n}.ReservationLocationsRoom.id');
-					$data['ReservationLocationsRoom']['room_id'] = $roomIdList;
-				}
+				$locationKey = $data['ReservationLocation']['key'];
 
-				switch($nc2Record['Nc2ReservationLocation']['add_authority']){
-					case 4:
-						// NC2主担以上→Nc3ルーム管理者以上
-						$borderLine = 'room_administrator';
-						break;
-					case 3:
-						//NC2モデレータ以上→NC3編集者以上
-						$borderLine = 'editor';
-						break;
-					case 2:
-						// NC2一般以上→NC3一般以上
-						$borderLine = 'general_user';
-						break;
-				}
-
-				// Roleをレベル低い順に取得
-				$roomRoles = $RoomRole->find('all', ['order' => 'level ASC']);
-				$value = 0;
-				foreach($roomRoles as $roomRole){
-					$roleKey = $roomRole['RoomRole']['role_key'];
-					if ($roleKey == $borderLine) {
-						$value = 1;
-					}
-					$data['ReservationLocationReservable'][$roleKey]['value'] =
-						$value;
-				}
-				if (!$LocationsReservable->saveReservable($locationKey, $data)){
+				if (!$LocationsReservable->saveReservable($locationKey, $data)) {
 					$Nc3Model->rollback();
 					continue;
 				}
@@ -467,23 +443,304 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation LocationReservable end.'));
 		return true;
+	}
 
+/**
+ * Rruleの移行
+ *
+ * @return bool
+ * @throws Exception
+ */
+	protected function _migrateRrule() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Rrule start.'));
 
+		$Nc2Model = $this->getNc2Model('reservation_reserve_details');
+		$nc2Records = $Nc2Model->find('all');
 
-		$Location = ClassRegistry::init('Reservations.ReservationLocation');
-		$locations = $Location->find('all');
-		foreach ($locations as $location) {
+		$Nc3Model = ClassRegistry::init('Reservations.ReservationRrule');
+		foreach ($nc2Records as $nc2Record) {
+			$Nc3Model->begin();
+			try {
+				$data = $this->_generateNc3ReservationRrule($nc2Record);
+				if (!$data) {
+					$Nc3Model->rollback();
+					continue;
+				}
+				$Nc3Model->create();
+				if (!$Nc3Model->save($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$Nc3Model->rollback();
 
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Record) . "\n" .
+						var_export($Nc3Model->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Nc3Model->rollback();
+					continue;
+				}
+
+				$nc2Id = $nc2Record['Nc2ReservationReserveDetail']['reserve_details_id'];
+				$idMap = [
+					$nc2Id => $Nc3Model->id
+				];
+				$this->saveMap('ReservationRrule', $idMap);
+
+				$Nc3Model->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Nc3Model->rollback($ex);
+				throw $ex;
+			}
 		}
 
-		// TODO save LocationReservable
-		/* @var ReservationLocationReservable $locationReservable */
-		$locationReservable = ClassRegistry::init('Reservations.ReservationLocationReservable');
-		$reservable = $locationReservable->create();
-		$reservable['ReservationLocationReservable']['location_key'];
-		$reservable['ReservationLocationReservable']['role_key'];
-		$reservable['ReservationLocationReservable']['room_id'];
-		$locationReservable->saveReservable($locationKey, $reservable);
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Rrule end.'));
+		return true;
+	}
+
+/**
+ * NC2 reserve_details dataからNC3 rruelをかえす
+ *
+ * @param array $nc2Record NC2 reserve_details data
+ * @return array
+ */
+	protected function _generateNc3ReservationRrule($nc2Record) {
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationRrule', $nc2Record['Nc2ReservationReserveDetail']['reserve_details_id']);
+		if ($mapIdList){
+			// 移行済みなのでコンバートしない
+			return [];
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+
+		// reservationId
+		$Reservation = ClassRegistry::init('Reservations.Reservation');
+		$reservation = $Reservation->find('first');
+		$reservationId = $reservation['Reservation']['id'];
+
+		// ireservation_uid
+		$Nc2ReservationReserve = $this->getNc2Model('reservation_reserve');
+		$reserve = $Nc2ReservationReserve->find('first', [
+			'conditions' => [
+				'reserve_details_id' => $nc2Record['Nc2ReservationReserveDetail']['reserve_details_id'],
+			],
+			'order' => 'reserve_id ASC'
+		]);
+
+		$ireservationUid = ReservationRruleUtil::generateIcalUid(
+			$reserve['Nc2ReservationReserve']['start_date'],
+			$reserve['Nc2ReservationReserve']['start_time']);
+
+		// roomId
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		if ($nc2Record['Nc2ReservationReserveDetail']['room_id'] > 0) {
+			$room = $Nc2ToNc3Room->getMap($nc2Record['Nc2ReservationReserveDetail']['room_id']);
+			$roomId = $room['Room']['id'];
+		} else {
+			$roomId = 1; // 無指定はパブリック扱いにしておく
+		}
+
+		$data = [
+			'ReservationRrule' => [
+				'reservation_id' => $reservationId,
+				'name' => '',
+				'rrule' => $nc2Record['Nc2ReservationReserveDetail']['rrule'],
+				'ireservation_uid' => $ireservationUid,
+				'ireservation_comp_name' => 'reservations',
+				'room_id' => $roomId,
+				'created_user' => $Nc2ToNc3User->getCreatedUser($reserve['Nc2ReservationReserve']),
+				'created' => $this->convertDate($reserve['Nc2ReservationReserve']['insert_time']),
+			]
+		];
+		return $data;
+	}
+
+
+/**
+ * 予約の移行
+ *
+ * @return bool
+ * @throws Exception
+ */
+	protected function _migrateEvent() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Event start.'));
+
+		$Nc2Model = $this->getNc2Model('reservation_reserve');
+		$nc2Records = $Nc2Model->find('all');
+
+		$Nc3Model = ClassRegistry::init('Reservations.ReservationEvent');
+		foreach ($nc2Records as $nc2Record) {
+			$Nc3Model->begin();
+			try {
+				$data = $this->_generateNc3ReservationEvent($nc2Record);
+				if (!$data) {
+					$Nc3Model->rollback();
+					continue;
+				}
+				$Nc3Model->create();
+				if (!$Nc3Model->save($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$Nc3Model->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Record) . "\n" .
+						var_export($Nc3Model->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Nc3Model->rollback();
+					continue;
+				}
+
+				$nc2Id = $nc2Record['Nc2ReservationReserve']['reserve_id'];
+				$idMap = [
+					$nc2Id => $Nc3Model->id
+				];
+				$this->saveMap('ReservationEvent', $idMap);
+
+				$Nc3Model->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Nc3Model->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Event end.'));
+		return true;
+	}
+
+/**
+ * NC2 reserve dataからNC3 eventを返す
+ *
+ * @param array $nc2Record NC2 reserve data
+ * @return array
+ */
+	protected function _generateNc3ReservationEvent($nc2Record) {
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationEvent', $nc2Record['Nc2ReservationReserve']['reserve_id']);
+		if ($mapIdList){
+			// 移行済みなのでコンバートしない
+			return [];
+		}
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+
+		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
+
+		// location_key
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
+		$location = $Nc3Model->findById(
+			$mapIdList[$nc2Record['Nc2ReservationReserve']['location_id']]
+		);
+		$locationKey = $location['ReservationLocation']['key'];
+
+		// room_id
+		if ($nc2Record['Nc2ReservationReserve']['room_id'] > 0){
+			$room = $Nc2ToNc3Room->getMap($nc2Record['Nc2ReservationReserve']['room_id']);
+			$roomId = $room['Room']['id'];
+		} else {
+			$roomId = 1; // ルーム無指定ならパブリックルームにする
+		}
+
+
+		// target_user
+		$targetUser = $Nc2ToNc3User->getMap($nc2Record['Nc2ReservationReserve']['user_id']);
+
+		// contact, description
+		$Nc2ReserveDetail = $this->getNc2Model('reservation_reserve_details');
+		$nc2Detail = $Nc2ReserveDetail->find('first', [
+			'conditions' => [
+				'reserve_details_id' => $nc2Record['Nc2ReservationReserve']['reserve_details_id']
+			]
+		]);
+		$contact = $nc2Detail['Nc2ReservationReserveDetail']['contact'];
+		$description = $nc2Detail['Nc2ReservationReserveDetail']['description'];
+
+		//$rrule = $nc2Detail['Nc2ReservationReserveDetail']['rrule'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationRrule', $nc2Detail['Nc2ReservationReserveDetail']['reserve_details_id']);
+		$rruleId = $mapIdList[$nc2Detail['Nc2ReservationReserveDetail']['reserve_details_id']];
+
+		$data = [
+			'ReservationEvent' => [
+				'reservation_rrule_id' => $rruleId,
+				'room_id' => $roomId,
+				'language_id' => $this->getLanguageIdFromNc2(),
+				'target_user' => $targetUser['User']['id'],
+				'title' => $nc2Record['Nc2ReservationReserve']['title'],
+				'title_icon' => '', // TODO
+				'location' => '',
+				'contact' => $contact,
+				'description' => $description,
+				'is_allday' => $nc2Record['Nc2ReservationReserve']['allday_flag'],
+				'start_date' => $nc2Record['Nc2ReservationReserve']['start_date'],
+				'start_time' => $nc2Record['Nc2ReservationReserve']['start_time'],
+				'dtstart' => $nc2Record['Nc2ReservationReserve']['start_time_full'],
+				'end_date' => $nc2Record['Nc2ReservationReserve']['end_date'],
+				'end_time' => $nc2Record['Nc2ReservationReserve']['end_time'],
+				'dtend' => $nc2Record['Nc2ReservationReserve']['end_time_full'],
+				'timezone' => $this->convertTimezone($nc2Record['Nc2ReservationReserve']['timezone_offset']),
+				'location_key' => $locationKey,
+				'status' => WorkflowComponent::STATUS_PUBLISHED,
+				'is_active' => 1,
+				'is_latest' => 1,
+				'recurrence_event_id' => 0,
+				'exception_event_id' => 0,
+				'is_enable_mail' => 0,
+				'email_send_timing' => 5,
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Record['Nc2ReservationReserve']),
+				'created' => $this->convertDate($nc2Record['Nc2ReservationReserve']['insert_time']),
+			]
+		];
+		return $data;
+
+		//$Nc2LocationDetail = $this->getNc2Model('reservation_location_details');
+		//$detail = $Nc2LocationDetail->findByLocationId($nc2Record['Nc2ReservationLocation']['location_id']);
+		//
+		//$Block = ClassRegistry::init('Blocks.Block');
+		//$block = $Block->findByPluginKey('reservations');
+		//
+		//$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		//$categoryId = $Nc2ToNc3Category->getNc3CategoryId($block['Block']['id'], $nc2Record['Nc2ReservationLocation']['category_id']);
+		//if ($categoryId == 0) {
+		//	$categoryId = null;
+		//}
+		//
+		//
+		//$data = [
+		//	'ReservationLocation' => [
+		//		'language_id' => $this->getLanguageIdFromNc2(),
+		//		'category_id' => $categoryId,
+		//		'location_name' => $nc2Record['Nc2ReservationLocation']['location_name'],
+		//		'detail' => $detail['Nc2ReservationLocationDetail']['description'],
+		//		'add_authority' => 0, // NC3では未使用
+		//		'time_table' => $this->_convertTimeTable($nc2Record['Nc2ReservationLocation']['time_table']),
+		//		'start_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['start_time']),
+		//		'end_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['end_time']),
+		//		'timezone' => $this->convertTimezone($nc2Record['Nc2ReservationLocation']['timezone_offset']),
+		//		'use_private' => $nc2Record['Nc2ReservationLocation']['use_private_flag'],
+		//		'use_auth_flag' => $nc2Record['Nc2ReservationLocation']['use_auth_flag'],
+		//		'use_all_rooms' => $nc2Record['Nc2ReservationLocation']['allroom_flag'],
+		//		'use_workflow' => 0, //使わない
+		//		'weight' => $nc2Record['Nc2ReservationLocation']['display_sequence'],
+		//		'contact' => $detail['Nc2ReservationLocationDetail']['contact'],
+		//
+		//		'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Record['Nc2ReservationLocation']),
+		//		'created' => $this->convertDate($nc2Record['Nc2ReservationLocation']['insert_time']),
+		//	],
+		//];
+		return $data;
 
 	}
 
@@ -877,5 +1134,73 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', '|'
 		];
 		return str_replace($nc2Table, $nc3Table, $timeTable);
+	}
+
+/**
+ * generate LocationReservable data
+ *
+ * @param array $nc2Record nc2location data
+ * @return array
+ */
+	protected function _generateNc3LocationReservable($nc2Record) {
+		$LocationsRoom = ClassRegistry::init('Reservations.ReservationLocationsRoom');
+		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
+
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
+
+		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
+
+		$data = [];
+		$location = $Nc3Model->findById(
+			$mapIdList[$nc2Record['Nc2ReservationLocation']['location_id']]
+		);
+		$data['ReservationLocation'] = $location['ReservationLocation'];
+		$locationKey = $location['ReservationLocation']['key'];
+
+		$locationRooms = $LocationsRoom->find(
+			'all',
+			[
+				'conditions' => [
+					'ReservationLocationsRoom.reservation_location_key' => $locationKey
+				]
+			]
+		);
+		if ($locationRooms) {
+			$roomIdList = Hash::combine(
+				$locationRooms,
+				'{n}.ReservationLocationsRoom.id',
+				'{n}.ReservationLocationsRoom.id'
+			);
+			$data['ReservationLocationsRoom']['room_id'] = $roomIdList;
+		}
+
+		switch ($nc2Record['Nc2ReservationLocation']['add_authority']) {
+			case 4:
+				// NC2主担以上→Nc3ルーム管理者以上
+				$borderLine = 'room_administrator';
+				break;
+			case 3:
+				//NC2モデレータ以上→NC3編集者以上
+				$borderLine = 'editor';
+				break;
+			case 2:
+				// NC2一般以上→NC3一般以上
+				$borderLine = 'general_user';
+				break;
+		}
+
+		// Roleをレベル低い順に取得
+		$roomRoles = $RoomRole->find('all', ['order' => 'level ASC']);
+		$value = 0;
+		foreach ($roomRoles as $roomRole) {
+			$roleKey = $roomRole['RoomRole']['role_key'];
+			if ($roleKey == $borderLine) {
+				$value = 1;
+			}
+			$data['ReservationLocationReservable'][$roleKey]['value'] =
+				$value;
+		}
+		return $data;
 	}
 }
