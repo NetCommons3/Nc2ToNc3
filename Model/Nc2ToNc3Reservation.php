@@ -461,9 +461,21 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$categoryId = $Nc2ToNc3Category->getNc3CategoryId(
 			$frame['Frame']['block_id'],
 			$nc2Record['Nc2ReservationBlock']['category_id']);
+		if ($categoryId == 0) {
+			$categoryId = null;
+		}
 
-		//  TODO $locationKey
+
+		//   $locationKey
 		$locationKey = ''; // 一時的
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation', $nc2Record['Nc2ReservationBlock']['location_id']);
+		if ($mapIdList) {
+			//  location取得してkeyをセットする
+			$ReservationLocation = ClassRegistry::init('Reservations.ReservationLocation');
+			$locationId = $mapIdList[$nc2Record['Nc2ReservationBlock']['location_id']];
+			$location = $ReservationLocation->findById($locationId);
+			$locationKey = $location['ReservationLocation']['key'];
+		}
 
 		switch($nc2Record['Nc2ReservationBlock']['display_type']) {
 			case 1:
