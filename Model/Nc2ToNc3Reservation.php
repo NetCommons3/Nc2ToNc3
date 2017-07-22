@@ -66,6 +66,10 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		if (!$this->_migrateLocation()) {
+			return false;
+		}
+
 		$Nc2Timeframe = $this->getNc2Model('reservation_timeframe');
 		$nc2Timeframes = $Nc2Timeframe->find('all');
 		if (!$this->_saveNc3ReservationTimeframeFromNc2($nc2Timeframes)) {
@@ -174,8 +178,12 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		return true;
 	}
 
+/**
+ * 施設カテゴリの移行
+ *
+ * @return bool
+ */
 	protected function _migrateCategory() {
-
 		$Reservation = ClassRegistry::init('Reservations.Reservation');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$block = $Block->findByPluginKey('reservations');
@@ -190,6 +198,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$data = $Reservation->find('first', []);
 		$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList, $block['Block']['id']);
+		$data['Block'] = $block['Block']; //これがないと2回目の移行でカテゴリ削除がされない
 		$Reservation->save($data); // CategoryBehaviorを使ってカテゴリデータを保存する
 
 		if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $block['Block']['id'])) {
@@ -197,6 +206,109 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		}
 
 		return true;
+	}
+
+/**
+ * 施設の移行
+ *
+ * @return bool
+ */
+	protected function _migrateLocation() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Location start.'));
+
+
+		$Nc2Model = $this->getNc2Model('reservation_location');
+		$nc2Records = $Nc2Model->find('all');
+
+		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
+		foreach ($nc2Records as $nc2Record) {
+			$Nc3Model->begin();
+			try {
+				$data = $this->_generateNc3ReservationLocation($nc2Record);
+				if (!$data) {
+					$Nc3Model->rollback();
+					continue;
+				}
+				$Nc3Model->create();
+				if (!$Nc3Model->save($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$Nc3Model->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Record) . "\n" .
+						var_export($Nc3Model->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Nc3Model->rollback();
+					continue;
+				}
+				// TODO　権限セットしてたらここで解除
+				$nc2Id = $nc2Record['Nc2ReservationLocation']['location_id'];
+				$idMap = [
+					$nc2Id => $Nc3Model->id
+				];
+				$this->saveMap('ReservationLocation', $idMap);
+
+				$Nc3Model->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Nc3Model->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		return true;
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Location end.'));
+
+	}
+
+	protected function _generateNc3ReservationLocation($nc2Record) {
+
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation', $nc2Record['Nc2ReservationLocation']['location_id']);
+		if ($mapIdList){
+			// 移行済みなのでコンバートしない
+			return [];
+		}
+
+		$Nc2LocationDetailModel = $this->getNc2Model('reservation_location_details');
+		$detail = $Nc2LocationDetailModel->findByLocationId($nc2Record['Nc2ReservationLocation']['location_id']);
+
+		$Block = ClassRegistry::init('Blocks.Block');
+		$block = $Block->findByPluginKey('reservations');
+
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		$categoryId = $Nc2ToNc3Category->getNc3CategoryId($block['Block']['id'], $nc2Record['Nc2ReservationLocation']['category_id']);
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+
+		$data = [
+			'ReservationLocation' => [
+				'language_id' => $this->getLanguageIdFromNc2(),
+				'category_id' => $categoryId,
+				'location_name' => $nc2Record['Nc2ReservationLocation']['location_name'],
+				'detail' => $detail['Nc2ReservationLocationDetail']['description'],
+				'add_authority' => 0, // NC3では未使用
+				'time_table' => $this->_convertTimeTable($nc2Record['Nc2ReservationLocation']['time_table']),
+				'start_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['start_time']),
+				'end_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['end_time']),
+				'timezone' => $this->convertTimezone($nc2Record['Nc2ReservationLocation']['timezone_offset']),
+				'use_private' => $nc2Record['Nc2ReservationLocation']['use_private_flag'],
+				'use_auth_flag' => $nc2Record['Nc2ReservationLocation']['use_auth_flag'],
+				'use_all_rooms' => $nc2Record['Nc2ReservationLocation']['allroom_flag'],
+				'use_workflow' => 0, //使わない
+				'weight' => $nc2Record['Nc2ReservationLocation']['display_sequence'],
+				'contact' => $detail['Nc2ReservationLocationDetail']['contact'],
+
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Record['Nc2ReservationLocation']),
+				'created' => $this->convertDate($nc2Record['Nc2ReservationLocation']['insert_time']),
+			],
+		];
+		return $data;
+
 	}
 
 	protected function _migrateBlockToFrameSetting() {
@@ -491,73 +603,9 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			return [];
 		}
 
-		//$nc3BlogIds = $Nc2ToNc3Map->getMapIdList('Blog', $nc2Timeframe['Nc2ReservationTimeframe']['journal_id']);
-		//if (!$nc3BlogIds) {
-		//	return [];
-		//}
-		//$nc3BlogId = $nc3BlogIds[$nc2Timeframe['Nc2ReservationTimeframe']['journal_id']];
-		//
-		//$Blog = ClassRegistry::init('Blogs.Blog');
-		//$Block = ClassRegistry::init('Blocks.Block');
-		//$nc3Blog = $Blog->findById($nc3BlogId, null, null, -1);
-		//$Blocks = $Block->findById($nc3Blog['Blog']['block_id'], null, null, -1);
-		//$nc3BlockKey = $Blocks['Block']['key'];
-
-		//'status' に入れる値の場合分け処理
-		//if ($nc2Timeframe['Nc2ReservationTimeframe']['status'] == '0' && $nc2Timeframe['Nc2ReservationTimeframe']['agree_flag'] == '0') {
-		//	$nc3Status = '1';
-		//	$nc3IsActive = '1';
-		//} elseif ($nc2Timeframe['Nc2ReservationTimeframe']['agree_flag'] == '1') {
-		//	$nc3Status = '2';
-		//	$nc3IsActive = '0';
-		//} elseif ($nc2Timeframe['Nc2ReservationTimeframe']['status'] != '0') {
-		//	$nc3Status = '3';
-		//	$nc3IsActive = '0';
-		//}
-
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 
-		/*
-		 *
-		 * CREATE TABLE `netcommons2_reservation_timeframe` (
-  `timeframe_id` int(11) unsigned NOT NULL,
-  `timeframe_name` varchar(255) NOT NULL DEFAULT '',
-  `start_time` varchar(14) NOT NULL DEFAULT '',
-  `end_time` varchar(14) NOT NULL DEFAULT '',
-  `timezone_offset` float(3,1) NOT NULL DEFAULT '0.0',
-  `timeframe_color` varchar(16) NOT NULL DEFAULT '',
-  `insert_time` varchar(14) NOT NULL DEFAULT '',
-  `insert_site_id` varchar(40) NOT NULL DEFAULT '',
-  `insert_user_id` varchar(40) NOT NULL DEFAULT '',
-  `insert_user_name` varchar(255) NOT NULL DEFAULT '',
-  `update_time` varchar(14) NOT NULL DEFAULT '',
-  `update_site_id` varchar(40) NOT NULL DEFAULT '',
-  `update_user_id` varchar(40) NOT NULL DEFAULT '',
-  `update_user_name` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`timeframe_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
-
- * CREATE TABLE `reservation_timeframes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `key` varchar(255) NOT NULL,
-  `language_id` int(11) NOT NULL,
-  `is_translation` tinyint(1) NOT NULL DEFAULT '0' COMMENT '翻訳したかどうか',
-  `is_origin` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'オリジナルかどうか',
-  `is_original_copy` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'オリジナルのコピー。言語を新たに追加したときに使用する',
-  `title` varchar(255) NOT NULL,
-  `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
-  `timezone` varchar(255) NOT NULL,
-  `color` varchar(16) NOT NULL,
-  `created_user` int(11) DEFAULT NULL,
-  `created` datetime DEFAULT NULL,
-  `modified_user` int(11) DEFAULT NULL,
-  `modified` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
- */
 		$data = [
 			'ReservationTimeframe' => [
 				'language_id' => $this->getLanguageIdFromNc2(), // TODO 言語はどこから取得するのが正しい?
@@ -597,6 +645,20 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$hour = substr($time, 0, 2);
 		$min = substr($time, 2, 2);
 		return $hour . ':' . $min;
+	}
+
+	protected function _convertLocationTime($time) {
+		return date('Y-m-d H:i:s', strtotime($time));
+	}
+
+	protected function _convertTimeTable($timeTable) {
+		$nc2Table = [
+			'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', ','
+		];
+		$nc3Table = [
+			'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', '|'
+		];
+		return str_replace($nc2Table, $nc3Table, $timeTable);
 	}
 
 /**
