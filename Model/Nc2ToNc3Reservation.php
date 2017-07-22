@@ -281,6 +281,9 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 		$categoryId = $Nc2ToNc3Category->getNc3CategoryId($block['Block']['id'], $nc2Record['Nc2ReservationLocation']['category_id']);
+		if ($categoryId == 0) {
+			$categoryId = null;
+		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
