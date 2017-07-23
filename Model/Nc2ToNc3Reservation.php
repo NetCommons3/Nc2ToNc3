@@ -146,7 +146,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		];
 		$Reservation->create();
 		$Reservation->begin();
-		if (!$Reservation->save($reservation)){
+		if (!$Reservation->save($reservation)) {
 			$Reservation->rollback();
 			return false;
 		}
@@ -194,7 +194,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  */
 	protected function _migrateLocation() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation Location start.'));
-
 
 		$Nc2Model = $this->getNc2Model('reservation_location');
 		$nc2Records = $Nc2Model->find('all');
@@ -249,10 +248,9 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @return array
  */
 	protected function _generateNc3ReservationLocation($nc2Record) {
-
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation', $nc2Record['Nc2ReservationLocation']['location_id']);
-		if ($mapIdList){
+		if ($mapIdList) {
 			// 移行済みなのでコンバートしない
 			return [];
 		}
@@ -295,7 +293,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			],
 		];
 		return $data;
-
 	}
 
 /**
@@ -306,7 +303,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  */
 	protected function _migrateLocationsRoom() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation LocationsRoom start.'));
-
 
 		$Nc2Model = $this->getNc2Model('reservation_location_rooms');
 		$nc2Records = $Nc2Model->find('all');
@@ -325,7 +321,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Nc3Model->rollback();
 
-					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Record) . "\n" .
 						var_export($Nc3Model->validationErrors, true);
@@ -335,11 +330,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				}
 
 				// 関連テーブルなのでマッピングレコード不要
-				//$nc2Id = $nc2Record['Nc2ReservationLocationRoom']['location_id'];
-				//$idMap = [
-				//	$nc2Id => $Nc3Model->id
-				//];
-				//$this->saveMap('ReservationLocation', $idMap);
 
 				$Nc3Model->commit();
 
@@ -386,7 +376,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			'ReservationLocationsRoom.reservation_location_key' => $nc3LocationKey,
 			'ReservationLocationsRoom.room_id' => $nc3RoomId
 		];
-		if ($LocationsRoom->find('count', ['conditions' => $conditions])){
+		if ($LocationsRoom->find('count', ['conditions' => $conditions])) {
 			return [];
 		}
 		$data = [
@@ -415,9 +405,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
 		$LocationsReservable = ClassRegistry::init('Reservations.ReservationLocationReservable');
-		//$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		//$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
-
 
 		foreach ($nc2Records as $nc2Record) {
 			$Nc3Model->begin();
@@ -434,8 +421,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				$Nc3Model->commit();
 
 			} catch (Exception $ex) {
-				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$Nc3Model->rollback($ex);
 				throw $ex;
 			}
@@ -489,8 +474,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				$Nc3Model->commit();
 
 			} catch (Exception $ex) {
-				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$Nc3Model->rollback($ex);
 				throw $ex;
 			}
@@ -509,7 +492,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 	protected function _generateNc3ReservationRrule($nc2Record) {
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationRrule', $nc2Record['Nc2ReservationReserveDetail']['reserve_details_id']);
-		if ($mapIdList){
+		if ($mapIdList) {
 			// 移行済みなのでコンバートしない
 			return [];
 		}
@@ -524,8 +507,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$reservationId = $reservation['Reservation']['id'];
 
 		// ireservation_uid
-		$Nc2ReservationReserve = $this->getNc2Model('reservation_reserve');
-		$reserve = $Nc2ReservationReserve->find('first', [
+		$Nc2Reserve = $this->getNc2Model('reservation_reserve');
+		$reserve = $Nc2Reserve->find('first', [
 			'conditions' => [
 				'reserve_details_id' => $nc2Record['Nc2ReservationReserveDetail']['reserve_details_id'],
 			],
@@ -543,7 +526,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			$room = $Nc2ToNc3Room->getMap($nc2Record['Nc2ReservationReserveDetail']['room_id']);
 			$roomId = $room['Room']['id'];
 		} else {
-			$roomId = 1; // 無指定はパブリック扱いにしておく
+			//$roomId = 1; // 無指定はパブリック扱いにしておく
+			$roomId = 0; // 無指定
 		}
 
 		$data = [
@@ -560,7 +544,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		];
 		return $data;
 	}
-
 
 /**
  * 予約の移行
@@ -588,8 +571,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Nc3Model->rollback();
 
-					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
-					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2Record) . "\n" .
 						var_export($Nc3Model->validationErrors, true);
 					$this->writeMigrationLog($message);
@@ -626,7 +607,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 	protected function _generateNc3ReservationEvent($nc2Record) {
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationEvent', $nc2Record['Nc2ReservationReserve']['reserve_id']);
-		if ($mapIdList){
+		if ($mapIdList) {
 			// 移行済みなのでコンバートしない
 			return [];
 		}
@@ -647,13 +628,13 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$locationKey = $location['ReservationLocation']['key'];
 
 		// room_id
-		if ($nc2Record['Nc2ReservationReserve']['room_id'] > 0){
+		if ($nc2Record['Nc2ReservationReserve']['room_id'] > 0) {
 			$room = $Nc2ToNc3Room->getMap($nc2Record['Nc2ReservationReserve']['room_id']);
 			$roomId = $room['Room']['id'];
 		} else {
-			$roomId = 1; // ルーム無指定ならパブリックルームにする
+			//$roomId = 1; // ルーム無指定ならパブリックルームにする
+			$roomId = 0; // ルーム無指定
 		}
-
 
 		// target_user
 		$targetUser = $Nc2ToNc3User->getMap($nc2Record['Nc2ReservationReserve']['user_id']);
@@ -704,44 +685,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			]
 		];
 		return $data;
-
-		//$Nc2LocationDetail = $this->getNc2Model('reservation_location_details');
-		//$detail = $Nc2LocationDetail->findByLocationId($nc2Record['Nc2ReservationLocation']['location_id']);
-		//
-		//$Block = ClassRegistry::init('Blocks.Block');
-		//$block = $Block->findByPluginKey('reservations');
-		//
-		//$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
-		//$categoryId = $Nc2ToNc3Category->getNc3CategoryId($block['Block']['id'], $nc2Record['Nc2ReservationLocation']['category_id']);
-		//if ($categoryId == 0) {
-		//	$categoryId = null;
-		//}
-		//
-		//
-		//$data = [
-		//	'ReservationLocation' => [
-		//		'language_id' => $this->getLanguageIdFromNc2(),
-		//		'category_id' => $categoryId,
-		//		'location_name' => $nc2Record['Nc2ReservationLocation']['location_name'],
-		//		'detail' => $detail['Nc2ReservationLocationDetail']['description'],
-		//		'add_authority' => 0, // NC3では未使用
-		//		'time_table' => $this->_convertTimeTable($nc2Record['Nc2ReservationLocation']['time_table']),
-		//		'start_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['start_time']),
-		//		'end_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['end_time']),
-		//		'timezone' => $this->convertTimezone($nc2Record['Nc2ReservationLocation']['timezone_offset']),
-		//		'use_private' => $nc2Record['Nc2ReservationLocation']['use_private_flag'],
-		//		'use_auth_flag' => $nc2Record['Nc2ReservationLocation']['use_auth_flag'],
-		//		'use_all_rooms' => $nc2Record['Nc2ReservationLocation']['allroom_flag'],
-		//		'use_workflow' => 0, //使わない
-		//		'weight' => $nc2Record['Nc2ReservationLocation']['display_sequence'],
-		//		'contact' => $detail['Nc2ReservationLocationDetail']['contact'],
-		//
-		//		'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Record['Nc2ReservationLocation']),
-		//		'created' => $this->convertDate($nc2Record['Nc2ReservationLocation']['insert_time']),
-		//	],
-		//];
-		return $data;
-
 	}
 
 /**
@@ -770,22 +713,10 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @throws Exception
  */
 	protected function _saveNc3ReservationFrameSettingFromNc2($nc2Records) {
-
 		/* @var $Nc3Model ReservationFrameSetting */
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationFrameSetting');
 
 		Current::write('Plugin.key', 'reservations');
-
-		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
-		//$Blog->Behaviors->Block->settings['nameHtml'] = false;
-
-		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
-		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
-		//$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
-
-		//$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
-		//$Block = ClassRegistry::init('Blocks.Block');
-		//$Topic = ClassRegistry::init('Topics.Topic');
 
 		foreach ($nc2Records as $nc2Record) {
 			$Nc3Model->begin();
@@ -795,24 +726,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					$Nc3Model->rollback();
 					continue;
 				}
-				//$query['conditions'] = [
-				//	'journal_id' => $nc2Journal['Nc2Journal']['journal_id']
-				//];
-				//$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('journal_category', $query);
-				//$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
-				//
-				//// いる？
-				//$nc3RoomId = $data['Block']['room_id'];
-				//Current::write('Room.id', $nc3RoomId);
-				//  権限セット必要だったらやる
-				//CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
-
-				//$BlocksLanguage->create();
 				$Nc3Model->create();
-				//$Block->create();
-				//$Topic->create();
 
-				//if (!$Timeframe->saveTimeframe($data)) {
 				if (!$Nc3Model->save($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Nc3Model->rollback();
@@ -834,17 +749,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				];
 				$this->saveMap('ReservationFrameSetting', $idMap);
 
-				// これはブログのカテゴリ移行か
-				//$nc3Blog = $Blog->findById($Blog->id, 'block_id', null, -1);
-				//if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Blog['Blog']['block_id'])) {
-				//	// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
-				//	// @see https://phpmd.org/rules/design.html
-				//	$message = $this->getLogArgument($nc2Journal);
-				//	$this->writeMigrationLog($message);
-				//	$Blog->rollback();
-				//	continue;
-				//}
-
 				$Nc3Model->commit();
 
 			} catch (Exception $ex) {
@@ -854,9 +758,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				throw $ex;
 			}
 		}
-
-		//Current::remove('Room.id');
-		//Current::remove('Plugin.key');
 
 		return true;
 	}
@@ -868,7 +769,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @return array
  */
 	protected function _generateNc3ReservationFrameSetting($nc2Record) {
-
 		$nc2Id = $nc2Record['Nc2ReservationBlock']['block_id'];
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationFrameSetting', $nc2Id);
@@ -889,17 +789,14 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			// 開始時刻固定
 			$displayStartTimeType = 1; // 固定
 			// NC2は0800 形式だがNC3は数値（8時なら 8)
-			$timelineBaseTime = (int) substr($nc2Record['Nc2ReservationBlock']['display_start_time'], 0, 2);
+			$timelineBaseTime = (int)substr($nc2Record['Nc2ReservationBlock']['display_start_time'], 0, 2);
 		}
 
 		// $roomId
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$room = $Nc2ToNc3Room->getMap($nc2Record['Nc2ReservationBlock']['room_id']);
 		$roomId = $room['Room']['id'];
-		//$roomIdList = $Nc2ToNc3Map->getMapIdList('Room');
-		//$roomId = $roomIdList[$nc2Record['Nc2ReservationBlock']['room_id']];
-		//$roomId = Hash::get($roomIdList, $nc2Record['Nc2ReservationBlock']['room_id'], $nc2Record['Nc2ReservationBlock']['room_id']);
-		// $frameKey
+
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$frame = $Nc2ToNc3Frame->getMap($nc2Record['Nc2ReservationBlock']['block_id']);
 		$frameKey = $frame['Frame']['key'];
@@ -977,17 +874,6 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		Current::write('Plugin.key', 'reservations');
 
-		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
-		//$Blog->Behaviors->Block->settings['nameHtml'] = false;
-
-		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
-		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
-		//$Blog->Behaviors->Block->settings = $Blog->actsAs['Blocks.Block'];
-
-		//$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
-		//$Block = ClassRegistry::init('Blocks.Block');
-		//$Topic = ClassRegistry::init('Topics.Topic');
-
 		foreach ($nc2Timeframes as $nc2Timeframe) {
 			$Timeframe->begin();
 			try {
@@ -996,24 +882,9 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					$Timeframe->rollback();
 					continue;
 				}
-				//$query['conditions'] = [
-				//	'journal_id' => $nc2Journal['Nc2Journal']['journal_id']
-				//];
-				//$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('journal_category', $query);
-				//$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
-				//
-				//// いる？
-				//$nc3RoomId = $data['Block']['room_id'];
-				//Current::write('Room.id', $nc3RoomId);
-				//  権限セット必要だったらやる
-				//CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
-				//$BlocksLanguage->create();
 				$Timeframe->create();
-				//$Block->create();
-				//$Topic->create();
 
-				//if (!$Timeframe->saveTimeframe($data)) {
 				if (!$Timeframe->save($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Timeframe->rollback();
@@ -1035,29 +906,13 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				];
 				$this->saveMap('ReservationTimeframe', $idMap);
 
-				// これはブログのカテゴリ移行か
-				//$nc3Blog = $Blog->findById($Blog->id, 'block_id', null, -1);
-				//if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Blog['Blog']['block_id'])) {
-				//	// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
-				//	// @see https://phpmd.org/rules/design.html
-				//	$message = $this->getLogArgument($nc2Journal);
-				//	$this->writeMigrationLog($message);
-				//	$Blog->rollback();
-				//	continue;
-				//}
-
 				$Timeframe->commit();
 
 			} catch (Exception $ex) {
-				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$Timeframe->rollback($ex);
 				throw $ex;
 			}
 		}
-
-		//Current::remove('Room.id');
-		//Current::remove('Plugin.key');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  ReservationTimeframe data Migration end.'));
 		return true;
@@ -1083,11 +938,11 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$data = [
 			'ReservationTimeframe' => [
-				'language_id' => $this->getLanguageIdFromNc2(), // TODO 言語はどこから取得するのが正しい?
+				'language_id' => $this->getLanguageIdFromNc2(),
 				'title' => $nc2Timeframe['Nc2ReservationTimeframe']['timeframe_name'],
-				'start_time' => $this->_convertTimeframeTime( $nc2Timeframe['Nc2ReservationTimeframe']['start_time']),//
+				'start_time' => $this->_convertTimeframeTime( $nc2Timeframe['Nc2ReservationTimeframe']['start_time']),
 				// 150000形式からTIME形式→そのままでも入るので変換不要
-				'end_time' => $this->_convertTimeframeTime($nc2Timeframe['Nc2ReservationTimeframe']['end_time']) ,//
+				'end_time' => $this->_convertTimeframeTime($nc2Timeframe['Nc2ReservationTimeframe']['end_time']),
 				'timezone' => $this->convertTimezone($nc2Timeframe['Nc2ReservationTimeframe']['timezone_offset']),
 				'color' => $nc2Timeframe['Nc2ReservationTimeframe']['timeframe_color'],
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Timeframe['Nc2ReservationTimeframe']),
@@ -1104,7 +959,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @param string $time 150000形式
  * @return string
  */
-	protected function _convertTimeframeTime($time){
+	protected function _convertTimeframeTime($time) {
 		$hour = substr($time, 0, 2);
 		$min = substr($time, 2, 2);
 		return $hour . ':' . $min;
