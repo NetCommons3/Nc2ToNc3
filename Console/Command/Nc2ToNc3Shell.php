@@ -26,11 +26,76 @@ class Nc2ToNc3Shell extends AppShell {
 	public $uses = ['Users.User'];
 
 /**
+ * 事前準備
+ *
+ * @return void
+ */
+	protected function _prepare() {
+		if (! array_key_exists('database', $this->params)) {
+			$this->params['database'] = $this->in(
+				__d('nc2_to_nc3', 'Enter database name of nc2?')
+			);
+		}
+		if (! array_key_exists('prefix', $this->params)) {
+			$this->params['prefix'] = $this->in(
+				__d('nc2_to_nc3', 'Enter table prefix name of nc2?')
+			);
+		}
+		if (substr($this->params['prefix'], -1, 1) !== '_') {
+			$this->params['prefix'] .= '_';
+		}
+		//if (! array_key_exists('host', $this->params)) {
+		//	$this->params['host'] = $this->in(
+		//		__d('nc2_to_nc3', 'Enter database host name of nc2?')
+		//	);
+		//}
+		//if (! array_key_exists('port', $this->params)) {
+		//	$this->params['port'] = $this->in(
+		//		__d('nc2_to_nc3', 'Enter database port of nc2?')
+		//	);
+		//}
+		//if (! array_key_exists('login', $this->params)) {
+		//	$this->params['login'] = $this->in(
+		//		__d('nc2_to_nc3', 'Enter database login user of nc2?')
+		//	);
+		//}
+		//if (! array_key_exists('password', $this->params)) {
+		//	$this->params['password'] = $this->in(
+		//		__d('nc2_to_nc3', 'Enter database login password of nc2?')
+		//	);
+		//}
+		if (! array_key_exists('upload_path', $this->params)) {
+			$this->params['upload_path'] = $this->in(
+				__d('nc2_to_nc3', 'Enter upload path of nc2?')
+			);
+		}
+		if (! array_key_exists('base_url', $this->params)) {
+			$this->params['base_url'] = $this->in(
+				__d(
+					'nc2_to_nc3',
+					'Enter url of nc2 for converting link in WYSIWYG content?(ex.http://example.com/nc2)'
+				)
+			);
+		}
+		if (! array_key_exists('nc3base', $this->params)) {
+			$this->params['nc3base'] = $this->in(
+				__d('nc2_to_nc3', 'Enter sub directory name?(ex."/dirname1/dirname2") If root is top, enter "/".')
+			);
+		}
+
+		if (! array_key_exists('exclude', $this->params)) {
+			$this->params['exclude'] = '';
+		}
+	}
+
+/**
  * Main
  *
  * @return void
  */
 	public function main() {
+		$this->_prepare();
+
 		// Router::url('/') で取得する値が、cakeコマンドのパスになってしまうので、オプションにした。
 		// 定数ROOT,WWW_ROOT,APP_DIR,WEBROOT_DIR を駆使すればいけそうな気がしたが、VirtualHostの設定があった場合は無理。
 		// CakePHPのDocumentにも「ドメインを手作業で設定する必要があります。」とある。
@@ -141,6 +206,11 @@ class Nc2ToNc3Shell extends AppShell {
 			'password',
 			[
 				'help' => 'database login password of nc2',
+			]
+		)->addOption(
+			'exclude',
+			[
+				'help' => 'migration exclude plugins. (ex. Faq,Video)',
 			]
 		);
 

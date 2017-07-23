@@ -260,8 +260,11 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Topic',
 			'Nc2ToNc3Reservation',
 		];
-
+		$excludePlugins = explode(',', $this->data['Nc2ToNc3']['exclude']);
 		foreach ($migrationModelNames as $migrationModelName) {
+			if (in_array(substr($migrationModelName, 8), $excludePlugins, true)) {
+				continue;
+			}
 			$migrationModelName = 'Nc2ToNc3.' . $migrationModelName;
 
 			/* @var $MigrationModel Nc2ToNc3UserAttribute */
