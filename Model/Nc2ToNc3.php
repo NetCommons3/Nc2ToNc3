@@ -259,6 +259,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Video',
 			'Nc2ToNc3Topic',
 			'Nc2ToNc3Reservation',
+			'Nc2ToNc3Multidatabase',
 		];
 		$excludePlugins = explode(',', $this->data['Nc2ToNc3']['exclude']);
 		foreach ($migrationModelNames as $migrationModelName) {

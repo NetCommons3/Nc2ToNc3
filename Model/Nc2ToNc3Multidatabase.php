@@ -1,0 +1,533 @@
+<?php
+/**
+ * Nc2ToNc3Blog
+ *
+ * @copyright Copyright 2014, NetCommons Project
+ * @author Fujiki Hideyuki <TriangleShooter@gmail.com>
+ * @link http://www.netcommons.org NetCommons Project
+ * @license http://www.netcommons.org/license.txt NetCommons License
+ */
+
+App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
+App::uses('Current', 'NetCommons.Utility');
+
+/**
+ * Nc2ToNc3Blog
+ *
+ * @see Nc2ToNc3BaseBehavior
+ * @method void writeMigrationLog($message)
+ * @method Model getNc2Model($tableName)
+ * @method string getLanguageIdFromNc2()
+ * @method string convertDate($date)
+ * @method string convertLanguage($langDirName)
+ * @method array saveMap($modelName, $idMap)
+ * @method array getMap($nc2Id)
+ * @method void changeNc3CurrentLanguage($langDirName = null)
+ * @method void restoreNc3CurrentLanguage()
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)]
+ *
+ */
+class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
+
+/**
+ * Custom database table name, or null/false if no table association is desired.
+ *
+ * @var string
+ * @link http://book.cakephp.org/2.0/en/models/model-attributes.html#usetable
+ */
+	public $useTable = false;
+
+/**
+ * List of behaviors to load when the model object is initialized. Settings can be
+ * passed to behaviors by using the behavior name as index.
+ *
+ * @var array
+ * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
+ */
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Multidatabase',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
+
+/**
+ * Migration method.
+ *
+ * @return bool True on success.
+ */
+	public function migrate() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration start.'));
+
+		/* @var $Nc2Blog AppModel */
+		$Nc2Multidatabase = $this->getNc2Model('multidatabase');
+		$nc2Multidatabases = $Nc2Multidatabase->find('all');
+		if (!$this->__saveNc3MultidatabaseFromNc2($nc2Multidatabases)) {
+			return false;
+		}
+
+		/* @var $Nc2MultidatabaseBlock AppModel */
+		$Nc2MultidatabaseBlock = $this->getNc2Model('multidatabase_block');
+		$nc2MultidatabaseBlocks = $Nc2MultidatabaseBlock->find('all');
+		if (!$this->__saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks)) {
+			return false;
+		}
+
+		$Nc2MultidatabaseMetadata = $this->getNc2Model('multidatabase_metadata');
+		// col_noをうめるためにmultidatabase_id
+		$nc2MultidatabaseMetadatas = $Nc2MultidatabaseMetadata->find('all', [
+			'order' => 'multidatabase_id ASC'
+		]);
+		if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidatabaseMetadatas)) {
+			return false;
+		}
+
+		//
+		//$Nc2JournalPost = $this->getNc2Model('journal_post');
+		//$nc2JournalPosts = $Nc2JournalPost->findAllByParentId('0', null, null, null, null, -1);
+		//
+		//if (!$this->__saveNc3BlogEntryFromNc2($nc2JournalPosts)) {
+		//	return false;
+		//}
+		//
+		//$query = [
+		//	'conditions' => [
+		//		'NOT' => [
+		//			'parent_id' => '0'
+		//		]
+		//	],
+		//	'recursive' => -1
+		//];
+		//$nc2JournalPosts = $Nc2JournalPost->find('all', $query);
+		//if (!$this->__saveNc3ContentCommentFromNc2($nc2JournalPosts)) {
+		//	return false;
+		//}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration end.'));
+		return true;
+	}
+
+/**
+ * Save JournalFrameSetting from Nc2.
+ *
+ * @param array $nc2Multidatabases Nc2Journal data.
+ * @return bool True on success
+ * @throws Exception
+ */
+
+	private function __saveNc3MultidatabaseFromNc2($nc2Multidatabases) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase data Migration start.'));
+
+		/* @var $Multidatabase Blog */
+		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
+		$Multidatabase = ClassRegistry::init('Multidatabases.Multidatabase');
+
+		Current::write('Plugin.key', 'multidatabases');
+		//Announcement モデルでBlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
+		$Multidatabase->Behaviors->Block->settings['nameHtml'] = false;
+
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		$Multidatabase->Behaviors->Block->settings = $Multidatabase->actsAs['Blocks.Block'];
+
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		$Block = ClassRegistry::init('Blocks.Block');
+		//$Topic = ClassRegistry::init('Topics.Topic');
+
+		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+
+
+		foreach ($nc2Multidatabases as $nc2Multidatabase) {
+			$Multidatabase->begin();
+			try {
+				$data = $this->generateNc3MultidatabaseData($nc2Multidatabase);
+				if (!$data) {
+					$Multidatabase->rollback();
+					continue;
+				}
+
+				// いる？
+				$nc3RoomId = $data['Block']['room_id'];
+				Current::write('Room.id', $nc3RoomId);
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+				$BlocksLanguage->create();
+				$Multidatabase->create();
+				$Block->create();
+				//$Topic->create();
+
+				if (!$Multidatabase->saveMultidatabase($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$Multidatabase->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Multidatabase) . "\n" .
+						var_export($Multidatabase->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
+					continue;
+				}
+
+
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2MultidatabaseId = $nc2Multidatabase['Nc2Multidatabase']['multidatabase_id'];
+				$idMap = [
+					$nc2MultidatabaseId => $Multidatabase->id
+				];
+				$this->saveMap('Multidatabase', $idMap);
+
+				// ダミーでSaveしたmetadataレコードの削除
+				$savedData = $Multidatabase->findById($Multidatabase->id);
+				$key =  $savedData['Multidatabase']['key'];
+				$Metadata->deleteAll(['key' => $key], false, false);
+
+				$Multidatabase->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Multidatabase->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Multidatabase Migration end.'));
+		return true;
+	}
+
+/**
+ * Save BlogFrameSetting from Nc2.
+ *
+ * @param array $nc2MultidatabaseBlocks Nc2ournalBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseFrameSetting data Migration start.'));
+
+		/* @var $MultidbFrameSetting BlogFrameSetting */
+		/* @var $Frame Frame */
+		$MultidbFrameSetting = ClassRegistry::init('Multidatabases.MultidatabaseFrameSetting');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		foreach ($nc2MultidatabaseBlocks as $nc2MultidatabaseBlock) {
+			$MultidbFrameSetting->begin();
+			try {
+				$data = $this->generateNc3MultidatabaseFrameSettingData($nc2MultidatabaseBlock);
+				if (!$data) {
+					$MultidbFrameSetting->rollback();
+					continue;
+				}
+
+				$MultidbFrameSetting->create();
+				if (!$MultidbFrameSetting->saveMultidatabaseFrameSetting($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2MultidatabaseBlock) . "\n" .
+						var_export($MultidbFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$MultidbFrameSetting->rollback();
+					continue;
+				}
+
+				if (!$Frame->saveFrame($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2MultidatabaseBlock) . "\n" .
+						var_export($MultidbFrameSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$MultidbFrameSetting->rollback();
+					continue;
+				}
+
+				$nc2BlockId = $nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['block_id'];
+				$idMap = [
+					$nc2BlockId => $MultidbFrameSetting->id
+				];
+				$this->saveMap('MultidatabaseFrameSetting', $idMap);
+
+				$MultidbFrameSetting->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::saveBlogFrameSetting()でthrowされるとこの処理に入ってこない
+				$MultidbFrameSetting->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		/*
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Block.id');
+		*/
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseFrameSetting data Migration end.'));
+
+		return true;
+	}
+
+/**
+ * Save Metadata from Nc2.
+ *
+ * @param array $nc2Metadata Nc2ournalBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveNc3MultidatabaseMetadataFromNc2($nc2Metadata) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseMetadata Migration start.'));
+
+		/* @var $MultidbMetadata BlogFrameSetting */
+		/* @var $Frame Frame */
+		$MultidbMetadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+
+		$MultidbMetadata->Behaviors->load('NetCommons.OriginalKey');
+
+		$currentDatabaseId = 0;
+		foreach ($nc2Metadata as $nc2Metadatum) {
+			if ($currentDatabaseId != $nc2Metadatum['Nc2MultidatabaseMetadata']['multidatabase_id']) {
+				$this->varCharColNo = 1;
+				$this->textColNo = 80;
+				$currentDatabaseId = $nc2Metadatum['Nc2MultidatabaseMetadata']['multidatabase_id'];
+			}
+			$MultidbMetadata->begin();
+			try {
+				$data = $this->generateNc3MultidatabaseMetadata($nc2Metadatum);
+				if (!$data) {
+					$MultidbMetadata->rollback();
+					continue;
+				}
+
+				$MultidbMetadata->create();
+				if (!$MultidbMetadata->save($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2Metadatum) . "\n" .
+						var_export($MultidbMetadata->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$MultidbMetadata->rollback();
+					continue;
+				}
+
+				$nc2BlockId = $nc2Metadatum['Nc2MultidatabaseMetadata']['metadata_id'];
+				$idMap = [
+					$nc2BlockId => $MultidbMetadata->id
+				];
+				$this->saveMap('MultidatabaseMetadata', $idMap);
+
+				$MultidbMetadata->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::saveBlogFrameSetting()でthrowされるとこの処理に入ってこない
+				$MultidbMetadata->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		/*
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Block.id');
+		*/
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseMetadata Migration end.'));
+
+		return true;
+	}
+
+	/**
+ * Save BlogEntry from Nc2.
+ *
+ * @param array $nc2JournalPosts Nc2JournalPost data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveNc3BlogEntryFromNc2($nc2JournalPosts) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration start.'));
+
+		/* @var $BlogEntry BlogEntry */
+		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
+		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
+		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+
+		Current::write('Plugin.key', 'blogs');
+		//Announcement モデルで	BlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
+		//$BlogEntry->Behaviors->Block->settings['nameHtml'] = false;
+
+		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
+		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
+		//$BlogEntry->Behaviors->Block->settings = $BlogEntry->actsAs['Blocks.Block'];
+
+		//$Nc2Journal = $this->getNc2Model('journal');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$Topic = ClassRegistry::init('Topics.Topic');
+
+		foreach ($nc2JournalPosts as $nc2JournalPost) {
+			$BlogEntry->begin();
+			try {
+				$data = $this->generateNc3BlogEntryData($nc2JournalPost);
+				if (!$data) {
+					$BlogEntry->rollback();
+					continue;
+				}
+				$nc3BlockId = $data['Block']['id'];
+				$nc2CategoryId = $nc2JournalPost['Nc2JournalPost']['category_id'];
+				$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
+
+				$Block = ClassRegistry::init('Blocks.Block');
+				$Blocks = $Block->findById($nc3BlockId, null, null, -1);
+				$nc3RoomId = $Blocks['Block']['room_id'];
+
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				Current::write('Block.id', $nc3BlockId);
+				Current::write('Room.id', $nc3RoomId);
+
+				$BlocksLanguage->create();
+				$BlogEntry->create();
+				$Block->create();
+				$Topic->create();
+
+				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+				$nc3Status = $data['BlogEntry']['status'];
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+
+				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
+				// ['datetime','datetime'] になってしまうので初期化
+				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
+				$BlogEntry->validate = [];
+
+				if (!$BlogEntry->saveEntry($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$BlogEntry->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
+					// var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+
+					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
+						var_export($BlogEntry->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$BlogEntry->rollback();
+					continue;
+				}
+
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+				$idMap = [
+					$nc2PostId => $BlogEntry->id
+				];
+				$this->saveMap('BlogEntry', $idMap);
+				$BlogEntry->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$BlogEntry->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		Current::remove('Block.id');
+		Current::remove('Room.id');
+		Current::remove('Plugin.key');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration end.'));
+		return true;
+	}
+
+/**
+ * Save ContentComment from Nc2.
+ *
+ * @param array $nc2JournalPosts Nc2JournalPost data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveNc3ContentCommentFromNc2($nc2JournalPosts) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Content Comment data Migration start.'));
+
+		/* @var $ContentComment ContentComment */
+		/* @var $Nc2ToNc3Comment Nc2ToNc3ContentComment */
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$ContentComment = ClassRegistry::init('ContentComments.ContentComment');
+		$Nc2ToNc3Comment = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3ContentComment');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+
+		foreach ($nc2JournalPosts as $nc2JournalPost) {
+			$ContentComment->begin();
+			try {
+				$data = $this->generateNc3ContentCommentData($nc2JournalPost);
+				if (!$data) {
+					$ContentComment->rollback();
+					continue;
+				}
+
+				$nc2RoomId = $nc2JournalPost['Nc2JournalPost']['room_id'];
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
+				$nc3RoomId = $mapIdList[$nc2RoomId];
+				$nc3Status = $data['ContentComment']['status'];
+
+				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+				Current::write('Room.id', $nc3RoomId);
+				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+
+				$ContentComment->create();
+				// 一応Model::validatの初期化
+				$ContentComment->validate = [];
+
+				if (!$ContentComment->saveContentComment($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
+						var_export($ContentComment->validationErrors, true);
+					$this->writeMigrationLog($message);
+
+					$ContentComment->rollback();
+					continue;
+				}
+
+				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
+				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+				$idMap = [
+					$nc2PostId => $ContentComment->id
+				];
+				if (!$Nc2ToNc3Comment->saveContentCommentMap($idMap, $data['ContentComment']['block_key'])) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2JournalPost);
+					$this->writeMigrationLog($message);
+
+					$ContentComment->rollback();
+					continue;
+				}
+
+				$ContentComment->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				$ContentComment->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		Current::remove('Room.id');
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Content Comment Migration end.'));
+
+		return true;
+	}
+
+}
