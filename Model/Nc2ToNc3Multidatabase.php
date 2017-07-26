@@ -81,6 +81,12 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		$Nc2MultidbContent = $this->getNc2Model('multidatabase_content');
+		$nc2MultidbContents = $Nc2MultidbContent->find('all');
+		if (!$this->__saveNc3MultidbContentFromNc2($nc2MultidbContents)) {
+			return false;
+		}
+
 		//
 		//$Nc2JournalPost = $this->getNc2Model('journal_post');
 		//$nc2JournalPosts = $Nc2JournalPost->findAllByParentId('0', null, null, null, null, -1);
@@ -345,106 +351,101 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		return true;
 	}
 
-	/**
+/**
  * Save BlogEntry from Nc2.
  *
- * @param array $nc2JournalPosts Nc2JournalPost data.
+ * @param array $nc2MultidbContents Nc2JournalPost data.
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveNc3BlogEntryFromNc2($nc2JournalPosts) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration start.'));
+	private function __saveNc3MultidbContentFromNc2($nc2MultidbContents) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase Content Migration start.'));
 
-		/* @var $BlogEntry BlogEntry */
+		/* @var $DbContent BlogEntry */
 		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
-		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
-		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		$DbContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
 
-		Current::write('Plugin.key', 'blogs');
-		//Announcement モデルで	BlockBehavior::settings[nameHtml]:true になるため、ここで明示的に設定しなおす
-		//$BlogEntry->Behaviors->Block->settings['nameHtml'] = false;
-
-		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
-		//@see https://github.com/cakephp/cakephp/blob/2.9.6/lib/Cake/Model/BehaviorCollection.php#L128-L133
-		//$BlogEntry->Behaviors->Block->settings = $BlogEntry->actsAs['Blocks.Block'];
+		Current::write('Plugin.key', 'multidatabases');
 
 		//$Nc2Journal = $this->getNc2Model('journal');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
-		$Topic = ClassRegistry::init('Topics.Topic');
+		//$Topic = ClassRegistry::init('Topics.Topic');
 
-		foreach ($nc2JournalPosts as $nc2JournalPost) {
-			$BlogEntry->begin();
+		foreach ($nc2MultidbContents as $nc2MultidbContent) {
+			$DbContent->begin();
+			$DbContent->Behaviors->disable('Attachment');
 			try {
-				$data = $this->generateNc3BlogEntryData($nc2JournalPost);
+				$data = $this->generateNc3MultidbContent($nc2MultidbContent);
 				if (!$data) {
-					$BlogEntry->rollback();
+					$DbContent->rollback();
 					continue;
 				}
-				$nc3BlockId = $data['Block']['id'];
-				$nc2CategoryId = $nc2JournalPost['Nc2JournalPost']['category_id'];
-				$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
-
-				$Block = ClassRegistry::init('Blocks.Block');
-				$Blocks = $Block->findById($nc3BlockId, null, null, -1);
-				$nc3RoomId = $Blocks['Block']['room_id'];
-
-				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
-				Current::write('Block.id', $nc3BlockId);
-				Current::write('Room.id', $nc3RoomId);
-
-				$BlocksLanguage->create();
-				$BlogEntry->create();
-				$Block->create();
-				$Topic->create();
+				//$nc3BlockId = $data['Block']['id'];
+				//$nc2CategoryId = $nc2MultidbContent['Nc2JournalPost']['category_id'];
+				//$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
+				//
+				//$Block = ClassRegistry::init('Blocks.Block');
+				//$Blocks = $Block->findById($nc3BlockId, null, null, -1);
+				//$nc3RoomId = $Blocks['Block']['room_id'];
+				//
+				//// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				//Current::write('Block.id', $nc3BlockId);
+				//Current::write('Room.id', $nc3RoomId);
+				//
+				//$BlocksLanguage->create();
+				$DbContent->create();
+				//$Block->create();
+				//$Topic->create();
 
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-				$nc3Status = $data['BlogEntry']['status'];
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+				//$nc3Status = $data['BlogEntry']['status'];
+				//CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
 				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
 				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
-				$BlogEntry->validate = [];
+				$DbContent->validate = [];
 
-				if (!$BlogEntry->saveEntry($data)) {
+				//if (!$DbContent->saveContent($data, false)) {
+				if (!$DbContent->save($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
-					$BlogEntry->rollback();
+					$DbContent->rollback();
 
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 
-					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
-						var_export($BlogEntry->validationErrors, true);
+					$message = $this->getLogArgument($nc2MultidbContent) . "\n" .
+						var_export($DbContent->validationErrors, true);
 					$this->writeMigrationLog($message);
-					$BlogEntry->rollback();
+					$DbContent->rollback();
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
-				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+				$nc2PostId = $nc2MultidbContent['Nc2MultidatabaseContent']['content_id'];
 				$idMap = [
-					$nc2PostId => $BlogEntry->id
+					$nc2PostId => $DbContent->id
 				];
-				$this->saveMap('BlogEntry', $idMap);
-				$BlogEntry->commit();
+				$this->saveMap('MultidatabaseContent', $idMap);
+				$DbContent->commit();
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$BlogEntry->rollback($ex);
+				$DbContent->rollback($ex);
 				throw $ex;
 			}
 		}
 
-		Current::remove('Block.id');
-		Current::remove('Room.id');
-		Current::remove('Plugin.key');
+		//Current::remove('Block.id');
+		//Current::remove('Room.id');
+		//Current::remove('Plugin.key');
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Entry data Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase Content Migration end.'));
 		return true;
 	}
 

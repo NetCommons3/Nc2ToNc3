@@ -20,7 +20,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
  * Get Log argument.
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2Journal Array data of Nc2Journal, Nc2JournalPost.
+ * @param array $nc2Journal Array data of Nc2Journal, Nc2MultidatabaseContent.
  * @return string Log argument
  */
 
@@ -298,12 +298,11 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @see MultidatabaseMetadataEdit::addColNo(); */
 		if (in_array($type, ['textarea', 'wysiwyg', 'select', 'checkbox'])) {
-			$colNo = $model->varCharColNo;
-			$model->varCharColNo++;
-
-		} else {
 			$colNo = $model->textColNo;
 			$model->textColNo++;
+		} else {
+			$colNo = $model->varCharColNo;
+			$model->varCharColNo++;
 		}
 
 		// nc2multidatabase.title_metadata_idで指定されてるIDがタイトル
@@ -352,65 +351,92 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
  * data[BlogEntry][status]:
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2JournalPost Nc2JournalPost data.
+ * @param array $nc2MultidbContent Nc2MultidatabaseContent data.
  * @return array Nc3BlogEntry data.
  */
 
-	public function generateNc3BlogEntryData(Model $model, $nc2JournalPost) {
-		$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+	public function generateNc3MultidbContent(Model $model, $nc2MultidbContent) {
+
+		$nc2ContentId = $nc2MultidbContent['Nc2MultidatabaseContent']['content_id'];
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogEntry', $nc2PostId);
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('MultidatabaseContent', $nc2ContentId);
 		if ($mapIdList) {
 			// 移行済み
 			return [];
 		}
 
-		$nc3BlogIds = $Nc2ToNc3Map->getMapIdList('Blog', $nc2JournalPost['Nc2JournalPost']['journal_id']);
-		if (!$nc3BlogIds) {
+		// 対応するmetadataの取得も必要
+		$nc3DbIds = $Nc2ToNc3Map->getMapIdList('Multidatabase', $nc2MultidbContent['Nc2MultidatabaseContent']['multidatabase_id']);
+		if (!$nc3DbIds) {
 			return [];
 		}
-		$nc3BlogId = $nc3BlogIds[$nc2JournalPost['Nc2JournalPost']['journal_id']];
 
-		$Blog = ClassRegistry::init('Blogs.Blog');
-		$Block = ClassRegistry::init('Blocks.Block');
-		$nc3Blog = $Blog->findById($nc3BlogId, null, null, -1);
-		$Blocks = $Block->findById($nc3Blog['Blog']['block_id'], null, null, -1);
-		$nc3BlockKey = $Blocks['Block']['key'];
+		$nc3DbId = $nc3DbIds[$nc2MultidbContent['Nc2MultidatabaseContent']['multidatabase_id']];
+		$Multidatabase = ClassRegistry::init('Multidatabases.Multidatabase');
+		$multidatabase = $Multidatabase->findById($nc3DbId, ['block_id', 'key', ], null, -1);
 
-		//'status' に入れる値の場合分け処理
-		if ($nc2JournalPost['Nc2JournalPost']['status'] == '0' && $nc2JournalPost['Nc2JournalPost']['agree_flag'] == '0') {
+		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+		$metadata =$Metadata->find('all', [
+			'conditions' => [
+				'multidatabase_id' => $nc3DbId,
+			]
+		]);
+		$colNoList = Hash::combine($metadata, '{n}.MultidatabaseMetadata.id', '{n}.MultidatabaseMetadata.col_no');
+
+		/* @var $Nc2ToNc3User Nc2ToNc3User */
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+
+		// nc2metadata_content取得。
+		$Nc2MetadataContent = $this->getNc2Model($model, 'multidatabase_metadata_content');
+		$nc2metadataContents = $Nc2MetadataContent->find('all', [
+			'conditions' => [
+				'content_id' => $nc2ContentId,
+			]
+		]);
+
+		// content mapping
+		$dbKey = $multidatabase['Multidatabase']['key'];
+		$blockId = $multidatabase['Multidatabase']['block_id'];
+
+		// status agree_flag = 1未承認 0 承認 . temporary_flag 2 一時保存 0 公開
+		// 'status' に入れる値の場合分け処理
+		if ($nc2MultidbContent['Nc2MultidatabaseContent']['temporary_flag'] == '0' && $nc2MultidbContent['Nc2MultidatabaseContent']['agree_flag'] == '0') {
 			$nc3Status = '1';
 			$nc3IsActive = '1';
-		} elseif ($nc2JournalPost['Nc2JournalPost']['agree_flag'] == '1') {
+		} elseif ($nc2MultidbContent['Nc2MultidatabaseContent']['agree_flag'] == '1') {
 			$nc3Status = '2';
 			$nc3IsActive = '0';
-		} elseif ($nc2JournalPost['Nc2JournalPost']['status'] != '0') {
+		} elseif ($nc2MultidbContent['Nc2MultidatabaseContent']['temporary_flag'] != '0') {
 			$nc3Status = '3';
 			$nc3IsActive = '0';
 		}
 
-		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		//
 		$data = [
-			'BlogEntry' => [
-				'blog_key' => $nc3Blog['Blog']['key'],
+			'MultidatabaseContent'  => [
+				'multidatabase_key' => $dbKey,
+				'language_id' => $this->getLanguageIdFromNc2($model),
+				'block_id' => $blockId,
 				'status' => $nc3Status,
 				'is_active' => $nc3IsActive,
-				'language_id' => $nc3Blog['Blog']['language_id'],
-				'title' => $nc2JournalPost['Nc2JournalPost']['title'],
-				'body1' => $model->convertWYSIWYG($nc2JournalPost['Nc2JournalPost']['content']),
-				'body2' => $model->convertWYSIWYG($nc2JournalPost['Nc2JournalPost']['more_content']),
-				'publish_start' => $this->_convertDate($nc2JournalPost['Nc2JournalPost']['journal_date']),
-				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalPost['Nc2JournalPost']),
-				'created' => $this->_convertDate($nc2JournalPost['Nc2JournalPost']['insert_time']),
-				'block_id' => $nc3Blog['Blog']['block_id'],
-				'title_icon' => $this->_convertTitleIcon($nc2JournalPost['Nc2JournalPost']['icon_name']),
-			],
-			'Block' => [
-				'id' => $nc3Blog['Blog']['block_id'],
-				'key' => $nc3BlockKey
+				'is_latest' => 1,
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2MultidbContent['Nc2MultidatabaseContent']),
+				'created' => $this->_convertDate($nc2MultidbContent['Nc2MultidatabaseContent']['insert_time']),
 			]
 		];
+
+		// metadata content mapping
+		foreach ($nc2metadataContents as $nc2metadataContent){
+			$nc2MetadataId = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['metadata_id'];
+			$metadataMapIds = $Nc2ToNc3Map->getMapIdList('MultidatabaseMetadata', $nc2MetadataId);
+			$nc3MetadataId = $metadataMapIds[$nc2MetadataId];
+
+			$colNo = $colNoList[$nc3MetadataId];
+
+			$data['MultidatabaseContent']['value' . $colNo] = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
+		}
+		// TODO vote -> like
+
 		return $data;
 	}
 
@@ -424,19 +450,19 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
  * data[ContentComment][comment]:コメント００１
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2JournalPost Nc2JournalPost data.
+ * @param array $Nc2MultidatabaseContent Nc2MultidatabaseContent data.
  * @return array Nc3ContentComment data.
  */
-	public function generateNc3ContentCommentData(Model $model, $nc2JournalPost) {
-		if (!$nc2JournalPost['Nc2JournalPost']['content']) {
-			// トラックバック送信データはNc2JournalPost.contentが空
+	public function generateNc3ContentCommentData(Model $model, $Nc2MultidatabaseContent) {
+		if (!$Nc2MultidatabaseContent['Nc2MultidatabaseContent']['content']) {
+			// トラックバック送信データはNc2MultidatabaseContent.contentが空
 			return [];
 		}
 
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 
-		$nc2ParentId = $nc2JournalPost['Nc2JournalPost']['parent_id'];
+		$nc2ParentId = $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['parent_id'];
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogEntry', $nc2ParentId);
 		if (!$mapIdList) {
 			// 親の記事の対応データ無し
@@ -462,7 +488,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3Comment Nc2ToNc3ContentComment */
 		$Nc2ToNc3Comment = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3ContentComment');
-		$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+		$nc2PostId = $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['post_id'];
 		$nc3ContentCommentId = $Nc2ToNc3Comment->getNc3ContentCommentId($nc3BlockKey, $nc2PostId);
 		if ($nc3ContentCommentId) {
 			// 移行済み
@@ -470,9 +496,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		//'status' に入れる値の場合分け処理
-		if ($nc2JournalPost['Nc2JournalPost']['status'] == '0' && $nc2JournalPost['Nc2JournalPost']['agree_flag'] == '0') {
+		if ($Nc2MultidatabaseContent['Nc2MultidatabaseContent']['status'] == '0' && $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['agree_flag'] == '0') {
 			$nc3Status = '1';
-		} elseif ($nc2JournalPost['Nc2JournalPost']['agree_flag'] == '1') {
+		} elseif ($Nc2MultidatabaseContent['Nc2MultidatabaseContent']['agree_flag'] == '1') {
 			$nc3Status = '2';
 		}
 
@@ -483,9 +509,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			'plugin_key' => 'blogs',
 			'content_key' => $nc3BlogEntry['BlogEntry']['key'],
 			'status' => $nc3Status,
-			'comment' => $nc2JournalPost['Nc2JournalPost']['content'],
-			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2JournalPost['Nc2JournalPost']),
-			'created' => $this->_convertDate($nc2JournalPost['Nc2JournalPost']['insert_time']),
+			'comment' => $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['content'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($Nc2MultidatabaseContent['Nc2MultidatabaseContent']),
+			'created' => $this->_convertDate($Nc2MultidatabaseContent['Nc2MultidatabaseContent']['insert_time']),
 		];
 
 		return $data;
@@ -508,9 +534,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id:' . $nc2Journal['Nc2MultidatabaseBlock']['block_id'];
 		}
 
-		if (isset($nc2Journal['Nc2JournalPost'])) {
-			return 'Nc2JournalPost ' .
-				'post_id:' . $nc2Journal['Nc2JournalPost']['post_id'];
+		if (isset($nc2Journal['Nc2MultidatabaseContent'])) {
+			return 'Nc2MultidatabaseContent ' .
+				'post_id:' . $nc2Journal['Nc2MultidatabaseContent']['post_id'];
 		}
 	}
 
