@@ -122,7 +122,7 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 			'login_view_main_init' => 'auth',
 			'linklist_view_main_init' => 'links',
 			'menu_view_main_init' => 'menus',
-			//'multidatabase_view_main_init' => null,
+			'multidatabase_view_main_init' => 'multidatabases',
 			//'online_view_main_init' => null,
 			'photoalbum_view_main_init' => 'photo_albums',
 			'questionnaire_view_main_init' => 'questionnaires',
