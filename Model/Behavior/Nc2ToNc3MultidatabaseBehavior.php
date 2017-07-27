@@ -498,36 +498,31 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
  * data[ContentComment][comment]:コメント００１
  *
  * @param Model $model Model using this behavior.
- * @param array $Nc2MultidatabaseContent Nc2MultidatabaseContent data.
+ * @param array $Nc2MultidbComment Nc2MultidatabaseContent data.
  * @return array Nc3ContentComment data.
  */
-	public function generateNc3ContentCommentData(Model $model, $Nc2MultidatabaseContent) {
-		if (!$Nc2MultidatabaseContent['Nc2MultidatabaseContent']['content']) {
-			// トラックバック送信データはNc2MultidatabaseContent.contentが空
-			return [];
-		}
-
+	public function generateNc3ContentCommentData(Model $model, $Nc2MultidbComment) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 
-		$nc2ParentId = $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['parent_id'];
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogEntry', $nc2ParentId);
+		$nc2ContentId = $Nc2MultidbComment['Nc2MultidatabaseComment']['content_id'];
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('MultidatabaseContent', $nc2ContentId);
 		if (!$mapIdList) {
 			// 親の記事の対応データ無し
 			return [];
 		}
 
-		/* @var $BlogEntry BlogEntry */
-		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
-		$nc3BlogEntry = $BlogEntry->findById($mapIdList[$nc2ParentId], ['key', 'block_id'], null, -1);
-		if (!$nc3BlogEntry) {
+		/* @var $MulitdbContent BlogEntry */
+		$MulitdbContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
+		$nc3MultidbContent = $MulitdbContent->findById($mapIdList[$nc2ContentId], ['key', 'block_id'], null, -1);
+		if (!$nc3MultidbContent) {
 			// 親の記事無し
 			return [];
 		}
 
 		/* @var $BlogEntry BlogEntry */
 		$Block = ClassRegistry::init('Blocks.Block');
-		$nc3Block = $Block->findById($nc3BlogEntry['BlogEntry']['block_id'], 'key', null, -1);
+		$nc3Block = $Block->findById($nc3MultidbContent['MultidatabaseContent']['block_id'], 'key', null, -1);
 		if (!$nc3Block) {
 			// ブロックデータ無し（あり得ない）
 			return [];
@@ -536,30 +531,31 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3Comment Nc2ToNc3ContentComment */
 		$Nc2ToNc3Comment = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3ContentComment');
-		$nc2PostId = $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['post_id'];
-		$nc3ContentCommentId = $Nc2ToNc3Comment->getNc3ContentCommentId($nc3BlockKey, $nc2PostId);
+		$nc2CommentId = $Nc2MultidbComment['Nc2MultidatabaseComment']['comment_id'];
+		$nc3ContentCommentId = $Nc2ToNc3Comment->getNc3ContentCommentId($nc3BlockKey, $nc2CommentId);
 		if ($nc3ContentCommentId) {
 			// 移行済み
 			return [];
 		}
 
 		//'status' に入れる値の場合分け処理
-		if ($Nc2MultidatabaseContent['Nc2MultidatabaseContent']['status'] == '0' && $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['agree_flag'] == '0') {
-			$nc3Status = '1';
-		} elseif ($Nc2MultidatabaseContent['Nc2MultidatabaseContent']['agree_flag'] == '1') {
-			$nc3Status = '2';
-		}
+		//if ($Nc2MultidbComment['Nc2MultidatabaseComment']['status'] == '0' && $Nc2MultidbComment['Nc2MultidatabaseComment']['agree_flag'] == '0') {
+		//	$nc3Status = '1';
+		//} elseif ($Nc2MultidbComment['Nc2MultidatabaseComment']['agree_flag'] == '1') {
+		//	$nc3Status = '2';
+		//}
+		$nc3Status = WorkflowComponent::STATUS_PUBLISHED;
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data['ContentComment'] = [
 			'block_key' => $nc3BlockKey,
-			'plugin_key' => 'blogs',
-			'content_key' => $nc3BlogEntry['BlogEntry']['key'],
+			'plugin_key' => 'multidatabases',
+			'content_key' => $nc3MultidbContent['MultidatabaseContent']['key'],
 			'status' => $nc3Status,
-			'comment' => $Nc2MultidatabaseContent['Nc2MultidatabaseContent']['content'],
-			'created_user' => $Nc2ToNc3User->getCreatedUser($Nc2MultidatabaseContent['Nc2MultidatabaseContent']),
-			'created' => $this->_convertDate($Nc2MultidatabaseContent['Nc2MultidatabaseContent']['insert_time']),
+			'comment' => $Nc2MultidbComment['Nc2MultidatabaseComment']['comment_content'],
+			'created_user' => $Nc2ToNc3User->getCreatedUser($Nc2MultidbComment['Nc2MultidatabaseComment']),
+			'created' => $this->_convertDate($Nc2MultidbComment['Nc2MultidatabaseComment']['insert_time']),
 		];
 
 		return $data;

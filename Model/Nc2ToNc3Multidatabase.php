@@ -89,7 +89,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 
 		//
-		//$Nc2JournalPost = $this->getNc2Model('journal_post');
+		$Nc2MultidbComment = $this->getNc2Model('multidatabase_comment');
 		//$nc2JournalPosts = $Nc2JournalPost->findAllByParentId('0', null, null, null, null, -1);
 		//
 		//if (!$this->__saveNc3BlogEntryFromNc2($nc2JournalPosts)) {
@@ -104,10 +104,10 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		//	],
 		//	'recursive' => -1
 		//];
-		//$nc2JournalPosts = $Nc2JournalPost->find('all', $query);
-		//if (!$this->__saveNc3ContentCommentFromNc2($nc2JournalPosts)) {
-		//	return false;
-		//}
+		$nc2MultidbComments = $Nc2MultidbComment->find('all');
+		if (!$this->__saveNc3ContentCommentFromNc2($nc2MultidbComments)) {
+			return false;
+		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration end.'));
 		return true;
@@ -593,11 +593,11 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 	/**
  * Save ContentComment from Nc2.
  *
- * @param array $nc2JournalPosts Nc2JournalPost data.
+ * @param array $nc2MultidbComments Nc2JournalPost data.
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveNc3ContentCommentFromNc2($nc2JournalPosts) {
+	private function __saveNc3ContentCommentFromNc2($nc2MultidbComments) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Content Comment data Migration start.'));
 
 		/* @var $ContentComment ContentComment */
@@ -607,16 +607,16 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Comment = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3ContentComment');
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 
-		foreach ($nc2JournalPosts as $nc2JournalPost) {
+		foreach ($nc2MultidbComments as $nc2MultidbComment) {
 			$ContentComment->begin();
 			try {
-				$data = $this->generateNc3ContentCommentData($nc2JournalPost);
+				$data = $this->generateNc3ContentCommentData($nc2MultidbComment);
 				if (!$data) {
 					$ContentComment->rollback();
 					continue;
 				}
 
-				$nc2RoomId = $nc2JournalPost['Nc2JournalPost']['room_id'];
+				$nc2RoomId = $nc2MultidbComment['Nc2MultidatabaseComment']['room_id'];
 				$mapIdList = $Nc2ToNc3Map->getMapIdList('Room', $nc2RoomId);
 				$nc3RoomId = $mapIdList[$nc2RoomId];
 				$nc3Status = $data['ContentComment']['status'];
@@ -632,7 +632,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				if (!$ContentComment->saveContentComment($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
+					$message = $this->getLogArgument($nc2MultidbComment) . "\n" .
 						var_export($ContentComment->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -642,14 +642,14 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
-				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
+				$nc2PostId = $nc2MultidbComment['Nc2MultidatabaseComment']['comment_id'];
 				$idMap = [
 					$nc2PostId => $ContentComment->id
 				];
 				if (!$Nc2ToNc3Comment->saveContentCommentMap($idMap, $data['ContentComment']['block_key'])) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2JournalPost);
+					$message = $this->getLogArgument($nc2MultidbComment);
 					$this->writeMigrationLog($message);
 
 					$ContentComment->rollback();
