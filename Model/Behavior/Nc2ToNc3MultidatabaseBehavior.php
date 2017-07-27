@@ -373,7 +373,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		$nc3DbId = $nc3DbIds[$nc2MultidbContent['Nc2MultidatabaseContent']['multidatabase_id']];
 		$Multidatabase = ClassRegistry::init('Multidatabases.Multidatabase');
-		$multidatabase = $Multidatabase->findById($nc3DbId, ['block_id', 'key', ], null, -1);
+		$multidatabase = $Multidatabase->findById($nc3DbId, ['id', 'block_id', 'key'], null, -1);
 
 		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
 		$metadata =$Metadata->find('all', [
@@ -419,6 +419,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$data = [
 			'MultidatabaseContent'  => [
 				'multidatabase_key' => $dbKey,
+				'multidatabase_id' => $multidatabase['Multidatabase']['id'],
 				'language_id' => $this->getLanguageIdFromNc2($model),
 				'block_id' => $blockId,
 				'status' => $nc3Status,

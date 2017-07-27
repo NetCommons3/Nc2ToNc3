@@ -88,25 +88,51 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		}
 
 
-		//
+		// Comment
 		$Nc2MultidbComment = $this->getNc2Model('multidatabase_comment');
-		//$nc2JournalPosts = $Nc2JournalPost->findAllByParentId('0', null, null, null, null, -1);
-		//
-		//if (!$this->__saveNc3BlogEntryFromNc2($nc2JournalPosts)) {
-		//	return false;
-		//}
-		//
-		//$query = [
-		//	'conditions' => [
-		//		'NOT' => [
-		//			'parent_id' => '0'
-		//		]
-		//	],
-		//	'recursive' => -1
-		//];
 		$nc2MultidbComments = $Nc2MultidbComment->find('all');
 		if (!$this->__saveNc3ContentCommentFromNc2($nc2MultidbComments)) {
 			return false;
+		}
+
+		// insert MetadataSettings
+		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+		$metadata = $Metadata->find('all', [
+			'conditions' => [
+				'type' => 'autonumber'
+			]
+		]);
+		$MetadataContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
+		$MetadataSetting = ClassRegistry::init('Multidatabases.MultidatabaseMetadataSetting');
+		//$MetadataContent->virtualFields['number'] = 0;
+		foreach($metadata as $metadatum) {
+			$colNo = $metadatum['MultidatabaseMetadata']['col_no'];
+			$result = $MetadataContent->find('first', [
+				'conditions' => [
+					'multidatabase_id' => $metadatum['MultidatabaseMetadata']['multidatabase_id'],
+
+				],
+				'fields' => [
+					'MAX(cast(value' . $colNo . ' as UNSIGNED)) AS number'
+				]
+			]);
+			if ($result) {
+				$number = $result[0]['number'];
+				if ($number === null) {
+					$number = 0;
+				}
+			}else{
+				$number = 0;
+			}
+
+			$setting = [
+				'MultidatabaseMetadataSetting' => [
+					'id' => $metadatum['MultidatabaseMetadata']['id'],
+					'auto_number_sequence' => $number
+				]
+			];
+			$MetadataSetting->create();
+			$MetadataSetting->save($setting);
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration end.'));
@@ -490,107 +516,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		return true;
 	}
 
-	/**
-	 * Save BlogEntry from Nc2.
-	 *
-	 * @param array $nc2MultidbFiles Nc2JournalPost data.
-	 * @return bool True on success
-	 * @throws Exception
-	 */
-	private function __saveNc3MultidbFileFromNc2($nc2MultidbFiles) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase File Migration start.'));
-
-		//
-
-		/* @var $DbContent BlogEntry */
-		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
-		$DbContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
-
-		Current::write('Plugin.key', 'multidatabases');
-
-		//$Nc2Journal = $this->getNc2Model('journal');
-		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
-		$Block = ClassRegistry::init('Blocks.Block');
-		//$Topic = ClassRegistry::init('Topics.Topic');
-
-		foreach ($nc2MultidbFiles as $nc2MultidbContent) {
-			$DbContent->begin();
-			$DbContent->Behaviors->disable('Attachment');
-			try {
-				$data = $this->generateNc3MultidbContent($nc2MultidbContent);
-				if (!$data) {
-					$DbContent->rollback();
-					continue;
-				}
-				//$nc3BlockId = $data['Block']['id'];
-				//$nc2CategoryId = $nc2MultidbContent['Nc2JournalPost']['category_id'];
-				//$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
-				//
-				//$Block = ClassRegistry::init('Blocks.Block');
-				//$Blocks = $Block->findById($nc3BlockId, null, null, -1);
-				//$nc3RoomId = $Blocks['Block']['room_id'];
-				//
-				//// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
-				//Current::write('Block.id', $nc3BlockId);
-				//Current::write('Room.id', $nc3RoomId);
-				//
-				//$BlocksLanguage->create();
-				$DbContent->create();
-				//$Block->create();
-				//$Topic->create();
-
-				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
-				//$nc3Status = $data['BlogEntry']['status'];
-				//CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
-
-				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
-				// ['datetime','datetime'] になってしまうので初期化
-				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
-				$DbContent->validate = [];
-
-				//if (!$DbContent->saveContent($data, false)) {
-				if (!$DbContent->save($data)) {
-					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
-					// ここでrollback
-					$DbContent->rollback();
-
-					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
-					// var_exportは大丈夫らしい。。。
-					// @see https://phpmd.org/rules/design.html
-
-					$message = $this->getLogArgument($nc2MultidbContent) . "\n" .
-						var_export($DbContent->validationErrors, true);
-					$this->writeMigrationLog($message);
-					$DbContent->rollback();
-					continue;
-				}
-
-				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-
-				$nc2PostId = $nc2MultidbContent['Nc2MultidatabaseContent']['content_id'];
-				$idMap = [
-					$nc2PostId => $DbContent->id
-				];
-				$this->saveMap('MultidatabaseContent', $idMap);
-				$DbContent->commit();
-
-			} catch (Exception $ex) {
-				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
-				$DbContent->rollback($ex);
-				throw $ex;
-			}
-		}
-
-		//Current::remove('Block.id');
-		//Current::remove('Room.id');
-		//Current::remove('Plugin.key');
-
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase File Migration end.'));
-		return true;
-	}
-
-	/**
+/**
  * Save ContentComment from Nc2.
  *
  * @param array $nc2MultidbComments Nc2JournalPost data.
