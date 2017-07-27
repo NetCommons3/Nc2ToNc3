@@ -383,6 +383,8 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		]);
 		$colNoList = Hash::combine($metadata, '{n}.MultidatabaseMetadata.id', '{n}.MultidatabaseMetadata.col_no');
 
+		$metadata = Hash::combine($metadata, '{n}.MultidatabaseMetadata.id', '{n}.MultidatabaseMetadata');
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 
@@ -411,6 +413,8 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			$nc3IsActive = '0';
 		}
 
+		$DbContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
+
 		//
 		$data = [
 			'MultidatabaseContent'  => [
@@ -422,8 +426,15 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				'is_latest' => 1,
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2MultidbContent['Nc2MultidatabaseContent']),
 				'created' => $this->_convertDate($nc2MultidbContent['Nc2MultidatabaseContent']['insert_time']),
+			],
+			'Block' => [
+				'id' => $blockId
 			]
 		];
+
+		$Nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
+
+		$Nc2DbFile = $this->getNc2Model($model, 'multidatabase_file');
 
 		// metadata content mapping
 		foreach ($nc2metadataContents as $nc2metadataContent){
@@ -433,7 +444,42 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 			$colNo = $colNoList[$nc3MetadataId];
 
-			$data['MultidatabaseContent']['value' . $colNo] = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
+			if (in_array($metadata[$nc3MetadataId]['type'], ['image', 'file'])){
+				// ?action=multidatabase_action_main_filedownload&upload_id=1
+				$value = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
+				$eualPos = strrpos($value, '=');
+				if ($eualPos === false) {
+					// アップロードされてない　→何もすることないか
+
+				}else{
+					// アップロードファイルあり
+					$data['MultidatabaseContent']['value' . $colNo] = '';
+
+					$nc2UploadId = substr($value, $eualPos + 1);
+					$file = $Nc2ToNc3Upload->generateUploadFile($nc2UploadId);
+					$fileFieldName = 'value'.$colNo.'_attach';
+					//$fileFieldName = 'value'.$colNo.'';
+					$data['MultidatabaseContent'][$fileFieldName] = $file;
+					$DbContent->uploadSettings($fileFieldName);
+
+					// ダウンロードパスワード
+					$nc2DbFile = $Nc2DbFile->findByUploadId($nc2UploadId);
+					if ($nc2DbFile['Nc2MultidatabaseFile']['file_password']) {
+						$data['AuthorizationKey'][] = [
+							'additional_id' => 'value' .$colNo,
+							'authorization_key' => $nc2DbFile['Nc2MultidatabaseFile']['file_password']
+						];
+
+					}
+
+					// TODO download_content
+
+				}
+
+			} else {
+				$data['MultidatabaseContent']['value' . $colNo] = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
+			}
+
 		}
 		// TODO vote -> like
 
