@@ -134,7 +134,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 			$MetadataSetting->create();
 			$MetadataSetting->save($setting);
 		}
-
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration end.'));
 		return true;
 	}
@@ -404,6 +403,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		$AuthorizationKey = ClassRegistry::init('AuthorizationKeys.AuthorizationKey');
 		$UploadFile = ClassRegistry::init('Files.UploadFile');
 
+		$Like = ClassRegistry::init('Likes.Like');
 		foreach ($nc2MultidbContents as $nc2MultidbContent) {
 			$DbContent->begin();
 			//$DbContent->Behaviors->disable('Attachment');
@@ -488,6 +488,13 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 						$UploadFile->create();
 						$UploadFile->save($file, false, false);
 					}
+				}
+
+				// Like
+				if ($data['Like']['like_count']) {
+					$data['Like']['content_key'] = $nc3DbContent['MultidatabaseContent']['key'];
+					$Like->create();
+					$Like->save($data);
 				}
 
 				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);

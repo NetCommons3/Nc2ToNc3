@@ -433,6 +433,12 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			]
 		];
 
+
+		$data['Like'] = [
+			'like_count' => $nc2MultidbContent['Nc2MultidatabaseContent']['vote_count'],
+			'plugin_key' => 'multidatabases',
+		];
+
 		$Nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
 
 		$Nc2DbFile = $this->getNc2Model($model, 'multidatabase_file');
@@ -484,7 +490,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			}
 
 		}
-		// TODO vote -> like
 
 		return $data;
 	}
