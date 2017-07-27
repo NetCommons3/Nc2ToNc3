@@ -166,6 +166,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		//$Topic = ClassRegistry::init('Topics.Topic');
 
 		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+		$MultidatabaseSetting = ClassRegistry::init('Multidatabases.MultidatabaseSetting');
 
 
 		foreach ($nc2Multidatabases as $nc2Multidatabase) {
@@ -184,6 +185,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				$BlocksLanguage->create();
 				$Multidatabase->create();
+				$MultidatabaseSetting->create();
 				$Block->create();
 				//$Topic->create();
 
@@ -199,6 +201,35 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$Multidatabase->rollback();
 					continue;
 				}
+
+				$multidatabase = $Multidatabase->findById($Multidatabase->id);
+				$block = $Block->findById($multidatabase['Multidatabase']['block_id']);
+
+				Current::write('Block', $block['Block']);
+
+				//$permissions = [
+				//	'BlockRolePermission' =>$data['BlockRolePermission']
+				//];
+
+				foreach($data['BlockRolePermission'] as &$permission){
+					foreach ($permission as &$role){
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$MultidatabaseSetting->saveMultidatabaseSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$MultidatabaseSetting->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($Multidatabase->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
+					continue;
+				}
+
 
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
@@ -222,6 +253,8 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				$Multidatabase->rollback($ex);
 				throw $ex;
 			}
+
+			Current::remove('Block');
 		}
 
 		Current::remove('Room.id');

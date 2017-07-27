@@ -135,7 +135,8 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				'use_like' => $nc2Multidatabase['Nc2Multidatabase']['vote_flag'],
 				'use_unlike' => '0',
 				'use_comment' => $nc2Multidatabase['Nc2Multidatabase']['comment_flag'],
-				//'use_sns' => $nc2Multidatabase['Nc2Multidatabase']['sns_flag'],
+				'use_workflow' => $nc2Multidatabase['Nc2Multidatabase']['agree_flag'],
+				'use_comment_approval' => $nc2Multidatabase['Nc2Multidatabase']['agree_flag'],
 				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
 			],
@@ -160,7 +161,100 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				3 => [],
 			]
 		];
+		$data = Hash::merge($data, $this->_makePermissiondata($nc2Multidatabase['Nc2Multidatabase']['contents_authority'], $nc3RoomId));
 
+		// 権限データ
+
+		return $data;
+	}
+
+	protected function _makePermissiondata($nc2AuthorityCode, $nc3RoomId) {
+		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
+		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
+		$rolesRooms = $RolesRoom->find('all', [
+			'conditions' => [
+				'RolesRoom.room_id' => $nc3RoomId
+			],
+			'fields' => ['RolesRoom.id', 'RolesRoom.role_key'],
+			'recursive' => -1
+		]);
+		$rolesRoomIdByRoleKey = Hash::combine($rolesRooms, '{n}.RolesRoom.role_key', '{n}.RolesRoom.id');
+
+
+		switch ($nc2AuthorityCode) {
+			case 4:
+				// NC2主担以上→Nc3ルーム管理者以上
+				$borderLine = 'room_administrator';
+				break;
+			case 3:
+				//NC2モデレータ以上→NC3編集者以上
+				$borderLine = 'editor';
+				break;
+			case 2:
+				// NC2一般以上→NC3一般以上
+				$borderLine = 'general_user';
+				break;
+		}
+
+		// Roleをレベル低い順に取得
+		$roomRoles = $RoomRole->find('all', ['order' => 'level ASC']);
+		$creatable = 0;
+		$commentPublishable = 0;
+		$commentPublishableBorderLine = 'chief_editor'; // NC3のデフォルトにしとく
+		foreach ($roomRoles as $roomRole) {
+			$roleKey = $roomRole['RoomRole']['role_key'];
+			if ($roleKey == $borderLine) {
+				$creatable = 1;
+			}
+			if ($roleKey == $commentPublishableBorderLine) {
+				$commentPublishable = 1;
+			}
+
+			// content_publishableはルーム管理, visitor のレコードはつくらない
+			if (!in_array($roleKey, ['room_administrator', 'visitor'])){
+				$data['BlockRolePermission']['content_publishable'][$roleKey] = [
+					'id' => null,
+					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+					'value' => 0,
+					'permission' => 'content_publishable'
+				];
+			}
+
+			// content_creatableはgeneral_userだけ
+			if ($roleKey == 'general_user') {
+				$data['BlockRolePermission']['content_creatable'][$roleKey] = [
+					'id' => null,
+					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+					'value' => $creatable,
+					'permission' => 'content_creatable'
+				];
+			}
+
+			if (!in_array($roleKey, ['room_administrator', 'chief_editor'])) {
+				$data['BlockRolePermission']['content_comment_publishable'][$roleKey] = [
+					'id' => null,
+					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+					'value' => $commentPublishable,
+					'permission' => 'content_comment_publishable'
+				];
+
+				$data['BlockRolePermission']['content_comment_creatable'][$roleKey] = [
+					'id' => null,
+					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+					'value' => 1,
+					'permission' => 'content_comment_creatable'
+				];
+			}
+
+		}
+		/*
+		 * roles_room_id, block_key, permission
+		 */
+		//$data['BlockRolePermission']['content_comment_creatable']['visitor'] = [
+		//	'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+		//	'value' => 0,
+		//	'permission' => 'content_comment_creatable'
+		//];
 		return $data;
 	}
 
