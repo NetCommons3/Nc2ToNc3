@@ -472,7 +472,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 					}
 
-					// TODO download_content
+					// download_content
+					$data['DownloadCount']['value' . $colNo] = $nc2DbFile['Nc2MultidatabaseFile']['download_count'];
+
 
 				}
 

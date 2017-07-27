@@ -376,6 +376,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		$Nc2MultidbFile = $this->getNc2Model('multidatabase_file');
 
 		$AuthorizationKey = ClassRegistry::init('AuthorizationKeys.AuthorizationKey');
+		$UploadFile = ClassRegistry::init('Files.UploadFile');
 
 		foreach ($nc2MultidbContents as $nc2MultidbContent) {
 			$DbContent->begin();
@@ -441,6 +442,25 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 						)) {
 							throw new InternalErrorException(__d('net_commons', 'Internal Server Error'));
 						}
+					}
+				}
+
+				$nc3DbContent = $DbContent->findById($DbContent->id, ['key'], null, -1);
+
+				// DownloadCount更新
+				if (isset($data['DownloadCount'])) {
+					foreach ($data['DownloadCount'] as $fieldName => $count) {
+						$file = $UploadFile->find('first', [
+							'conditions' => [
+								'plugin_key' => 'multidatabases',
+								'content_key' => $nc3DbContent['MultidatabaseContent']['key'],
+								'field_name' => $fieldName . '_attach',
+							]
+						]);
+						$file['UploadFile']['download_count'] = $count;
+						$file['UploadFile']['total_download_count'] = $count;
+						$UploadFile->create();
+						$UploadFile->save($file, false, false);
 					}
 				}
 
