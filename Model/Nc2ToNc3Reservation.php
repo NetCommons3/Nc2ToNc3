@@ -198,6 +198,20 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$Nc2Model = $this->getNc2Model('reservation_location');
 		$nc2Records = $Nc2Model->find('all');
 
+		$User = ClassRegistry::init('Users.User');
+		$approvalUsers = $User->find('all', [
+			'conditions' => [
+				'User.role_key' => [
+					'system_administrator',
+					'administrator'
+				]
+			],
+			'fields' => ['User.id'],
+			'recursive' => -1
+		]);
+
+		$ApplovalUser = ClassRegistry::init('Reservations.ReservationLocationsApprovalUser');
+
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
 		foreach ($nc2Records as $nc2Record) {
 			$Nc3Model->begin();
@@ -208,7 +222,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					continue;
 				}
 				$Nc3Model->create();
-				if (!$Nc3Model->save($data)) {
+				if (!$savedData = $Nc3Model->save($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Nc3Model->rollback();
 
@@ -219,6 +233,28 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					$Nc3Model->rollback();
 					continue;
+				}
+
+				// 承認者を登録しておく
+				$locationKey = $savedData['ReservationLocation']['key'];
+				foreach ($approvalUsers as $user) {
+					$approvalUser = [
+						'ReservationLocationsApprovalUser' => [
+							'location_key' => $locationKey,
+							'user_id' => $user['User']['id'],
+						]
+					];
+					$ApplovalUser->create();
+					if (!$ApplovalUser->save($approvalUser)) {
+						$Nc3Model->rollback();
+
+						// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+						// @see https://phpmd.org/rules/design.html
+						$message = $this->getLogArgument($approvalUser) . "\n" .
+							var_export($Nc3Model->validationErrors, true);
+						$this->writeMigrationLog($message);
+						continue;
+					}
 				}
 
 				$nc2Id = $nc2Record['Nc2ReservationLocation']['location_id'];
