@@ -167,6 +167,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
 		$MultidatabaseSetting = ClassRegistry::init('Multidatabases.MultidatabaseSetting');
+		$MailSetting = ClassRegistry::init('Mails.MailSetting');
 
 
 		foreach ($nc2Multidatabases as $nc2Multidatabase) {
@@ -186,6 +187,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				$BlocksLanguage->create();
 				$Multidatabase->create();
 				$MultidatabaseSetting->create();
+				$MailSetting->create();
 				$Block->create();
 				//$Topic->create();
 
@@ -230,6 +232,28 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// MailSetting
+				$data['MailSetting']['block_key'] = $block['Block']['key'];
+				//
+				//foreach($data['BlockRolePermission'] as &$permission){
+				//	foreach ($permission as &$role){
+				//		$role['block_key'] = $block['Block']['key'];
+				//	}
+				//}
+				// メールの権限については先に権限設定保存じに保存できちゃってるので、ここでは保存させない
+				unset($data['BlockRolePermission']);
+				if (!$MailSetting->saveMailSettingAndFixedPhrase($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$MailSetting->rollback();
+
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($Multidatabase->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
+					continue;
+				}
 
 
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);

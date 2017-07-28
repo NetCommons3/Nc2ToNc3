@@ -161,10 +161,93 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				3 => [],
 			]
 		];
-		$data = Hash::merge($data, $this->_makePermissiondata($nc2Multidatabase['Nc2Multidatabase']['contents_authority'], $nc3RoomId));
 
 		// 権限データ
+		$data = Hash::merge($data, $this->_makePermissiondata($nc2Multidatabase['Nc2Multidatabase']['contents_authority'], $nc3RoomId));
 
+		// Mail設定
+		$data = Hash::merge($data, $this->_makeMailSetting($model, $nc2Multidatabase['Nc2Multidatabase'], $nc3RoomId));
+
+		return $data;
+	}
+
+	protected function _convertMailValiable($text) {
+		// TODO　X-DATA, X-MDB使えないけどどうしよう
+		return $text;
+	}
+
+	protected function _makeMailSetting($model, $nc2Multidb, $nc3RoomId) {
+		//  Mail
+		$data = [
+			'MailSetting' => [
+				'plugin_key' => 'multidatabases',
+				'block_key' => null,
+				'is_mail_send' => $nc2Multidb['mail_flag'],
+				'is_mail_send_approval' => $nc2Multidb['agree_flag'], // ワークフローを使うなら承認メール有効にする
+
+			],
+			'MailSettingFixedPhrase' => [
+				[
+					'language_id' => $this->getLanguageIdFromNc2($model),
+					'plugin_key' => 'multidatabases',
+					'block_key' => null,
+					'type_key' => 'contents',
+					'mail_fixed_phrase_subject' => $this->_convertMailValiable($nc2Multidb['mail_subject']),
+					'mail_fixed_phrase_body' => $this->_convertMailValiable($nc2Multidb['mail_body']),
+				],
+			],
+		];
+
+		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
+		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
+		$rolesRooms = $RolesRoom->find('all', [
+			'conditions' => [
+				'RolesRoom.room_id' => $nc3RoomId
+			],
+			'fields' => ['RolesRoom.id', 'RolesRoom.role_key'],
+			'recursive' => -1
+		]);
+		$rolesRoomIdByRoleKey = Hash::combine($rolesRooms, '{n}.RolesRoom.role_key', '{n}.RolesRoom.id');
+
+
+		switch ($nc2Multidb['mail_authority']) {
+			case 4:
+				// NC2主担以上→Nc3ルーム管理者以上
+				$borderLine = 'room_administrator';
+				break;
+			case 3:
+				//NC2モデレータ以上→NC3編集者以上
+				$borderLine = 'editor';
+				break;
+			case 2:
+				// NC2一般以上→NC3一般以上
+				$borderLine = 'general_user';
+				break;
+			case 1:
+				// NC2ゲスト→NC3ゲスト
+				$borderLine = 'visitor';
+				break;
+		}
+		// Roleをレベル低い順に取得
+		$roomRoles = $RoomRole->find('all', ['order' => 'level ASC']);
+		$receivable = 0;
+		foreach ($roomRoles as $roomRole) {
+			$roleKey = $roomRole['RoomRole']['role_key'];
+			if ($roleKey == $borderLine) {
+				$receivable = 1;
+			}
+
+			if (!in_array($roleKey, ['room_administrator', 'chief_editor'])) {
+				$data['BlockRolePermission']['mail_content_receivable'][$roleKey] = [
+					'id' => null,
+					'block_key' => null,
+					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+					'value' => $receivable,
+					'permission' => 'mail_content_receivable'
+				];
+			}
+
+		}
 		return $data;
 	}
 
