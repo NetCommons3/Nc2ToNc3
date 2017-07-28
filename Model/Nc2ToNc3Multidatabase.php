@@ -82,7 +82,9 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		}
 
 		$Nc2MultidbContent = $this->getNc2Model('multidatabase_content');
-		$nc2MultidbContents = $Nc2MultidbContent->find('all');
+		$nc2MultidbContents = $Nc2MultidbContent->find('all', [
+			'order' => 'display_sequence'
+		]);
 		if (!$this->__saveNc3MultidbContentFromNc2($nc2MultidbContents)) {
 			return false;
 		}
