@@ -120,6 +120,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Room.php#L516
 		$this->changeNc3CurrentLanguage();
 
+		// 既存のパブリックルームのTopを対応付け
+		if (!$this->__savePublicTopRoomFromNc2()) {
+			return false;
+		}
+		$this->saveExistingMap($nc2Pages);
+
 		foreach ($nc2Pages as $nc2Page) {
 			if (!$this->__saveRoomFromNc2($nc2Page['Nc2Page']['lang_dirname'])) {
 				$this->restoreNc3CurrentLanguage();
@@ -160,11 +166,6 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		/* @var $RolesRoomsUser RolesRoomsUser */
 		$Room = ClassRegistry::init('Rooms.Room');
 		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
-
-		if (!$this->__savePublicTopRoomFromNc2()) {
-			return false;
-		}
-		$this->saveExistingMap($nc2Pages);	// 既存のパブリックルームのTopを対応付け
 
 		foreach ($nc2Pages as $nc2Page) {
 			/*
