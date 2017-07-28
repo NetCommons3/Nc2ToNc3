@@ -628,20 +628,20 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 			$colNo = $colNoList[$nc3MetadataId];
 
-			if (in_array($metadata[$nc3MetadataId]['type'], ['image', 'file'])){
+			if (in_array($metadata[$nc3MetadataId]['type'], ['image', 'file'])) {
 				// ?action=multidatabase_action_main_filedownload&upload_id=1
 				$value = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
 				$eualPos = strrpos($value, '=');
 				if ($eualPos === false) {
 					// アップロードされてない　→何もすることないか
 
-				}else{
+				} else {
 					// アップロードファイルあり
 					$data['MultidatabaseContent']['value' . $colNo] = '';
 
 					$nc2UploadId = substr($value, $eualPos + 1);
 					$file = $Nc2ToNc3Upload->generateUploadFile($nc2UploadId);
-					$fileFieldName = 'value'.$colNo.'_attach';
+					$fileFieldName = 'value' . $colNo . '_attach';
 					//$fileFieldName = 'value'.$colNo.'';
 					$data['MultidatabaseContent'][$fileFieldName] = $file;
 					$DbContent->uploadSettings($fileFieldName);
@@ -650,7 +650,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 					$nc2DbFile = $Nc2DbFile->findByUploadId($nc2UploadId);
 					if ($nc2DbFile['Nc2MultidatabaseFile']['file_password']) {
 						$data['AuthorizationKey'][] = [
-							'additional_id' => 'value' .$colNo,
+							'additional_id' => 'value' . $colNo,
 							'authorization_key' => $nc2DbFile['Nc2MultidatabaseFile']['file_password']
 						];
 
@@ -662,6 +662,8 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 				}
 
+			} elseif ($metadata[$nc3MetadataId]['type'] == 'checkbox') {
+				$data['MultidatabaseContent']['value' . $colNo] = str_replace('|', '||', $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content']);
 			} else {
 				$data['MultidatabaseContent']['value' . $colNo] = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
 			}
