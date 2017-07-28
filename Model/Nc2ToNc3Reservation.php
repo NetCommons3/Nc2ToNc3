@@ -530,11 +530,14 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			$roomId = 0; // 無指定
 		}
 
+		$rrule = ($nc2Record['Nc2ReservationReserveDetail']['rrule'] === null) ? '' :
+			$nc2Record['Nc2ReservationReserveDetail']['rrule'];
+
 		$data = [
 			'ReservationRrule' => [
 				'reservation_id' => $reservationId,
 				'name' => '',
-				'rrule' => $nc2Record['Nc2ReservationReserveDetail']['rrule'],
+				'rrule' => $rrule,
 				'ireservation_uid' => $ireservationUid,
 				'ireservation_comp_name' => 'reservations',
 				'room_id' => $roomId,
