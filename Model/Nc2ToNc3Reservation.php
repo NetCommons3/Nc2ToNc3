@@ -888,7 +888,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 				$Timeframe->create();
 
-				if (!$Timeframe->save($data)) {
+				if (!$Timeframe->saveTimeframe($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
 					$Timeframe->rollback();
 
@@ -943,9 +943,9 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			'ReservationTimeframe' => [
 				'language_id' => $this->getLanguageIdFromNc2(),
 				'title' => $nc2Timeframe['Nc2ReservationTimeframe']['timeframe_name'],
-				'start_time' => $this->_convertTimeframeTime( $nc2Timeframe['Nc2ReservationTimeframe']['start_time']),
+				'start_time' => $this->_convertTimeframeTime( $nc2Timeframe['Nc2ReservationTimeframe']['start_time'], $nc2Timeframe['Nc2ReservationTimeframe']['timezone_offset']),
 				// 150000形式からTIME形式→そのままでも入るので変換不要
-				'end_time' => $this->_convertTimeframeTime($nc2Timeframe['Nc2ReservationTimeframe']['end_time']),
+				'end_time' => $this->_convertTimeframeTime($nc2Timeframe['Nc2ReservationTimeframe']['end_time'], $nc2Timeframe['Nc2ReservationTimeframe']['timezone_offset']),
 				'timezone' => $this->convertTimezone($nc2Timeframe['Nc2ReservationTimeframe']['timezone_offset']),
 				'color' => $nc2Timeframe['Nc2ReservationTimeframe']['timeframe_color'],
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Timeframe['Nc2ReservationTimeframe']),
@@ -962,9 +962,21 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @param string $time 150000形式
  * @return string
  */
-	protected function _convertTimeframeTime($time) {
+	protected function _convertTimeframeTime($time, $timezoneOffset) {
+		// DBにはUTC時間で保存されてる
+		// saveTimeframe()にはtimezone で指定したタイムゾーンの時間で渡す
 		$hour = substr($time, 0, 2);
 		$min = substr($time, 2, 2);
+		$time = $hour . ':' . $min;
+
+		$userTimezone = $this->convertTimezone($timezoneOffset);
+
+		$time = new DateTime($time, new DateTimeZone('UTC'));
+		$time->setTimezone(new DateTimeZone($userTimezone));
+		$ret = $time->format('H:i');
+return $ret;
+		$hour = $hour + $timezoneOffset;
+
 		return $hour . ':' . $min;
 	}
 
