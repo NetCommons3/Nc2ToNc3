@@ -692,6 +692,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationRrule', $nc2Detail['Nc2ReservationReserveDetail']['reserve_details_id']);
 		$rruleId = $mapIdList[$nc2Detail['Nc2ReservationReserveDetail']['reserve_details_id']];
 
+		$titleiCon = $this->convertTitleIcon($nc2Record['Nc2ReservationReserve']['title_icon']);
+		$titleiCon = ($titleiCon === null) ? '' : $titleiCon;
 		$data = [
 			'ReservationEvent' => [
 				'reservation_rrule_id' => $rruleId,
@@ -699,7 +701,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				'language_id' => $this->getLanguageIdFromNc2(),
 				'target_user' => $targetUser['User']['id'],
 				'title' => $nc2Record['Nc2ReservationReserve']['title'],
-				'title_icon' => '', // TODO
+				'title_icon' => $titleiCon,
 				'location' => '',
 				'contact' => $contact,
 				'description' => $description,
