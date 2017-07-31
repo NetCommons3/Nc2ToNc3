@@ -293,15 +293,16 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				$commentPublishable = 1;
 			}
 
-			// content_publishableはルーム管理, visitor のレコードはつくらない
-			if (!in_array($roleKey, ['room_administrator', 'visitor'])){
-				$data['BlockRolePermission']['content_publishable'][$roleKey] = [
-					'id' => null,
-					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-					'value' => 0,
-					'permission' => 'content_publishable'
-				];
-			}
+			// content_publishable はデータとして挿入しなくなったのでコメントアウト
+			//// content_publishableはルーム管理, visitor のレコードはつくらない
+			//if (!in_array($roleKey, ['room_administrator', 'visitor'])){
+			//	$data['BlockRolePermission']['content_publishable'][$roleKey] = [
+			//		'id' => null,
+			//		'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
+			//		'value' => 0,
+			//		'permission' => 'content_publishable'
+			//	];
+			//}
 
 			// content_creatableはgeneral_userだけ
 			if ($roleKey == 'general_user') {
@@ -313,6 +314,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				];
 			}
 
+			// コメント投稿権限とコメント承認権限はroom_administrator, chief_editor以外を設定する
 			if (!in_array($roleKey, ['room_administrator', 'chief_editor'])) {
 				$data['BlockRolePermission']['content_comment_publishable'][$roleKey] = [
 					'id' => null,
