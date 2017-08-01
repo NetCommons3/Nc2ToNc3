@@ -134,8 +134,10 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 	private function __saveFrameFromNc2($nc2Blocks) {
 		/* @var $Frame Frame */
 		/* @var $Room Room */
+		/* @var $Block Block */
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$Room = ClassRegistry::init('Rooms.Room');
+		$Block = ClassRegistry::init('Blocks.Block');
 
 		//$this->saveExistingMap($nc2Blocks);
 		$nc3CurrentRoom = null;
@@ -161,6 +163,9 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 				}
 				$nc3Room = $Room->findById($data['Frame']['room_id'], null, null, -1);
 				Current::write('Room', $nc3Room['Room']);
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.3/Model/Questionnaire.php#L442
+				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.3/Model/QuestionnaireSetting.php#L138-L141
+				$Block->create(false);
 
 				$Frame->create(false);
 				if (!($data = $Frame->saveFrame($data))) {
