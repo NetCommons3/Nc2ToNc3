@@ -53,6 +53,12 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
 		}
 
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfTex($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
+
 		$content = str_replace($searches, $replaces, $content);
 
 		return $content;
@@ -338,6 +344,33 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		 $body = $content;
 
 		 return $body;*/
+
+		return $strReplaceArguments;
+	}
+
+/**
+ * Get str_replace arguments of TeX.
+ *
+ * @param string $content Nc2 content.
+ * @return array str_replace arguments.(0:$search,1:$replace)
+ */
+	private function __getStrReplaceArgumentsOfTex($content) {
+		$strReplaceArguments = [];
+
+		$pattern = '/<img .*? src=".*?action=common_tex_main&amp;c=(.*?)" .*?\/>/';
+		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+		var_dump($matches);
+		foreach ($matches as $match) {
+			$strReplaceArguments[0][] = $match[0];
+
+			$texValue = str_replace("%_", "%", $match[1]);
+			$texValue = rawurldecode($texValue);
+
+			$strReplaceArguments[1][] =
+				'<span class="tex-char">' .
+				'$$' . $texValue . '$$' .
+				'</span>';
+		}
 
 		return $strReplaceArguments;
 	}
