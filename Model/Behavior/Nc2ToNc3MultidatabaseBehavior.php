@@ -98,12 +98,14 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2Multidatabase['Nc2Multidatabase']);
 		$nc3Created = $this->_convertDate($nc2Multidatabase['Nc2Multidatabase']['insert_time']);
 
-		//$Nc2MultidatabaseBlock = $model->getNc2Model($model, 'multidatabase_block');
-		//$nc2MultidatabaseBlock = $Nc2MultidatabaseBlock->find('first', [
-		//	'conditions' => [
-		//
-		//	]
-		//])
+		// use_workflowはRoom.need_approval = 0のときに変更可能。need_approval=1なら1で固定
+		$Room = ClassRegistry::init('Rooms.Room');
+		$room = $Room->findById($roomMap['Room']['id']);
+		if ($room['Room']['need_approval']) {
+			$useWorkflow = 1;
+		} else {
+			$useWorkflow = $nc2Multidatabase['Nc2Multidatabase']['agree_flag'];
+		}
 
 		$data = [
 			'Frame' => [
@@ -135,7 +137,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				'use_like' => $nc2Multidatabase['Nc2Multidatabase']['vote_flag'],
 				'use_unlike' => '0',
 				'use_comment' => $nc2Multidatabase['Nc2Multidatabase']['comment_flag'],
-				'use_workflow' => $nc2Multidatabase['Nc2Multidatabase']['agree_flag'],
+				'use_workflow' => $useWorkflow,
 				'use_comment_approval' => $nc2Multidatabase['Nc2Multidatabase']['agree_flag'],
 				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
