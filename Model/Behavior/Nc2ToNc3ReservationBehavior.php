@@ -11,44 +11,41 @@
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
- * Nc2ToNc3BlogBehavior
- * TODO Reservationにあわせる
+ * Nc2ToNc3ReservationBehavior
  */
-
 class Nc2ToNc3ReservationBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get Log argument.
  *
  * @param Model $model Model using this behavior.
- * @param array $nc2Journal Array data of Nc2Journal, Nc2JournalPost.
+ * @param array $Nc2Reservation Array data of Nc2Reservation, Nc2ReservationPost.
  * @return string Log argument
  */
 
-	public function getLogArgument(Model $model, $nc2Journal) {
-		return $this->__getLogArgument($nc2Journal);
+	public function getLogArgument(Model $model, $Nc2Reservation) {
+		return $this->__getLogArgument($Nc2Reservation);
 	}
 
 /**
  * Get Log argument.
  *
- * @param array $nc2Journal Array data of Nc2CalendarManage, Nc2CalendarBlock and Nc2CalendarPlan.
+ * @param array $Nc2Reservation Array data of Nc2CalendarManage, Nc2CalendarBlock and Nc2CalendarPlan.
  * @return string Log argument
  */
-	private function __getLogArgument($nc2Journal) {
-		if (isset($nc2Journal['Nc2Journal'])) {
-			return 'Nc2Journal ' .
-				'journal_id:' . $nc2Journal['Nc2Journal']['journal_id'];
+	private function __getLogArgument($Nc2Reservation) {
+		if (isset($Nc2Reservation['Nc2Reservation'])) {
+			return 'Nc2Reservation ' .
+				'journal_id:' . $Nc2Reservation['Nc2Reservation']['journal_id'];
 		}
 
-		if (isset($nc2Journal['Nc2JournalBlock'])) {
-			return 'Nc2JournalBlock ' .
-				'block_id:' . $nc2Journal['Nc2JournalBlock']['block_id'];
+		if (isset($Nc2Reservation['Nc2ReservationBlock'])) {
+			return 'Nc2ReservationBlock ' .
+				'block_id:' . $Nc2Reservation['Nc2ReservationBlock']['block_id'];
 		}
 
-		if (isset($nc2Journal['Nc2JournalPost'])) {
-			return 'Nc2JournalPost ' .
-				'post_id:' . $nc2Journal['Nc2JournalPost']['post_id'];
+		if (isset($Nc2Reservation['Nc2ReservationPost'])) {
+			return 'Nc2ReservationPost ' .
+				'post_id:' . $Nc2Reservation['Nc2ReservationPost']['post_id'];
 		}
 	}
-
 }

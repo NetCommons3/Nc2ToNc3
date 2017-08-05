@@ -107,7 +107,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		$MetadataContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
 		$MetadataSetting = ClassRegistry::init('Multidatabases.MultidatabaseMetadataSetting');
 		//$MetadataContent->virtualFields['number'] = 0;
-		foreach($metadata as $metadatum) {
+		foreach ($metadata as $metadatum) {
 			$colNo = $metadatum['MultidatabaseMetadata']['col_no'];
 			$result = $MetadataContent->find('first', [
 				'conditions' => [
@@ -123,7 +123,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				if ($number === null) {
 					$number = 0;
 				}
-			}else{
+			} else {
 				$number = 0;
 			}
 
@@ -171,7 +171,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		$MultidatabaseSetting = ClassRegistry::init('Multidatabases.MultidatabaseSetting');
 		$MailSetting = ClassRegistry::init('Mails.MailSetting');
 
-
 		foreach ($nc2Multidatabases as $nc2Multidatabase) {
 			$Multidatabase->begin();
 			try {
@@ -215,7 +214,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				//	'BlockRolePermission' =>$data['BlockRolePermission']
 				//];
 
-				foreach($data['BlockRolePermission'] as &$permission){
+				foreach ($data['BlockRolePermission'] as &$permission) {
 					foreach ($permission as &$role){
 						$role['block_key'] = $block['Block']['key'];
 					}
@@ -257,7 +256,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2MultidatabaseId = $nc2Multidatabase['Nc2Multidatabase']['multidatabase_id'];
@@ -268,7 +266,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				// ダミーでSaveしたmetadataレコードの削除
 				$savedData = $Multidatabase->findById($Multidatabase->id);
-				$key =  $savedData['Multidatabase']['key'];
+				$key = $savedData['Multidatabase']['key'];
 				$Metadata->deleteAll(['key' => $key], false, false);
 
 				$Multidatabase->commit();
@@ -441,7 +439,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
  *
  * @param array $nc2MultidbContents Nc2JournalPost data.
  * @return bool True on success
- * @throws Exception
+ * @throws InternalErrorException
  */
 	private function __saveNc3MultidbContentFromNc2($nc2MultidbContents) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase Content Migration start.'));
@@ -518,7 +516,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				// ここでファイルパスワード保存
 				if (isset($data['AuthorizationKey'])) {
-					foreach($data['AuthorizationKey'] as $authKey) {
+					foreach ($data['AuthorizationKey'] as $authKey) {
 						if (! $AuthorizationKey->saveAuthorizationKey(
 							'MultidatabaseContent',
 							$DbContent->id,

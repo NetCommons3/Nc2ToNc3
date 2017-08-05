@@ -998,6 +998,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * convert TimeFrame time
  *
  * @param string $time 150000形式
+ * @param float $timezoneOffset +12.0〜-12.0
  * @return string
  */
 	protected function _convertTimeframeTime($time, $timezoneOffset) {
@@ -1012,10 +1013,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$time = new DateTime($time, new DateTimeZone('UTC'));
 		$time->setTimezone(new DateTimeZone($userTimezone));
 		$ret = $time->format('H:i');
-return $ret;
-		$hour = $hour + $timezoneOffset;
-
-		return $hour . ':' . $min;
+		return $ret;
 	}
 
 /**
