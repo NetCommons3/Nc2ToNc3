@@ -633,22 +633,24 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			$colNo = $colNoList[$nc3MetadataId];
 
 			if (in_array($metadata[$nc3MetadataId]['type'], ['image', 'file'])) {
+				$fileFieldName = 'value' . $colNo . '_attach';
+				$DbContent->uploadSettings($fileFieldName);
+
 				// ?action=multidatabase_action_main_filedownload&upload_id=1
 				$value = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
-				$eualPos = strrpos($value, '=');
-				if ($eualPos === false) {
+				$equalPos = strrpos($value, '=');
+				if ($equalPos === false) {
 					// アップロードされてない　→何もすることないか
-
 				} else {
 					// アップロードファイルあり
 					$data['MultidatabaseContent']['value' . $colNo] = '';
 
-					$nc2UploadId = substr($value, $eualPos + 1);
+					$nc2UploadId = substr($value, $equalPos + 1);
 					$file = $Nc2ToNc3Upload->generateUploadFile($nc2UploadId);
-					$fileFieldName = 'value' . $colNo . '_attach';
+					//$fileFieldName = 'value' . $colNo . '_attach';
 					//$fileFieldName = 'value'.$colNo.'';
 					$data['MultidatabaseContent'][$fileFieldName] = $file;
-					$DbContent->uploadSettings($fileFieldName);
+					//$DbContent->uploadSettings($fileFieldName);
 
 					// ダウンロードパスワード
 					$nc2DbFile = $Nc2DbFile->findByUploadId($nc2UploadId);
