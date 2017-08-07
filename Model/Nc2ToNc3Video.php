@@ -53,7 +53,13 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Video Migration start.'));
 
-		/* @var $Nc2Video AppModel */
+		/* @var $Nc2ToNc3Plugin Nc2ToNc3Plugin */
+		$Nc2ToNc3Plugin = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Plugin');
+		$pluginMap = $Nc2ToNc3Plugin->getMap();
+		if (!Hash::extract($pluginMap, '{n}.Plugin[key=videos]')) {
+			$this->writeMigrationLog(__d('nc2_to_nc3', 'Multimedia is not installed.'));
+			return true;
+		}
 
 		/* @var $Nc2MultimediaBlock AppModel */
 		$Nc2Multimedia = $this->getNc2Model('multimedia');
