@@ -36,7 +36,7 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
  * Convert Nc2Page permalink.
  *
  * @param Model $model Model using this behavior.
- * @param strine $nc2Permalink Nc2Item data.
+ * @param string $nc2Permalink Nc2Item data.
  * @return string Converted Nc2Page permalink.
  */
 	public function convertPermalink(Model $model, $nc2Permalink) {
@@ -110,7 +110,7 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Convert Nc2Page permalink.
  *
- * @param strine $nc2Permalink Nc2Item data.
+ * @param string $nc2Permalink Nc2Item data.
  * @return string Converted Nc2Page permalink.
  */
 	protected function _convertPermalink($nc2Permalink) {
