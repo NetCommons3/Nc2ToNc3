@@ -359,7 +359,6 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 
 		$pattern = '/<img .*? src=".*?action=common_tex_main&amp;c=(.*?)" .*?\/>/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
-		var_dump($matches);
 		foreach ($matches as $match) {
 			$strReplaceArguments[0][] = $match[0];
 

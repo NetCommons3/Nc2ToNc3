@@ -30,6 +30,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method array generateNc3FaqQuestionData($nc3Faq, $nc2Question)
  * @method array generateNc3FaqFrameSettingData($nc2FaqBlock)
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
@@ -60,6 +61,14 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Faq Migration start.'));
+
+		/* @var $Nc2ToNc3Plugin Nc2ToNc3Plugin */
+		$Nc2ToNc3Plugin = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Plugin');
+		$pluginMap = $Nc2ToNc3Plugin->getMap();
+		if (!Hash::extract($pluginMap, '{n}.Plugin[key=faqs]')) {
+			$this->writeMigrationLog(__d('nc2_to_nc3', 'Faq is not installed.'));
+			return true;
+		}
 
 		/* @var $Nc2Faq AppModel */
 		$Nc2Faq = $this->getNc2Model('faq');
