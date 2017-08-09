@@ -557,7 +557,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$multidatabase = $Multidatabase->findById($nc3DbId, ['id', 'block_id', 'key'], null, -1);
 
 		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
-		$metadata =$Metadata->find('all', [
+		$metadata = $Metadata->find('all', [
 			'conditions' => [
 				'multidatabase_id' => $nc3DbId,
 			]
@@ -664,7 +664,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 					// download_content
 					$data['DownloadCount']['value' . $colNo] = $nc2DbFile['Nc2MultidatabaseFile']['download_count'];
-
 
 				}
 
