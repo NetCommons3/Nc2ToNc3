@@ -69,6 +69,22 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 					]
 				]
 			];
+			//NetCommons 3.1.4以降、会員権限にゲスト権限(guest_user)を追加したため、ゲストはゲストで移行する
+			//ただし、NC3の権限管理でゲスト権限を削除した場合は、一般権限(common_user)にする
+			$UserRole = ClassRegistry::init('UserRoles.UserRole');
+			$count = $UserRole->find('count', [
+				'recursive' => -1,
+				'conditions' => [
+					'key' => 'guest_user'
+				],
+			]);
+			if ($count > 0) {
+				$this->__map['5'] = [
+					'UserRoleSetting' => [
+						'role_key' => 'guest_user'
+					]
+				];
+			}
 		}
 
 		if (!isset($nc2RoleAuthorityIds)) {
