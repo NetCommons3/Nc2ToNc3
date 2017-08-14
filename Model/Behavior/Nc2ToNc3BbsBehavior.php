@@ -9,6 +9,7 @@
  */
 
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
+App::uses('BbsFrameSetting', 'Bbses.Model');
 
 /**
  * Nc2ToNc3BbsBehavior
@@ -105,13 +106,13 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'name' => $nc2Bbs['Nc2Bb']['bbs_name'],
 				'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
 			],
-			'BbsFrameSetting' => [
-				'id' => '',
-				'frame_key' => $frameMap['Frame']['key'],
-				'articles_per_page' => $nc2BbsBlock['Nc2BbsBlock']['visible_row'],
-				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2BbsBlock['Nc2BbsBlock']),
-				'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
-			],
+			//'BbsFrameSetting' => [
+			//	'id' => '',
+			//	'frame_key' => $frameMap['Frame']['key'],
+			//	'articles_per_page' => $nc2BbsBlock['Nc2BbsBlock']['visible_row'],
+			//	'created_user' => $Nc2ToNc3User->getCreatedUser($nc2BbsBlock['Nc2BbsBlock']),
+			//	'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
+			//],
 			'BlocksLanguage' => [
 				'language_id' => '',
 				'name' => $nc2Bbs['Nc2Bb']['bbs_name']
@@ -314,6 +315,24 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			'plugin_key' => 'bbses',
 			'block_id' => Hash::get($nc3Bbs, ['Bbs', 'block_id']),
 		];
+
+		//表示タイプ(NC3.1.4以降対応)
+		if ($nc2BbsBlock['Nc2BbsBlock']['expand'] === '1') {
+			//フラット表示
+			$data['BbsFrameSetting']['display_type'] = BbsFrameSetting::DISPLAY_TYPE_FLAT;
+		} else {
+			if ($nc2BbsBlock['Nc2BbsBlock']['display'] === '0') {
+				//根記事一覧
+				$data['BbsFrameSetting']['display_type'] = BbsFrameSetting::DISPLAY_TYPE_ROOT;
+			} else {
+				//NC2の最新記事一覧、全件一覧および過去記事は、NC3では全件一覧にする
+				$data['BbsFrameSetting']['display_type'] = BbsFrameSetting::DISPLAY_TYPE_ALL;
+			}
+		}
+		if ($nc2BbsBlock['Nc2BbsBlock']['display'] === '1') {
+			//最新記事一覧の場合、表示件数を1にする
+			$data['BbsFrameSetting']['articles_per_page'] = 1;
+		}
 
 		return $data;
 	}
