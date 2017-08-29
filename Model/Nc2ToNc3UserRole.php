@@ -69,6 +69,28 @@ class Nc2ToNc3UserRole extends Nc2ToNc3AppModel {
 					]
 				]
 			];
+
+			// Nc2Authority.user_authority_id:5(管理者)は全てadministrator
+			/* @var $Nc2Authority AppModel */
+			$Nc2Authority = $this->getNc2Model('authorities');
+			$nc2Administrators = $Nc2Authority->findAllBySystemFlagAndUserAuthorityId(
+				'0',
+				'5',
+				'role_authority_id',
+				null,
+				null,
+				null,
+				-1
+			);
+			foreach ($nc2Administrators as $nc2Administrator) {
+				$nc2AuthorityId = $nc2Administrator['Nc2Authority']['role_authority_id'];
+				$this->__map[$nc2AuthorityId] = [
+					'UserRoleSetting' => [
+						'role_key' => 'administrator'
+					]
+				];
+			}
+
 			//NetCommons 3.1.4以降、会員権限にゲスト権限(guest_user)を追加したため、ゲストはゲストで移行する
 			//ただし、NC3の権限管理でゲスト権限を削除した場合は、一般権限(common_user)にする
 			$UserRole = ClassRegistry::init('UserRoles.UserRole');
