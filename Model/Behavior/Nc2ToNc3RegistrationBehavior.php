@@ -94,36 +94,59 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$endPeriod = $this->_convertDate($nc2Registration['Nc2Registration']['period']);
 		}
 
+		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$roomMap = $Nc2ToNc3Room->getMap($nc2Registration['Nc2Registration']['room_id']);
+		if (!$roomMap) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Registration));
+			$this->_writeMigrationLog($message);
+			return [];
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data['Registration'] = [
-			'key' => Hash::get($registrationMap, ['Registration', 'key']),
-			'is_active' => '0',
-			'status' => '3',
-			'title' => $nc2Registration['Nc2Registration']['registration_name'],
-			//'title_icon' => $this->_convertTitleIcon($nc2Registration['Nc2Registration']['title_icon']),
-			'is_total_show' => '0',
-			'answer_timing' => $answerTiming,
-			'is_key_pass_use' => RegistrationsComponent::USES_NOT_USE,
-			'total_show_timing' => '0',
-			'registration_mail_subject' => $nc2Registration['Nc2Registration']['mail_subject'],
-			'registration_mail_body' => $nc2Registration['Nc2Registration']['mail_body'],
-			'sub_title' => '',
-			'is_answer_mail_send' => $nc2Registration['Nc2Registration']['mail_send'],
-			'is_image_authentication' => $nc2Registration['Nc2Registration']['image_authentication'],
-			'reply_to' => $nc2Registration['Nc2Registration']['rcpt_to'],
-			'answer_start_period' => '',
-			'answer_end_period' => $endPeriod,
-			'is_limit_number' => (empty($nc2Registration['Nc2Registration']['limit_number']) ? '0' : '1'),
-			'limit_number' => $nc2Registration['Nc2Registration']['limit_number'],
-			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Registration['Nc2Registration']),
-			'created' => $this->_convertDate($nc2Registration['Nc2Registration']['insert_time']),
+		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2Registration['Nc2Registration']);
+		$nc3Created = $this->_convertDate($nc2Registration['Nc2Registration']['insert_time']);
+		$data = [
+			'Registration' => [
+				'key' => Hash::get($registrationMap, ['Registration', 'key']),
+				'is_active' => '1',
+				'status' => '1',
+				'title' => $nc2Registration['Nc2Registration']['registration_name'],
+				//'title_icon' => $this->_convertTitleIcon($nc2Registration['Nc2Registration']['title_icon']),
+				'is_total_show' => '0',
+				'answer_timing' => $answerTiming,
+				'is_key_pass_use' => RegistrationsComponent::USES_NOT_USE,
+				'total_show_timing' => '0',
+				'registration_mail_subject' => $nc2Registration['Nc2Registration']['mail_subject'],
+				'registration_mail_body' => $nc2Registration['Nc2Registration']['mail_body'],
+				'sub_title' => '',
+				'is_answer_mail_send' => $nc2Registration['Nc2Registration']['mail_send'],
+				'is_image_authentication' => $nc2Registration['Nc2Registration']['image_authentication'],
+				'reply_to' => $nc2Registration['Nc2Registration']['rcpt_to'],
+				'answer_start_period' => '',
+				'answer_end_period' => $endPeriod,
+				'is_limit_number' => (empty($nc2Registration['Nc2Registration']['limit_number']) ? '0' : '1'),
+				'limit_number' => $nc2Registration['Nc2Registration']['limit_number'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
+			],
+			'Block' => [
+				'id' => '',
+				'room_id' => $roomMap['Room']['id'],
+				'plugin_key' => 'registrations',
+				'name' => $nc2Registration['Nc2Registration']['registration_name'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
+			],
+			'BlocksLanguage' => [
+				'language_id' => '',
+				'name' => $nc2Registration['Nc2Registration']['registration_name'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
+			],
 		];
 
-		if ($nc2Registration['Nc2Registration']['status'] != '0') {
-			$data['Registration']['is_active'] = '1';
-			$data['Registration']['status'] = '1';
-		}
 		if ($nc2Registration['Nc2Registration']['image_authentication'] == '1') {
 			$data['Registration']['is_image_authentication'] = '0';
 		}
@@ -343,7 +366,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$data[] = [
 				'choice_sequence' => $nc3ChoiceSequence,
 				'choice_label' => $nc2Choice,
-				//'graph_color' => $this->_getGraphColor($nc3ChoiceSequence),
+				'graph_color' => $this->_getGraphColor($nc3ChoiceSequence),
 				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2Item['Nc2RegistrationItem']),
 				'created' => $this->_convertDate($nc2Item['Nc2RegistrationItem']['insert_time']),
 			];

@@ -78,12 +78,21 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	public function writeMigrationLog(Model $model, $message) {
 		$debugString = '';
 		$backtraces = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
+
 		if (isset($backtraces[4]) &&
 			isset($backtraces[4]['line']) &&
 			isset($backtraces[4]['class']) &&
 			$backtraces[4]['function'] == 'writeMigrationLog'
 		) {
 			$debugString = $backtraces[4]['class'] . ' on line ' . $backtraces[4]['line'];
+		}
+
+		if (version_compare( PHP_VERSION, '7.0.0', '>=' ) &&
+			isset($backtraces[2]['line']) &&
+			isset($backtraces[3]['class']) &&
+			$backtraces[0]['function'] == 'writeMigrationLog'
+		) {
+			$debugString = $backtraces[3]['class'] . ' on line ' . $backtraces[2]['line'];
 		}
 
 		$this->_writeMigrationLog($message, $debugString);

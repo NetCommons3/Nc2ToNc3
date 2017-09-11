@@ -239,6 +239,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Room',
 			'Nc2ToNc3Page',
 			'Nc2ToNc3Frame',
+			'Nc2ToNc3AccessCounter',
 			'Nc2ToNc3Announcement',
 			'Nc2ToNc3Bbs',
 			'Nc2ToNc3Blog',
