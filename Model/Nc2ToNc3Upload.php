@@ -78,7 +78,7 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 
 		if (!is_readable($tmpName)) {
 			$message = __d('nc2_to_nc3', '%s not found .', 'Nc2Upload upload_id:' . $nc2Upload['Nc2Upload']['upload_id']);
-			$this->writeMigrationLog($message);
+			$this->writeMigrationLog($message . ' - ' . $tmpName);
 			return $data;
 		}
 
