@@ -77,7 +77,8 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $Frame Frame */
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$nc3RoomId = $roomMap['Room']['id'];
-		$nc3Frame = $Frame->findByRoomIdAndPluginKey($nc3RoomId, 'multidatabases', ['id','key'], null, -1);
+		$nc3Frame = $Frame->findByRoomIdAndPluginKey($nc3RoomId, 'multidatabases', ['id', 'key'],
+			null, -1);
 		if (!$nc3Frame) {
 			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Multidatabase));
 			$this->_writeMigrationLog($message);
@@ -173,11 +174,25 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		return $data;
 	}
 
+/**
+ * メールの置き換え変数のコンバート。必要であればここで置換する
+ *
+ * @param string $text メール定型文
+ * @return string
+ */
 	protected function _convertMailValiable($text) {
-		// TODO　X-DATA, X-MDB使えないけどどうしよう
+		// X-DATA, X-MDB使えるようになったし、ここでやることは特になさそう
 		return $text;
 	}
 
+/**
+ * メール設定配列データ作成
+ *
+ * @param Model $model Nc2ToNc3Multidatabase
+ * @param array $nc2Multidb NC2汎用DB配列
+ * @param array $nc3RoomId ルームID
+ * @return array
+ */
 	protected function _makeMailSetting($model, $nc2Multidb, $nc3RoomId) {
 		//  Mail
 		$data = [
@@ -210,7 +225,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			'recursive' => -1
 		]);
 		$rolesRoomIdByRoleKey = Hash::combine($rolesRooms, '{n}.RolesRoom.role_key', '{n}.RolesRoom.id');
-
 
 		switch ($nc2Multidb['mail_authority']) {
 			case 4:
@@ -253,6 +267,13 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		return $data;
 	}
 
+/**
+ * 権限配列の作成
+ *
+ * @param int $nc2AuthorityCode NC2での投稿権限
+ * @param int $nc3RoomId ルームID
+ * @return mixed
+ */
 	protected function _makePermissiondata($nc2AuthorityCode, $nc3RoomId) {
 		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
 		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
@@ -264,7 +285,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			'recursive' => -1
 		]);
 		$rolesRoomIdByRoleKey = Hash::combine($rolesRooms, '{n}.RolesRoom.role_key', '{n}.RolesRoom.id');
-
 
 		switch ($nc2AuthorityCode) {
 			case 4:
@@ -424,6 +444,13 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		return $data;
 	}
 
+/**
+ * NC3 metadataの準備
+ *
+ * @param Model $model Nc2ToNc3Multidatabase
+ * @param array $nc2Metadatum NC2メタデータ
+ * @return array
+ */
 	public function generateNc3MultidatabaseMetadata(Model $model, $nc2Metadatum) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
@@ -465,7 +492,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			9 => 'date',
 			10 => 'created',
 			11 => 'updated'
-  		];
+		];
 
 		$type = $metadataTypeMap[$nc2Metadatum['Nc2MultidatabaseMetadata']['type']];
 
@@ -490,7 +517,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$isTitle = ($nc2Metadatum['Nc2MultidatabaseMetadata']['metadata_id'] ==
 			$nc2Multidatabase['Nc2Multidatabase']['title_metadata_id']);
 
-
 		$data['MultidatabaseMetadata'] = [
 			//'key' => $nc3Multidatabase['Multidatabase']['key'], //
 			'multidatabase_id' => $nc3MultidatabaseId,
@@ -498,8 +524,8 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			'name' => $nc2Metadatum['Nc2MultidatabaseMetadata']['name'],
 			'col_no' => $colNo,
 			'type' => $type,
-			'rank' => $nc2Metadatum['Nc2MultidatabaseMetadata']['display_sequence'] -1,
-			'position' => $nc2Metadatum['Nc2MultidatabaseMetadata']['display_pos'] -1,
+			'rank' => $nc2Metadatum['Nc2MultidatabaseMetadata']['display_sequence'] - 1,
+			'position' => $nc2Metadatum['Nc2MultidatabaseMetadata']['display_pos'] - 1,
 			'selections' => $selections,
 			'is_require' => $nc2Metadatum['Nc2MultidatabaseMetadata']['require_flag'],
 			'is_title' => $isTitle,
@@ -535,9 +561,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
  * @param array $nc2MultidbContent Nc2MultidatabaseContent data.
  * @return array Nc3BlogEntry data.
  */
-
 	public function generateNc3MultidbContent(Model $model, $nc2MultidbContent) {
-
 		$nc2ContentId = $nc2MultidbContent['Nc2MultidatabaseContent']['content_id'];
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('MultidatabaseContent', $nc2ContentId);
@@ -557,7 +581,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$multidatabase = $Multidatabase->findById($nc3DbId, ['id', 'block_id', 'key'], null, -1);
 
 		$Metadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
-		$metadata =$Metadata->find('all', [
+		$metadata = $Metadata->find('all', [
 			'conditions' => [
 				'multidatabase_id' => $nc3DbId,
 			]
@@ -598,7 +622,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		//
 		$data = [
-			'MultidatabaseContent'  => [
+			'MultidatabaseContent' => [
 				'multidatabase_key' => $dbKey,
 				'multidatabase_id' => $multidatabase['Multidatabase']['id'],
 				'language_id' => $this->getLanguageIdFromNc2($model),
@@ -614,7 +638,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			]
 		];
 
-
 		$data['Like'] = [
 			'like_count' => $nc2MultidbContent['Nc2MultidatabaseContent']['vote_count'],
 			'plugin_key' => 'multidatabases',
@@ -625,7 +648,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$Nc2DbFile = $this->getNc2Model($model, 'multidatabase_file');
 
 		// metadata content mapping
-		foreach ($nc2metadataContents as $nc2metadataContent){
+		foreach ($nc2metadataContents as $nc2metadataContent) {
 			$nc2MetadataId = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['metadata_id'];
 			$metadataMapIds = $Nc2ToNc3Map->getMapIdList('MultidatabaseMetadata', $nc2MetadataId);
 			$nc3MetadataId = $metadataMapIds[$nc2MetadataId];
@@ -664,7 +687,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 					// download_content
 					$data['DownloadCount']['value' . $colNo] = $nc2DbFile['Nc2MultidatabaseFile']['download_count'];
-
 
 				}
 
