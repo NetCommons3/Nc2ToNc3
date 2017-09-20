@@ -76,6 +76,12 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		$Nc2RegistrationBlock = $this->getNc2Model('registration_block');
+		$nc2RBlocks = $Nc2RegistrationBlock->find('all');
+		if (!$this->__saveFrameFromNc2($nc2RBlocks)) {
+			return false;
+		}
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Registration Migration end.'));
 
 		return true;
@@ -92,7 +98,6 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Registration data Migration start.'));
 
 		/* @var $Registration Registration */
-		/* @var $Nc2RegistrationBlock AppModel */
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		/* @var $Frame Frame */
 		/* @var $Block Block */
@@ -177,7 +182,6 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  RegistrationData data Migration start.'));
 
 		/* @var $Registration Registration */
-		/* @var $Registration RegistrationAnswerSummary */
 		/* @var $Nc2RegistrationItemData AppModel */
 		$Registration = ClassRegistry::init('Registrations.Registration');
 		$RAnswerSummary = ClassRegistry::init('Registrations.RegistrationAnswerSummary');
@@ -274,4 +278,90 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 
 		return true;
 	}
+
+/**
+ * Save Frame from Nc2.
+ *
+ * @param array $nc2RBlocks Nc2RegistrationBlock data.
+ * @return bool True on success
+ * @throws Exception
+ */
+	private function __saveFrameFromNc2($nc2RBlocks) {
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Frame data Migration start.'));
+
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		/* @var $Frame Frame */
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		/* @var $Registration Registration */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$Registration = ClassRegistry::init('Registrations.Registration');
+		foreach ($nc2RBlocks as $nc2RegistrationBlock) {
+			$Frame->begin();
+			try {
+				$nc2BlockId = $nc2RegistrationBlock['Nc2RegistrationBlock']['block_id'];
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2RegistrationBlock));
+					$this->writeMigrationLog($message);
+
+					$Frame->rollback();
+					continue;
+				}
+
+				// RegistrationFrameModelは存在しないが、移行済みデータのためにDummyModel名で取得
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('RegistrationFrame', $nc2BlockId);
+				if ($mapIdList) {
+					$Frame->rollback();	// 移行済み
+					continue;
+				}
+
+				$nc2RegistrationId = $nc2RegistrationBlock['Nc2RegistrationBlock']['registration_id'];
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('Registration', $nc2RegistrationId);
+				$nc3RegistrationId = Hash::get($mapIdList, [$nc2RegistrationId]);
+				$nc3Registration = $Registration->findById($nc3RegistrationId, ['block_id'], null, -1);
+				if (!$nc3Registration) {
+					$Frame->rollback();	// ブロックデータなし
+					continue;
+				}
+
+				$data['Frame'] = [
+					'id' => $frameMap['Frame']['id'],
+					'plugin_key' => 'registrations',
+					'block_id' => $nc3Registration['Registration']['block_id'],
+					'default_action' => 'registration_answers/view/',
+				];
+				if (!$Frame->saveFrame($data)) {
+					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
+					// @see https://phpmd.org/rules/design.html
+					$message = $this->getLogArgument($nc2RBlocks) . "\n" .
+						var_export($Frame->validationErrors, true);
+						$this->writeMigrationLog($message);
+
+						$Frame->rollback();
+						continue;
+				}
+
+				$idMap = [
+					$nc2BlockId => $frameMap['Frame']['id'],
+				];
+				// RegistrationFrameModelは存在しないが、移行済みデータのためにDummyModel名で登録
+				$this->saveMap('RegistrationFrame', $idMap);
+
+				$Frame->commit();
+
+			} catch (Exception $ex) {
+				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
+				// $QuestionnaireFrameSetting::savePage()でthrowされるとこの処理に入ってこない
+				$Frame->rollback($ex);
+				throw $ex;
+			}
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Frame data Migration end.'));
+
+		return true;
+	}
+
 }
