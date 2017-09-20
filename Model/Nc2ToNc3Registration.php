@@ -130,10 +130,6 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				$this->writeCurrent($frameMap, 'registrations');
 
 				if (!$Registration->saveRegistration($data)) {
-					ini_set('xdebug.var_display_max_children', -1);
-					ini_set('xdebug.var_display_max_data', -1);
-					ini_set('xdebug.var_display_max_depth', -1);
-
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
 					$Registration->rollback();
