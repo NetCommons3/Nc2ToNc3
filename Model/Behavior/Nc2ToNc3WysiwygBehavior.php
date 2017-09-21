@@ -80,10 +80,10 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		//$replace = WysiwygBehavior::REPLACE_BASE_URL . './?action=common_download_main&upload_id=';
 		$replaceUrl = Router::url('/', true);
 
-		$pattern = '/(src|href)="\.\/\?action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		$pattern = '/(src|href)="\.\/(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
-			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[2]);
+			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[3]);
 			if (!$nc3UploadFile) {
 				// エラー処理どうする？とりあえず継続しとく。
 				continue;
