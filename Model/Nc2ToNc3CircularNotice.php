@@ -53,6 +53,14 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'CircularNotice Migration start.'));
 
+		/* @var $Nc2ToNc3Plugin Nc2ToNc3Plugin */
+		$Nc2ToNc3Plugin = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Plugin');
+		$pluginMap = $Nc2ToNc3Plugin->getMap();
+		if (!Hash::extract($pluginMap, '{n}.Plugin[key=circular_notices]')) {
+			$this->writeMigrationLog(__d('nc2_to_nc3', 'CircularNotice is not installed.'));
+			return true;
+		}
+
 		/* @var $Nc2CircularBlock AppModel */
 		$Nc2CircularBlock = $this->getNc2Model('circular_block');
 		$nc2CircularBlocks = $Nc2CircularBlock->find('all');
