@@ -127,6 +127,9 @@ class Nc2ToNc3Shell extends AppShell {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		Configure::write('App.base', $this->params['nc3base']);
 
+		// Javascript等のHTMLタグを許可する
+		Current::write('Permission.html_not_limited.value', 1);
+
 		// CakeObject::requestActionを使用すると、AuthComponent::_isAllowedでredirectされる
 		// $Nc2ToNc3Controller::migrationを呼び出した方が良いのか？
 		// Model呼び出し(Nc2ToNc3::migration)の方が良いのか？
