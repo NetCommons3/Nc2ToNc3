@@ -10,12 +10,6 @@
             "app/Plugin/{$name}": ["type:cakephp-plugin"]
         }
     },
-    "repositories": [
-        {
-            "type":"vcs",
-            "url": "https://github.com/akagane99/Nc2ToNc3"
-        }
-    ],
     "require": {
         "cakedc/migrations": "~2.2",
         "netcommons/access-counters": "@dev",
