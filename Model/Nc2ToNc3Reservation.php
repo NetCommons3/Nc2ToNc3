@@ -70,13 +70,13 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		if (!$this->_migrateLocationsRoom()) {
-			return false;
-		}
+		//if (!$this->_migrateLocationsRoom()) {
+		//	return false;
+		//}
 
-		if (!$this->_migrateLocationReservable()) {
-			return false;
-		}
+		//if (!$this->_migrateLocationReservable()) {
+		//	return false;
+		//}
 
 		if (!$this->_migrateRrule()) {
 			return false;
@@ -213,6 +213,9 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 		$ApplovalUser = ClassRegistry::init('Reservations.ReservationLocationsApprovalUser');
 
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
+
+		$LocationsReservable = ClassRegistry::init('Reservations.ReservationLocationReservable');
+
 		foreach ($nc2Records as $nc2Record) {
 			$Nc3Model->begin();
 			try {
@@ -256,6 +259,26 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 						continue;
 					}
 				}
+
+				// Locationroomを移行する
+				$nc2LocationId = $nc2Record['Nc2ReservationLocation']['location_id'];
+				if (!$this->_migrateLocationsRoom($nc2LocationId, $savedData)) {
+					$Nc3Model->rollback();
+					continue;
+				}
+
+				// LocationReservableを登録する
+				if (!$this->_migrateLocationReservable($nc2LocationId, $savedData)) {
+					$Nc3Model->rollback();
+					continue;
+				}
+
+				//$data = $this->_generateNc3LocationReservable($nc2Record, $savedData);
+				////$locationKey = $data['ReservationLocation']['key'];
+				//if (!$LocationsReservable->saveReservable($locationKey, $data)) {
+				//	$Nc3Model->rollback();
+				//	continue;
+				//}
 
 				$nc2Id = $nc2Record['Nc2ReservationLocation']['location_id'];
 				$idMap = [
@@ -337,17 +360,21 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @return bool
  * @throws Exception
  */
-	protected function _migrateLocationsRoom() {
+	protected function _migrateLocationsRoom($locationId, $savedData) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation LocationsRoom start.'));
 
 		$Nc2Model = $this->getNc2Model('reservation_location_rooms');
-		$nc2Records = $Nc2Model->find('all');
+		// NC2 location_idを元にそのlocation_roomsデータだけを移行する
+		$conditions = [
+			'location_id' => $locationId
+		];
+		$nc2Records = $Nc2Model->find('all', ['conditions' => $conditions]);
 
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocationsRoom');
 		foreach ($nc2Records as $nc2Record) {
-			$Nc3Model->begin();
+			//$Nc3Model->begin();
 			try {
-				$data = $this->_generateNc3ReservationLocationsRoom($nc2Record);
+				$data = $this->_generateNc3ReservationLocationsRoom($nc2Record, $savedData);
 				if (!$data) {
 					$Nc3Model->rollback();
 					continue;
@@ -367,7 +394,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 				// 関連テーブルなのでマッピングレコード不要
 
-				$Nc3Model->commit();
+				//$Nc3Model->commit();
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
@@ -387,16 +414,18 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @param array $nc2Record NC2 location_room data
  * @return array
  */
-	protected function _generateNc3ReservationLocationsRoom($nc2Record) {
+	protected function _generateNc3ReservationLocationsRoom($nc2Record, $nc3Location) {
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		//$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 
-		$nc2LocationId = $nc2Record['Nc2ReservationLocationRoom']['location_id'];
+		//$nc2LocationId = $nc2Record['Nc2ReservationLocationRoom']['location_id'];
 		// nc3location.id取得
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation', $nc2LocationId);
+		//$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation', $nc2LocationId);
 		// ロケーションキー取得
-		$ReservationLocation = ClassRegistry::init('Reservations.ReservationLocation');
-		$location = $ReservationLocation->findById($mapIdList[$nc2LocationId]);
+		//$ReservationLocation = ClassRegistry::init('Reservations.ReservationLocation');
+		//$location = $ReservationLocation->findById($mapIdList[$nc2LocationId]);
+		$location = $nc3Location;
+
 		$nc3LocationKey = $location['ReservationLocation']['key'];
 		// nc3roomId取得
 		$nc2RoomId = $nc2Record['Nc2ReservationLocationRoom']['room_id'];
@@ -433,19 +462,23 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @return bool
  * @throws Exception
  */
-	protected function _migrateLocationReservable() {
+	protected function _migrateLocationReservable($nc2LocationId, $savedData) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Reservation LocationReservable start.'));
 
 		$Nc2Model = $this->getNc2Model('reservation_location');
-		$nc2Records = $Nc2Model->find('all');
+		$nc2Records = $Nc2Model->find('all', [
+			'conditions' => [
+				'location_id' => $nc2LocationId
+			]
+		]);
 
 		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
 		$LocationsReservable = ClassRegistry::init('Reservations.ReservationLocationReservable');
 
 		foreach ($nc2Records as $nc2Record) {
-			$Nc3Model->begin();
+			//$Nc3Model->begin();
 			try {
-				$data = $this->_generateNc3LocationReservable($nc2Record);
+				$data = $this->_generateNc3LocationReservable($nc2Record, $savedData);
 
 				$locationKey = $data['ReservationLocation']['key'];
 
@@ -1048,19 +1081,21 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * @param array $nc2Record nc2location data
  * @return array
  */
-	protected function _generateNc3LocationReservable($nc2Record) {
+	protected function _generateNc3LocationReservable($nc2Record, $nc3Location) {
 		$LocationsRoom = ClassRegistry::init('Reservations.ReservationLocationsRoom');
 		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
 
-		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-		$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
+		//$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		//$mapIdList = $Nc2ToNc3Map->getMapIdList('ReservationLocation');
 
-		$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
+		//$Nc3Model = ClassRegistry::init('Reservations.ReservationLocation');
 
 		$data = [];
-		$location = $Nc3Model->findById(
-			$mapIdList[$nc2Record['Nc2ReservationLocation']['location_id']]
-		);
+		//$location = $Nc3Model->findById(
+		//	$mapIdList[$nc2Record['Nc2ReservationLocation']['location_id']]
+		//);
+		$location = $nc3Location;
+
 		$data['ReservationLocation'] = $location['ReservationLocation'];
 		$locationKey = $location['ReservationLocation']['key'];
 
