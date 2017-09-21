@@ -1,8 +1,9 @@
 Nc2ToNc3
 ==============
 
-Migration plugin to Nc3 from Nc2 for NetComomns3  
-Nc2ToNc3(移行ツール)は、同一サーバにNC2のデータとNC3サイトを用意して移行するプラグインです。  
+Migration plugin to Nc3 from Nc2 for NetComomns3
+
+Nc2ToNc3(移行ツール)は、同一サーバにNC2のデータとNC3サイトを用意して移行するプラグインです。
 
 ### 手順
 
