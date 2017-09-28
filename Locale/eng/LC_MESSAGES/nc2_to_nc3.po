@@ -49,3 +49,5 @@ msgstr ""
 msgid "Password"
 msgstr ""
 
+msgid "Go here for the migration from NetCommons2 documentation."
+msgstr ""

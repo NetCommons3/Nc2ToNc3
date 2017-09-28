@@ -86,3 +86,6 @@ msgstr "NC2のURL"
 
 msgid "Input URL of NetCommons2 for converting link in WYSIWYG content."
 msgstr "NC2のWYSIWYGエディターで登録されているリンクのURLを変換して移行します。(ex.http://example.com/nc2)"
+
+msgid "Go here for the migration from NetCommons2 documentation."
+msgstr "NetCommons2からの移行プラム実行方法"
