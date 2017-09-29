@@ -140,6 +140,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 					$Registration->rollback();
 
 					$message = $this->getLogArgument($nc2Registration) . "\n" .
+						var_export($data, true) . "\n" .
 						var_export($Registration->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -206,6 +207,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 
 				if (!($nc3Summary = $RAnswerSummary->save($data))) {
 					$message = $this->getLogArgument($nc2ItemData) . "\n" .
+						var_export($data, true) . "\n" .
 						var_export($RAnswerSummary->validationErrors, true);
 					$this->writeMigrationLog($message);
 
