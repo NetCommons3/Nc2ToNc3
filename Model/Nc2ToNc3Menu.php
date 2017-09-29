@@ -126,6 +126,7 @@ class Nc2ToNc3Menu extends Nc2ToNc3AppModel {
 				$MenuFrameSetting->rollback();
 
 				$message = $this->getLogArgument($nc2MenuDetail) . "\n" .
+					var_export($data, true) . "\n" .
 					var_export($MenuFrameSetting->validationErrors, true);
 				$this->writeMigrationLog($message);
 
