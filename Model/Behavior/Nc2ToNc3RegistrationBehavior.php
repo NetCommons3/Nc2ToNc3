@@ -123,7 +123,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 				'sub_title' => '',
 				'is_answer_mail_send' => $nc2Registration['Nc2Registration']['mail_send'],
 				'is_image_authentication' => $nc2Registration['Nc2Registration']['image_authentication'],
-				'reply_to' => $nc2Registration['Nc2Registration']['rcpt_to'],
+				//'reply_to' => $nc2Registration['Nc2Registration']['rcpt_to'],
 				'answer_start_period' => '',
 				'answer_end_period' => $endPeriod,
 				'is_limit_number' => (empty($nc2Registration['Nc2Registration']['limit_number']) ? '0' : '1'),
@@ -181,6 +181,11 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
  * @return array Nc3RegistrationAnswerSummary data.
  */
 	public function generateNc3RegistrationAnswerSummaryData(Model $model, $nc2ItemDataFirst, $nc3Registration) {
+		if (empty($nc3Registration)) {
+			// 回答なし
+			return [];
+		}
+
 		$nc2RegistrationId = $nc2ItemDataFirst['Nc2RegistrationItemData']['registration_id'];
 		$registrationMap = $this->_getMap($nc2RegistrationId);
 		if (!$registrationMap) {
