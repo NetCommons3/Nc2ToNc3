@@ -93,14 +93,16 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/Config/routes.php#L11-L19
 			$controller = 'file';
 			$size = '';
+			$class = '';
 			if ($match[1] === 'src') {
 				$controller = 'image';
 				$size = '/' . $this->__getImageSize($nc3UploadFile);
+				$class = 'class="img-responsive nc3-img nc3-img-block" ';
 			}
 
 			$strReplaceArguments[0][] = $match[0];
 
-			$strReplaceArguments[1][] = $match[1] . '="' .
+			$strReplaceArguments[1][] = $class . $match[1] . '="' .
 				$replaceUrl . 'wysiwyg/' . $controller . '/download' .
 				'/' . $nc3UploadFile['UploadFile']['room_id'] .
 				'/' . $nc3UploadFile['UploadFile']['id'] .
