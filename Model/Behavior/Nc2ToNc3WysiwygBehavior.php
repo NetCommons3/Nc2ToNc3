@@ -59,8 +59,13 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
 		}
 
-		$content = str_replace($searches, $replaces, $content);
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfTable($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
 
+		$content = str_replace($searches, $replaces, $content);
 		return $content;
 	}
 
@@ -93,14 +98,16 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/Config/routes.php#L11-L19
 			$controller = 'file';
 			$size = '';
+			$class = '';
 			if ($match[1] === 'src') {
 				$controller = 'image';
 				$size = '/' . $this->__getImageSize($nc3UploadFile);
+				$class = 'class="img-responsive nc3-img nc3-img-block" ';
 			}
 
 			$strReplaceArguments[0][] = $match[0];
 
-			$strReplaceArguments[1][] = $match[1] . '="' .
+			$strReplaceArguments[1][] = $class . $match[1] . '="' .
 				$replaceUrl . 'wysiwyg/' . $controller . '/download' .
 				'/' . $nc3UploadFile['UploadFile']['room_id'] .
 				'/' . $nc3UploadFile['UploadFile']['id'] .
@@ -369,6 +376,42 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 				'<span class="tex-char">' .
 				'$$' . $texValue . '$$' .
 				'</span>';
+		}
+
+		return $strReplaceArguments;
+	}
+
+/**
+ * Get str_replace arguments of Table.
+ *
+ * @param string $content Nc2 content.
+ * @return array str_replace arguments.(0:$search,1:$replace)
+ */
+	private function __getStrReplaceArgumentsOfTable($content) {
+		$strReplaceArguments = [];
+
+		// <table>のstyleをclassに置き換え
+		$patterns[] = [
+			'pattern' => '/<table.*? (style=".*?")>/',
+			'replace' => 'class="table table-bordered table-hover table-responsive"'
+		];
+		// <tr><td>のstyle消す
+		//		$patterns[] = [
+		//			'pattern' => '/<tr.*?( style=".*?")>/',
+		//			'replace' => ''
+		//		];
+		//		$patterns[] = [
+		//			'pattern' => '/<td.*?( style=".*?")>/',
+		//			'replace' => ''
+		//		];
+		foreach ($patterns as $pattern) {
+			preg_match_all($pattern['pattern'], $content, $matches, PREG_SET_ORDER);
+			foreach ($matches as $match) {
+
+				$replaceTable = str_replace($match[1], $pattern['replace'], $match[0]);
+				$strReplaceArguments[0][] = $match[0];
+				$strReplaceArguments[1][] = $replaceTable;
+			}
 		}
 
 		return $strReplaceArguments;
