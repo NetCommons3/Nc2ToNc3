@@ -393,7 +393,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		// <table>のstyleをclassに置き換え
 		$patterns[] = [
 			'pattern' => '/<table.*? (style=".*?")>/',
-			'replace' => 'class="table table-bordered table-hover table-responsive"'
+			'replace' => 'class="table table-bordered table-responsive"'
 		];
 		// <tr><td>のstyle消す
 		//		$patterns[] = [
