@@ -206,6 +206,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				// 新着用に更新日を移行
 				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
 				'modified' => $this->_convertDate($nc2CabinetFile['Nc2CabinetFile']['update_time']),
+				// キャビネットで更新日をunsetさせない
+				'_is_no_unset_modified' => 1,
 			];
 			//フォルダの場合
 		} else {
@@ -221,6 +223,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				// 新着用に更新日を移行
 				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
 				'modified' => $this->_convertDate($nc2CabinetFile['Nc2CabinetFile']['update_time']),
+				// キャビネットで更新日をunsetさせない
+				'_is_no_unset_modified' => 1,
 			];
 		}
 		$data['Block'] = [
