@@ -127,6 +127,12 @@ class Nc2ToNc3Shell extends AppShell {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		Configure::write('App.base', $this->params['nc3base']);
 
+		// デバッグ出力レベル=1。Nc2ToNc3Controller.validationErrorsをコンソール表示するため
+		// デバッグ出力レベル
+		// 0: エラー・メッセージ、エラー、警告は表示されません。フラッシュメッセージがリダイレクトされます。
+		// 1: エラーと警告が表示され、モデルのキャッシュがリフレッシュ、フラッシュメッセージが停止します。
+		// 2: 1だけでなく、完全なデバッグメッセージやSQLも出力します。
+		Configure::write('debug', 1);
 		// Javascript等のHTMLタグを許可する
 		Current::write('Permission.html_not_limited.value', 1);
 
