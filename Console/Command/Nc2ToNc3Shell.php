@@ -127,6 +127,8 @@ class Nc2ToNc3Shell extends AppShell {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		Configure::write('App.base', $this->params['nc3base']);
 
+		// debug=ON。Nc2ToNc3Controller.validationErrorsをコンソール表示するため
+		Configure::write('debug', 1);
 		// Javascript等のHTMLタグを許可する
 		Current::write('Permission.html_not_limited.value', 1);
 
