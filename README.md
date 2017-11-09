@@ -9,8 +9,6 @@ Nc2ToNc3(移行ツール)は、同一サーバにNC2のデータとNC3サイト�
 
 1. [NC2の準備](#nc2の準備)
 1. [NC3インストール（外部リンク）](https://www.netcommons.org/NetCommons3/download)
-1. [Nc2ToNc3配置](#nc2tonc3配置)
-1. [マイグレーション実行](#マイグレーション実行)
 1. [NC3のバックアップ](#nc3のバックアップ)
 1. [移行ツール実行](#移行ツール実行)
 
@@ -20,7 +18,8 @@ Nc2ToNc3(移行ツール)は、同一サーバにNC2のデータとNC3サイト�
 
 #### Nc2ToNc3配置
 
-app/Plugin配下に配置します。
+NetCommons3.1.5よりNc2ToNc3(移行ツール)が同梱されるようになったため、  
+app/Plugin配下に配置されています。
 
 ```
 NetCommons3のパス/app/Plugin/Nc2ToNc3
@@ -28,9 +27,8 @@ NetCommons3のパス/app/Plugin/Nc2ToNc3
 
 #### マイグレーション実行
 
-```
-cakeコマンドのパス/cake Migrations.migration run -p Nc2ToNc3  -c master -i master
-```
+~~cakeコマンドのパス/cake Migrations.migration run -p Nc2ToNc3  -c master -i master~~  
+NetCommons3.1.5よりNc2ToNc3(移行ツール)が同梱されるようになったため、マイグレーション実行は不要になりました。
 
 #### NC3のバックアップ
 
@@ -39,10 +37,12 @@ cakeコマンドのパス/cake Migrations.migration run -p Nc2ToNc3  -c master -
 ## 移行ツール実行
 
 ```
-cakeコマンドのパス/cake Nc2ToNc3 --database NC2のDB名 --prefix NC2のテーブルプレフィックス名 --upload_path NC2のアップロードファイルフォルダーパス --base_url NC2のベースURL --nc3base NC3のベースパス
+cd NetCommons3のパス/app
+./Console/cake Nc2ToNc3 --database NC2のDB名 --prefix NC2のテーブルプレフィックス名 --upload_path NC2のアップロードファイルフォルダーパス --base_url NC2のベースURL --nc3base NC3のベースパス
 ```
 Ex.)
 ```
+cd /var/www/html/nc3/app
 ./Console/cake Nc2ToNc3 --database nc2421 --prefix nc_ --upload_path /var/www/html/NC2/html/webapp/uploads/ --base_url http://example.com/NC2/html --nc3base /nc3
 ```
 
