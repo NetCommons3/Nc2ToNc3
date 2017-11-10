@@ -235,7 +235,6 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Utility/CalendarPermissiveRooms.php#L195
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Controller/CalendarPlansController.php#L145-L147
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarEvent.php#L313
-		$CalendarEvent->initSetting(new WorkflowComponent(new ComponentCollection()));
 		CalendarPermissiveRooms::setRoomPermRoles($CalendarEvent->prepareCalRoleAndPerm());
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
