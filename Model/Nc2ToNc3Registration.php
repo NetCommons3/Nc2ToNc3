@@ -332,6 +332,8 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 					'block_id' => $nc3Registration['Registration']['block_id'],
 					'default_action' => 'registration_answers/view/',
 				];
+				// 前処理のFrame::data が残っている場合があるので、上書しとく。
+				$Frame->read(array_keys($data['Frame']), $frameMap['Frame']['id']);
 				if (!$Frame->saveFrame($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
