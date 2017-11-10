@@ -102,6 +102,8 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		/* @var $Frame Frame */
 		/* @var $Block Block */
 		$Registration = ClassRegistry::init('Registrations.Registration');
+		$Registration->MailSetting = ClassRegistry::init('Mails.MailSetting');
+		$Registration->MailSettingFixedPhrase = ClassRegistry::init('Mails.MailSettingFixedPhrase');
 		$NcRBlock = $this->getNc2Model('registration_block');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Frame = ClassRegistry::init('Frames.Frame');
@@ -133,6 +135,12 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				}
 
 				$this->writeCurrent($frameMap, 'registrations');
+
+				// 本来 Registrationの独自ビヘイビアMailSettingBehaviorでcreate()した方がよい。
+				// とはいえ、ループで$Registration->saveRegistration()を繰り返し呼び出すのは、移行ツール位。
+				// 移行ツールだけの対応でもメール設定が移行できるようにするため、ここでcreate()する
+				$Registration->MailSetting->create();
+				$Registration->MailSettingFixedPhrase->create();
 
 				if (!$Registration->saveRegistration($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
