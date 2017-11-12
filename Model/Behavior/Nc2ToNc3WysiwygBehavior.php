@@ -270,10 +270,11 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
 		$replaceBaseUrl = Router::url('/', true);
 
-		$pattern = '/href="' . $nc2BaseUrl . '\/(.*?)"/';
+		// @see https://regexper.com/#%2Fhref%3D(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(.*%3F)%22%2F
+		$pattern = '/href="(' . $nc2BaseUrl . '\/|\.\/)(.*?)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
-			$replacePath = $match[1];
+			$replacePath = $match[2];
 
 			preg_match('/page_id=(\d+)/', $replacePath, $pageIdMatches);
 			if ($pageIdMatches) {
