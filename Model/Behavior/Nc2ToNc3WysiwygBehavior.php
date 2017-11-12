@@ -78,6 +78,11 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 	private function __getStrReplaceArgumentsOfDownloadAction($content) {
 		$strReplaceArguments = [];
 
+		/* @var $Nc2ToNc3 Nc2ToNc3 */
+		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
+		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
+		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
+
 		// save〇〇に渡すデータを、WysiwygBehavior::REPLACE_BASE_URL（{{__BASE_URL__}}）にすると、
 		// HTMLPurifierで除去される（詳細箇所については未調査）
 		// なので、WysiwygBehavior::beforeSave で置換される文字列にしとく
@@ -85,10 +90,11 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		//$replace = WysiwygBehavior::REPLACE_BASE_URL . './?action=common_download_main&upload_id=';
 		$replaceUrl = Router::url('/', true);
 
-		$pattern = '/(src|href)="\.\/(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		// @see https://regexper.com/#%2F(src%7Chref)%3D%22(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(%5C%3F%7Cindex%5C.php%5C%3F)action%3Dcommon_download_main%26(%3F%3Aamp%3B)%3Fupload_id%3D(%5Cd%2B)%22%2F
+		$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
-			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[3]);
+			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[4]);
 			if (!$nc3UploadFile) {
 				// エラー処理どうする？とりあえず継続しとく。
 				continue;
