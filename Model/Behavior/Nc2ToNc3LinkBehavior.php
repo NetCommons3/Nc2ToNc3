@@ -135,7 +135,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3BlockId,
 				'status' => '1',
 				'language_id' => $nc3LinkBlock['LinkBlocksLanguage']['language_id'],
-				'url' => $nc2LinklistLink['Nc2LinklistLink']['url'],
+				'url' => $this->__convertURL($nc2LinklistLink['Nc2LinklistLink']['url']),
 				'title' => $nc2LinklistLink['Nc2LinklistLink']['title'],
 				'description' => $nc2LinklistLink['Nc2LinklistLink']['description'],
 				'click_count' => $nc2LinklistLink['Nc2LinklistLink']['view_count'],
@@ -155,6 +155,66 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 		];
 
 		return $data;
+	}
+
+/**
+ * Convert nc2 URL.
+ *
+ * @param string $content Nc2 content.
+ * @return string converted nc3 body.
+ */
+	private function __convertURL($content) {
+		$searches = [];
+		$replaces = [];
+
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfBaseUrlLink($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
+
+		$content = str_replace($searches, $replaces, $content);
+		return $content;
+	}
+
+/**
+ * Get str_replace arguments of page link.
+ *
+ * @param string $content Nc2 content.
+ * @return array str_replace arguments.(0:$search,1:$replace)
+ */
+	private function __getStrReplaceArgumentsOfBaseUrlLink($content) {
+		$strReplaceArguments = [];
+
+		/* @var $Nc2ToNc3 Nc2ToNc3 */
+		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
+		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
+		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
+
+		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
+		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
+		$replaceBaseUrl = Router::url('/', true);
+
+		// Wysiwyg以外のページURL ex) Links
+		$pattern = '/(' . $nc2BaseUrl . '\/|\.\/)(.*)/';
+
+		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
+		foreach ($matches as $match) {
+			$replacePath = $match[2];
+
+			preg_match('/page_id=(\d+)/', $replacePath, $pageIdMatches);
+			if ($pageIdMatches) {
+				$pageMap = $Nc2ToNc3Page->getMap($pageIdMatches[1]);
+				$replacePath = $pageMap['Page']['permalink'];
+			}
+
+			$strReplaceArguments[0][] = $match[0];
+			$replacePath = urlencode($replacePath);
+			$replacePath = str_replace('%2F', '/', $replacePath);
+			$strReplaceArguments[1][] = $replaceBaseUrl . $replacePath;
+		}
+
+		return $strReplaceArguments;
 	}
 
 /**
