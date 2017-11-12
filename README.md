@@ -7,6 +7,7 @@ Nc2ToNc3(移行ツール)は、同一サーバにNC2のデータとNC3サイト�
 
 ### 手順
 
+1. [NC2を最新版2.4.2.1にアップデート（外部リンク）](https://nc2.netcommons.org/ダウンロード/コアパッケージ/)
 1. [NC2の準備](#nc2の準備)
 1. [NC3インストール（外部リンク）](https://www.netcommons.org/NetCommons3/download)
 1. [NC3のバックアップ](#nc3のバックアップ)
