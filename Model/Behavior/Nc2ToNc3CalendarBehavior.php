@@ -17,6 +17,11 @@ App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 
 /**
+ * Nc2 all members room id.
+ */
+	const NC2_ALL_MEMBERS_ROOM_ID = '0';
+
+/**
  * Get Log argument.
  *
  * @param Model $model Model using this behavior.
@@ -50,7 +55,15 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$nc2RoomId = $nc2CalendarManage['Nc2CalendarManage']['room_id'];
+
 		$roomMap = $Nc2ToNc3Room->getMap($nc2RoomId);
+		if ($nc2RoomId === self::NC2_ALL_MEMBERS_ROOM_ID) {
+			$roomMap['Room'] = [
+				'id' => Space::getRoomIdRoot(Space::COMMUNITY_SPACE_ID),
+				'space_id' => Space::COMMUNITY_SPACE_ID,
+			];
+		}
+
 		if (!$roomMap) {
 			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarManage));
 			$this->_writeMigrationLog($message);
@@ -250,7 +263,15 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $Nc2ToNc3Room Nc2ToNc3Room */
 		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 		$nc2RoomId = $nc2CalendarPlan['Nc2CalendarPlan']['room_id'];
+
 		$roomMap = $Nc2ToNc3Room->getMap($nc2RoomId);
+		if ($nc2RoomId === self::NC2_ALL_MEMBERS_ROOM_ID) {
+			$roomMap['Room'] = [
+				'id' => Space::getRoomIdRoot(Space::COMMUNITY_SPACE_ID),
+				'space_id' => Space::COMMUNITY_SPACE_ID,
+			];
+		}
+
 		if (!$roomMap) {
 			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarPlan));
 			$this->_writeMigrationLog($message);
