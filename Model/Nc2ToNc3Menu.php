@@ -24,7 +24,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
  * @method void changeNc3CurrentLanguage($langDirName = null)
  * @method void restoreNc3CurrentLanguage()
  *
- * @see Nc2ToNc3BaseBehavior
+ * @see Nc2ToNc3MenuBehavior
  * @method string getLogArgument($nc2MenuDetail)
  * @method array generateNc3MenuFrameSettingData($nc2MenuDetail)
  * @method array generateNc3MenuFramePageOrRoomData($nc2MenuDetail, $nc3MenuFrameSetting)
