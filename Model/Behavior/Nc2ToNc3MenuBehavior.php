@@ -263,9 +263,14 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 
 			return $nc3DisplayType;
 		}
+
+		$nc2TemplateName = $nc2Block['Nc2Block']['temp_name'];
+		if ($nc2TemplateName === 'topic_path') {
+			return $nc2TemplateName;
+		}
+
 		$nc2Page = $Nc2Page->findByPageId($nc2Block['Nc2Block']['page_id'], 'display_position', null, -1);
 		$nc2DisplayPosition = $nc2Page['Nc2Page']['display_position'];
-
 		$displayTypeMap = [
 			'1' => 'major',
 			'2' => 'minor',
@@ -275,13 +280,12 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 			return $displayTypeMap[$nc2DisplayPosition];
 		}
 
-		$nc2TemplateName = $nc2Block['Nc2Block']['temp_name'];
 		if (strpos($nc2TemplateName, 'header') === 0 ||
 			strpos($nc2TemplateName, 'jq_gnavi') === 0) {
 			return $displayTypeMap['3'];
 		}
 
-		return 'main';
+		return 'major';
 	}
 
 }
