@@ -190,16 +190,6 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 		$mapedNc3PageIds = $Nc2ToNc3Map->find('list', $query);
 
 		foreach ($nc3PageList as $nc3PageId => $nc3RoomId) {
-			if (!isset($nc3MenuFrameSetting['MenuRooms'][$nc3RoomId])) {
-				$nc3MenuFrameSetting['MenuRooms'][$nc3RoomId]['MenuFramesRoom'] = [
-					'frame_key' => $nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
-					'room_id' => $nc3RoomId,
-					'is_hidden' => '0',
-					'created_user' => $nc3MenuFrameSetting['MenuFrameSetting']['created_user'],
-					'created' => $nc3MenuFrameSetting['MenuFrameSetting']['created'],
-				];
-			}
-
 			if (!in_array($nc3PageId, $mapedNc3PageIds)) {
 				continue;
 			}
