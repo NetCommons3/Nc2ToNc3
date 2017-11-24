@@ -158,11 +158,7 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 		// propertyに保持するタイミングと、unsetのタイミングを合わせようと初期処理っぽくやろうとしたが、
 		// Nc3MenuFrameSetting.created_user,createdがまだなかったので、とりあえず毎回取得する
 
-		if ($nc3MenuFrameSetting['MenuFrameSetting']['display_type'] !== 'header') {
-			return $nc3MenuFrameSetting;
-		}
-
-		// Nc3MenuFrameSetting.display_type が'header' の場合、Nc2MenuDetail に存在しないRoom,Pageのデータを作成する
+		// Nc2MenuDetail に存在しないRoom,Pageのデータを作成する
 		// Room::getReadableRoomsConditionsでプライベートルームの条件ははいらないはず。
 		// @see https://github.com/NetCommons3/Menus/blob/3.1.0/Controller/MenusAppController.php#L52-L56
 		// @see https://github.com/NetCommons3/Menus/blob/3.1.0/Controller/MenusController.php#L58-L63
