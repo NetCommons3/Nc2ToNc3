@@ -51,11 +51,17 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
+		$data = [];
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('MenuFrameSetting', $nc2BlockId);
 		if ($mapIdList) {
 			return [];	// 移行済み
+
+			// Debug用
+			//if ($mapIdList) {
+			//	$data['id'] = $mapIdList[$nc2BlockId];
+			//}
 		}
 
 		$nc3DisplayType = $this->__convertDisplayType($nc2MenuDetail);
@@ -64,7 +70,7 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 		}
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data = [
+		$data += [
 			'frame_key' => $frameMap['Frame']['key'],
 			'display_type' => $nc3DisplayType,
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2MenuDetail['Nc2MenuDetail']),
@@ -109,11 +115,27 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-
+		$menuFramePageId = null;
 		$nc3RoomId = $pageMap['Box']['room_id'];
-
 		$nc3PageId = $pageMap['Page']['id'];
+
+		// Debug用
+		/*
+		$menuFramePageId = Hash::get(
+			ClassRegistry::init('Menus.MenuFramesPage')
+				->findByFrameKeyAndPageId(
+					$nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
+					$nc3PageId,
+					'id',
+					null,
+					-1
+				),
+			['MenuFramesPage', 'id'],
+			null
+		);*/
+
 		$nc3MenuFrameSetting['Menus'][$nc3RoomId][$nc3PageId]['MenuFramesPage'] = [
+			'id' => $menuFramePageId,
 			'frame_key' => $nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
 			'page_id' => $nc3PageId,
 			'is_hidden' => '1',
@@ -194,8 +216,25 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 				continue;
 			}
 
+			$menuFramePageId = null;
+
+			// Debug用
+			/*$menuFramePageId = Hash::get(
+				ClassRegistry::init('Menus.MenuFramesPage')
+				->findByFrameKeyAndPageId(
+					$nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
+					$nc3PageId,
+					'id',
+					null,
+					-1
+					),
+				['MenuFramesPage', 'id'],
+				null
+			);*/
+
 			if (!isset($nc3MenuFrameSetting['Menus'][$nc3RoomId][$nc3PageId])) {
 				$nc3MenuFrameSetting['Menus'][$nc3RoomId][$nc3PageId]['MenuFramesPage'] = [
+					'id' => $menuFramePageId,
 					'frame_key' => $nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
 					'page_id' => $nc3PageId,
 					'is_hidden' => '0',
