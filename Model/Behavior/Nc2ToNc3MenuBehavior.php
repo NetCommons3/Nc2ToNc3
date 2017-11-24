@@ -59,9 +59,9 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 			return [];	// 移行済み
 
 			// Debug用
-			//if ($mapIdList) {
-			//	$data['id'] = $mapIdList[$nc2BlockId];
-			//}
+			/*if ($mapIdList) {
+				$data['id'] = $mapIdList[$nc2BlockId];
+			}*/
 		}
 
 		$nc3DisplayType = $this->__convertDisplayType($nc2MenuDetail);
@@ -103,6 +103,12 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 			return $nc3MenuFrameSetting;
 		}
 
+		if ($nc2PageId == '2') {
+			// グループルームの処理
+			$nc3MenuFrameSetting = $this->__addReadableRoomHiddenData($nc3MenuFrameSetting);
+			return $nc3MenuFrameSetting;
+		}
+
 		/* @var $Nc2ToNc3Page Nc2ToNc3Page */
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 		$pageMap = $Nc2ToNc3Page->getMap($nc2PageId);
@@ -120,8 +126,7 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 		$nc3PageId = $pageMap['Page']['id'];
 
 		// Debug用
-		/*
-		$menuFramePageId = Hash::get(
+		/*$menuFramePageId = Hash::get(
 			ClassRegistry::init('Menus.MenuFramesPage')
 				->findByFrameKeyAndPageId(
 					$nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
@@ -147,7 +152,73 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
- * Add other　room and page data.
+ * Add readable room hidden data.
+ *
+ * @param array $nc3MenuFrameSetting Nc3MenuFrameSetting data.
+ * @return array Nc3MenuFrameSetting data.
+ */
+	private function __addReadableRoomHiddenData($nc3MenuFrameSetting) {
+		/* @var $Room Room */
+		$Room = ClassRegistry::init('Rooms.Room');
+		$query = $Room->getReadableRoomsConditions([], $nc3MenuFrameSetting['MenuFrameSetting']['created_user']);
+		$query['fields'] = [
+			'Room.id',
+			'Room.page_id_top',
+		];
+		$nc3PageIdTops = $Room->find('list', $query);
+
+		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$query = [
+			'fields' => 'nc3_id',
+			'conditions' => [
+				'model_name' => 'Page',
+				'nc3_id' => $nc3PageIdTops,
+			],
+			'recursive' => -1
+		];
+		$nc3RoomIds = $Nc2ToNc3Map->find('list', $query);
+
+		foreach ($nc3RoomIds as $nc3RoomId) {
+			if (!isset($nc3PageIdTops[$nc3RoomId])) {
+				continue;
+			}
+
+			$menuFramePageId = null;
+			$nc3PageId = $nc3PageIdTops[$nc3RoomId];
+
+			// Debug用
+			/*$menuFramePageId = Hash::get(
+				ClassRegistry::init('Menus.MenuFramesPage')
+				->findByFrameKeyAndPageId(
+					$nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
+					$nc3PageIdTops[$nc3RoomId],
+					'id',
+					null,
+					-1
+					),
+				['MenuFramesPage', 'id'],
+				null
+			);*/
+
+			if (!isset($nc3MenuFrameSetting['Menus'][$nc3RoomId][$nc3PageId])) {
+				$nc3MenuFrameSetting['Menus'][$nc3RoomId][$nc3PageId]['MenuFramesPage'] = [
+					'id' => $menuFramePageId,
+					'frame_key' => $nc3MenuFrameSetting['MenuFrameSetting']['frame_key'],
+					'page_id' => $nc3PageId,
+					'is_hidden' => '1',
+					'created_user' => $nc3MenuFrameSetting['MenuFrameSetting']['created_user'],
+					'created' => $nc3MenuFrameSetting['MenuFrameSetting']['created'],
+				];
+			}
+
+		}
+
+		return $nc3MenuFrameSetting;
+	}
+
+/**
+ * Add other room and page data.
  *
  * @param Model $model Model using this behavior.
  * @param array $nc3MenuFrameSetting Nc3MenuFrameSetting data.
@@ -165,7 +236,7 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 		// @see https://github.com/NetCommons3/Rooms/blob/3.1.0/Model/Behavior/RoomBehavior.php#L93-L95
 		/* @var $Room Room */
 		$Room = ClassRegistry::init('Rooms.Room');
-		$query = $Room->getReadableRoomsConditions();
+		$query = $Room->getReadableRoomsConditions([], $nc3MenuFrameSetting['MenuFrameSetting']['created_user']);
 		$query['fields'] = 'Room.id';
 		$nc3RoomIds = $Room->find('list', $query);
 
