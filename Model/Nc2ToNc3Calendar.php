@@ -242,15 +242,6 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 
 		/* @var $CalendarActionPlan CalendarActionPlan */
 		$CalendarActionPlan = ClassRegistry::init('Calendars.CalendarActionPlan');
-
-		// コード補完のため、@var宣言すると、PHPMDで coupling between objects に引っかかる（1クラスにオブジェクト参照は13個までらしい）。
-		// PHPMDのどのルールかは不明。なので、コメントにしとく
-		///* @var $Block Block */
-		/* @var $CalendarActionPlan CalendarActionPlan */
-		/* @var $CalendarEvent CalendarEvent */
-		$CalendarActionPlan = ClassRegistry::init('Calendars.CalendarActionPlan');
-		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
-		$Block = ClassRegistry::init('Blocks.Block');
 		foreach ($nc2CalendarPlans as $nc2CalendarPlan) {
 			$CalendarActionPlan->begin();
 			try {
@@ -260,31 +251,20 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				// Blockデータ作成処理が追加されたので呼び出す
+				// https://github.com/NetCommons3/Calendars/commit/50d9fb10c624220778aab773186973b3bae1ecea
+				$data = $CalendarActionPlan->Calendar->prepareBlockWithoutFrame($data);
+
 				// 予定登録処理で使用しているデータをセット
 				// データの有無しか使ってないっっぽいけど、一応予定のroom_idから取得したblock_idをセット
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L545
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Calendar.php#L153-L155
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Behavior/CalendarInsertPlanBehavior.php#L97
-				$nc3RoomId = $data['CalendarActionPlan']['plan_room_id'];
-				$nc3Block = $Block->findByRoomIdAndPluginKey(
-					$nc3RoomId,
-					'calendars',
-					[
-						'id',
-						'key',
-					],
-					null,
-					-1
-				);
-
-				Current::write('Frame.block_id', $nc3Block['Block']['id']);
+				$nc3RoomId = $data['Block']['room_id'];
+				Current::write('Frame.block_id', $data['Block']['id']);
 				Current::write('Frame.room_id', $nc3RoomId);
 				Current::write('Frame.plugin_key', 'calendars');
 				Current::write('Room.id', $nc3RoomId);
-
-				// Block.keyは、配置してあるルームのブロックっぽいが、Nc2CalendarPlanから配置場所がたどれないため、予定のroom_idのブロックを設定しとく
-				$data['Block']['id'] = $nc3Block['Block']['id'];
-				$data['Block']['key'] = $nc3Block['Block']['key'];
 
 				// Validation で throw されるため、事前にチェック
 				$validationData = $CalendarActionPlan->convertToPlanParamFormat($data);
