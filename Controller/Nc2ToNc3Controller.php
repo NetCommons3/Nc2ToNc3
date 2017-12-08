@@ -33,7 +33,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 		'Security',
 		'ControlPanel.ControlPanelLayout',
 		'NetCommons.Permission' => [
-			'type' => PermissionComponent::CHECK_TYEP_SYSTEM_PLUGIN
+			'type' => PermissionComponent::CHECK_TYPE_SYSTEM_PLUGIN
 		],
 	];
 
