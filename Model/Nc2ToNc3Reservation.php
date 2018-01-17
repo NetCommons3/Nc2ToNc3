@@ -357,6 +357,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 /**
  * Migrate LocationsRoom
  *
+ * @param int $locationId 施設ID
+ * @param int $savedData 登録データ
  * @return bool
  * @throws Exception
  */
@@ -412,6 +414,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * NC2 location_rooms dataからNC3 LocationsRoom dataを返す
  *
  * @param array $nc2Record NC2 location_room data
+ * @param array $nc3Location NC3の施設データ
  * @return array
  */
 	protected function _generateNc3ReservationLocationsRoom($nc2Record, $nc3Location) {
@@ -459,6 +462,8 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 /**
  * Migrate LocationReservable
  *
+ * @param int $nc2LocationId nc2の施設ID
+ * @param int $savedData 登録データ
  * @return bool
  * @throws Exception
  */
@@ -1079,6 +1084,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
  * generate LocationReservable data
  *
  * @param array $nc2Record nc2location data
+ * @param array $nc3Location NC3の施設データ
  * @return array
  */
 	protected function _generateNc3LocationReservable($nc2Record, $nc3Location) {

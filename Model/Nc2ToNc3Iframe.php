@@ -106,7 +106,7 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 					$Iframe->rollback();
 					continue;
 				}
-				
+
 				$this->writeCurrent($frameMap, 'iframes');
 
 				$Frame->create();

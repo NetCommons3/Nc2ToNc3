@@ -89,7 +89,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-
 		// Comment
 		$Nc2MultidbComment = $this->getNc2Model('multidatabase_comment');
 		$nc2MultidbComments = $Nc2MultidbComment->find('all');
@@ -215,7 +214,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				//];
 
 				foreach ($data['BlockRolePermission'] as &$permission) {
-					foreach ($permission as &$role){
+					foreach ($permission as &$role) {
 						$role['block_key'] = $block['Block']['key'];
 					}
 				}
