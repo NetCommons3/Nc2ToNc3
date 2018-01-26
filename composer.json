@@ -2,12 +2,18 @@
     "name": "netcommons/nc2-to-nc3",
     "description": "Nc2ToNc3 Plugin for NetCommons3",
     "type": "cakephp-plugin",
-    "keywords": ["cakephp", "nc2-to-nc3"],
+    "keywords": [
+        "cakephp",
+        "nc2-to-nc3"
+    ],
     "homepage": "http://www.netcommons.org/",
-    "license": "NetCommons License",
+    "license": "LicenseRef-NetCommons",
+    "license-ref-net-commons": "https://raw.githubusercontent.com/NetCommons3/NetCommons3/master/license.txt",
     "extra": {
         "installer-paths": {
-            "app/Plugin/{$name}": ["type:cakephp-plugin"]
+            "app/Plugin/{$name}": [
+                "type:cakephp-plugin"
+            ]
         }
     },
     "require": {
@@ -21,7 +27,7 @@
         "netcommons/calendars": "@dev",
         "netcommons/categories": "@dev",
         "netcommons/circular-notices": "@dev",
-        "netcommons/content-comments":  "@dev",
+        "netcommons/content-comments": "@dev",
         "netcommons/faqs": "@dev",
         "netcommons/frames": "@dev",
         "netcommons/iframes": "@dev",
@@ -46,14 +52,14 @@
         "netcommons/user-roles": "@dev",
         "netcommons/videos": "@dev",
         "netcommons/blocks": "@dev",
-        "netcommons/likes":  "@dev"
+        "netcommons/likes": "@dev"
     },
     "authors": [
         {
-          "name": "kteraguchi",
-          "email": "kteraguchi@commonsnet.org",
-          "homepage": "https://github.com/kteraguchi",
-          "role": "Developer"
+            "name": "kteraguchi",
+            "email": "kteraguchi@commonsnet.org",
+            "homepage": "https://github.com/kteraguchi",
+            "role": "Developer"
         },
         {
             "name": "NetCommons Community",
