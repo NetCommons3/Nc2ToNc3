@@ -127,6 +127,10 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'use_like' => $nc2Journal['Nc2Journal']['vote_flag'],
 				'use_unlike' => '0',
 				'use_comment' => $nc2Journal['Nc2Journal']['comment_flag'],
+				// NC3からルームに新しい設定「コンテンツの承認機能」＝コンテンツに承認が必要が追加されたため、
+				// 投稿承認=ON（use_workflow）、コメント承認=ON（use_comment_approval）で移行する。
+				'use_comment_approval' => '1',
+				'use_workflow' => '1',
 				'use_sns' => $nc2Journal['Nc2Journal']['sns_flag'],
 				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
