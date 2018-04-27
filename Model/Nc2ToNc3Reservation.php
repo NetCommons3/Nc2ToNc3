@@ -878,6 +878,12 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$frame = $Nc2ToNc3Frame->getMap($nc2Record['Nc2ReservationBlock']['block_id']);
+		if (!$frame) {
+			$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Record));
+			$this->writeMigrationLog($message);
+			return false;
+		}
+
 		$frameKey = $frame['Frame']['key'];
 
 		// $categoryId

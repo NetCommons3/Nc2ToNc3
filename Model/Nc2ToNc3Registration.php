@@ -120,6 +120,12 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 					continue;
 				}
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2RBlock['Nc2RegistrationBlock']['block_id']);
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2RBlock));
+					$this->writeMigrationLog($message);
+					$Registration->rollback();
+					continue;
+				}
 				$frame = $Frame->findById($frameMap['Frame']['id'], null, null, -1);
 				$nc3RoomId = $frameMap['Frame']['room_id'];
 				Current::write('Frame', $frame['Frame']);
