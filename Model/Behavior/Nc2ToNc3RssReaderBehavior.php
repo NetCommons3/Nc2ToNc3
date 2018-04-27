@@ -63,15 +63,21 @@ class Nc2ToNc3RssReaderBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
-		$rss = Xml::build($nc2RssBlock['Nc2RssBlock']['url']);
-		if ($rss->getName() === 'feed') {
-			$name = (string)$rss->title;
-			$link = (string)$rss->link->attributes()->href;
-			$summary = (string)$rss->subtitle;
-		} else {
-			$name = (string)$rss->channel->title;
-			$link = (string)$rss->channel->link;
-			$summary = (string)$rss->channel->description;
+		try {
+			$rss = Xml::build($nc2RssBlock['Nc2RssBlock']['url']);
+			if ($rss->getName() === 'feed') {
+				$name = (string)$rss->title;
+				$link = (string)$rss->link->attributes()->href;
+				$summary = (string)$rss->subtitle;
+			} else {
+				$name = (string)$rss->channel->title;
+				$link = (string)$rss->channel->link;
+				$summary = (string)$rss->channel->description;
+			}
+		} catch (Exception $ex) {
+			$name = '';
+			$link = '';
+			$summary = '';
 		}
 		if (!$name) {
 			$name = $nc2RssBlock['Nc2RssBlock']['site_name'];
