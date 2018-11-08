@@ -11,9 +11,9 @@ NC2最新版（2.4.2.1）からNC3最新版に移行します。
 
 ### 手順
 
-1. [NC2を最新版にアップデート](#NC2を最新版にアップデート)
+1. [NC2を最新版にアップデート](#nc2を最新版にアップデート)
 1. [NC2の準備](#nc2の準備)
-1. [NC3の準備](#NC3の準備)
+1. [NC3の準備](#nc3の準備)
 1. [NC3のバックアップ](#nc3のバックアップ)
 1. [移行ツール実行](#移行ツール実行)
 
@@ -33,9 +33,8 @@ NC3を新規インストールします。[NC3インストール（外部リン�
 
 NC3を既にインストール済みの場合、最新版にアップデートします。[NC3アップデート（外部リンク）](https://www.netcommons.org/NetCommons3/download#!#frame-156)
 
-##### NC3にNc2ToNc3配置
+**Nc2ToNc3の配置**
 
-NC3.1.5よりNc2ToNc3(移行ツール)が同梱されるようになったため、  
 app/Plugin配下に配置されています。
 
 ```
@@ -50,7 +49,7 @@ NetCommons3のパス/app/Plugin/Nc2ToNc3
 
 ```
 cd NetCommons3のパス/app
-./Console/cake Nc2ToNc3 --database NC2のDB名 --prefix NC2のテーブルプレフィックス名 --upload_path NC2のアップロードファイルフォルダーパス --base_url NC2のベースURL --nc3base NC3のベースパス
+./Console/cake Nc2ToNc3 --database NC2のDB名 --prefix NC2のテーブル名のprefix --upload_path NC2でアップロードしたファイルがあるディレクトリ --base_url NC2のベースURL --nc3base NC3のベースパス
 ```
 
 **オプション**
@@ -60,7 +59,7 @@ cd NetCommons3のパス/app
 |--database     |NC2のDB名                                            |nc2421
 |--prefix       |NC2の（DB内の）テーブル名のprefix                      |nc_
 |--upload_path  |NC2でアップロードしたファイルがあるディレクトリ          |/var/www/html/nc2/html/webapp/uploads/
-|--base_url     |NC2のベースURL（※）                                  |http://example.com/NC2/html
+|--base_url     |NC2のベースURL                                        |http://example.com/nc2/html
 |--nc3base      |NC3のベースパス（ドキュメントルートからの相対パス）      | /nc3
 
 ### 例)
@@ -69,8 +68,8 @@ cd NetCommons3のパス/app
 
 |         | URL                         |DB名    |prefix   |ドキュメントルート
 |---------| --------------------------- | ------ | ------- | ------
-|NC2      |http://example.com/NC2/html  |nc2421  |nc       |/var/www/html/nc2/
-|NC3      |http://example.com/NC3       |nc3	 |なし     |/var/www/html/nc3/
+|NC2      |http://example.com/nc2/html  |nc2421  |nc       |/var/www/html/nc2/
+|NC3      |http://example.com/nc3       |nc3	 |なし     |/var/www/html/nc3/
 
 **コマンド例**
 
