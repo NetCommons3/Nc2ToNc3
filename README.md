@@ -33,9 +33,7 @@ NC3を新規インストールします。[NC3インストール（外部リン�
 
 NC3を既にインストール済みの場合、最新版にアップデートします。[NC3アップデート（外部リンク）](https://www.netcommons.org/NetCommons3/download#!#frame-156)
 
-**Nc2ToNc3の配置**
-
-app/Plugin配下に配置されています。
+Nc2ToNc3は、app/Plugin配下に配置されています。
 
 ```
 NetCommons3のパス/app/Plugin/Nc2ToNc3
@@ -54,7 +52,7 @@ cd NetCommons3のパス/app
 
 **オプション**
 
-|               | 意味                                                |コマンド例の値
+|               | 意味                                                |値の例
 |---------------| --------------------------------------------------- | ------
 |--database     |NC2のDB名                                            |nc2421
 |--prefix       |NC2の（DB内の）テーブル名のprefix                      |nc_
