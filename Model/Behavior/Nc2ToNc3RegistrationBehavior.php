@@ -364,22 +364,13 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
  */
 	private function __generateNc3RegistrationChoiceData($nc2Item) {
 		$nc2Choices = explode('|', $nc2Item['Nc2RegistrationItem']['option_value']);
+		$nc2Choices = $this->__unsetEmptyNc2Choices($nc2Choices);
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [];
 		$nc3ChoiceSequence = 0;
 		foreach ($nc2Choices as $nc2Choice) {
-			// NC2ではOKだった全角空白のみの選択肢も、NC3ではRegistrationChoiceモデルでvalidateエラーになるため、セットしない。
-			// @see https://github.com/NetCommons3/Registrations/blob/master/Model/RegistrationChoice.php#L80-L89
-			$checkEmpty = str_replace(['　', ' '], '', $nc2Choice);
-			if ($checkEmpty == '') {
-				continue;
-			}
-			// NC2ではOKだった「:」「|」を含む選択肢も、NC3ではRegistrationChoiceモデルでvalidateエラーになるため、全角に置換してセットする。
-			$nc2Choice = str_replace(':', '：', $nc2Choice);
-			$nc2Choice = str_replace('|', '｜', $nc2Choice);
-
 			$data[] = [
 				'choice_sequence' => $nc3ChoiceSequence,
 				'choice_label' => $nc2Choice,
@@ -478,9 +469,10 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		];
 		$nc2ChoiceListTmp = $Nc2Item->find('all', $query);
 		$nc2ChoiceList = [];
-		foreach ($nc2ChoiceListTmp as $nc2Choice) {
-			$nc2ChoiceList[$nc2Choice['Nc2RegistrationItem']['item_id']]
-				= explode('|', $nc2Choice['Nc2RegistrationItem']['option_value']);
+		foreach ($nc2ChoiceListTmp as $nc2ChoiceTmp) {
+			$nc2ChoiceSeqList = explode('|', $nc2ChoiceTmp['Nc2RegistrationItem']['option_value']);
+			$nc2ChoiceSeqList = $this->__unsetEmptyNc2Choices($nc2ChoiceSeqList);
+			$nc2ChoiceList[$nc2ChoiceTmp['Nc2RegistrationItem']['item_id']] = $nc2ChoiceSeqList;
 		}
 
 		// $nc3RegistrationのRegistrationPage階層を除去RegistrationQuestion
@@ -531,6 +523,29 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		}
 
 		return $map;
+	}
+
+/**
+ * unset empty nc2Choices
+ *
+ * @param array $nc2Choices nc2Choices
+ * @return array nc2Choices
+ */
+	private function __unsetEmptyNc2Choices($nc2Choices) {
+		foreach ($nc2Choices as $key => $nc2Choice) {
+			// NC2ではOKだった全角空白のみの選択肢も、NC3ではRegistrationChoiceモデルでvalidateエラーになるため、取り除く。
+			// @see https://github.com/NetCommons3/Registrations/blob/master/Model/RegistrationChoice.php#L80-L89
+			$checkEmpty = str_replace(['　', ' '], '', $nc2Choice);
+			if ($checkEmpty == '') {
+				unset($nc2Choices[$key]);
+			} else {
+				// NC2ではOKだった「:」「|」を含む選択肢も、NC3ではRegistrationChoiceモデルでvalidateエラーになるため、全角に置換してセットする。
+				$nc2Choice = str_replace(':', '：', $nc2Choice);
+				$nc2Choice = str_replace('|', '｜', $nc2Choice);
+				$nc2Choices[$key] = $nc2Choice;
+			}
+		}
+		return $nc2Choices;
 	}
 
 /**
@@ -586,6 +601,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		}
 
 		$nc2Choices = explode('|', $nc2AnswerValue);
+		$nc2Choices = $this->__unsetEmptyNc2Choices($nc2Choices);
 		$nc3AnswerValue = '';
 		$nc3AnswerArray = [];
 		//foreach ($nc2Choices as $key => $nc2Choice) {

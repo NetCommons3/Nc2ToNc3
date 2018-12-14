@@ -200,6 +200,8 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		$Registration = ClassRegistry::init('Registrations.Registration');
 		$RAnswerSummary = ClassRegistry::init('Registrations.RegistrationAnswerSummary');
 		$NcRItemData = $this->getNc2Model('registration_item_data');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Registration');
 		foreach ($nc2RegistrationData as $nc2RegistrationDatum) {
 			$RAnswerSummary->begin();
 			try {
@@ -207,7 +209,16 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				$nc2RegistrationId = $nc2RegistrationDatum['Nc2RegistrationData']['registration_id'];
 				$nc2DataId = $nc2RegistrationDatum['Nc2RegistrationData']['data_id'];
 				$nc2ItemData = $NcRItemData->findAllByDataId($nc2DataId, null, null, -1);
-				$nc3Registration = $Registration->findById($nc2RegistrationId);
+
+				// NC2のRegistrationIdから、NC3のRegistrationId取得. --> $mapIdList[$nc2RegistrationId]
+				if (!isset($mapIdList[$nc2RegistrationId])) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2RegistrationDatum));
+					$this->writeMigrationLog($message);
+
+					$RAnswerSummary->rollback();
+					continue;
+				}
+				$nc3Registration = $Registration->findById($mapIdList[$nc2RegistrationId]);
 
 				$nc2ItemDataFirst = reset($nc2ItemData);
 				$data = $this->generateNc3RegistrationAnswerSummaryData($nc2ItemDataFirst, $nc3Registration);
@@ -266,7 +277,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		/* @var $RegistrationAnswer RegistrationAnswer */
 		$RegistrationAnswer = ClassRegistry::init('Registrations.RegistrationAnswer');
 		//$RegistrationAnswer->begin();
-			try {
+		try {
 			$nc2ItemDataFirst = reset($nc2ItemData);
 			$questionMap = $this->getQuestionMap($nc2ItemDataFirst, $nc3Registration);
 
@@ -283,10 +294,10 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				return false;
 			}
 			//$RegistrationAnswer->commit();
-			} catch (Exception $ex) {
+		} catch (Exception $ex) {
 			//$RegistrationAnswer->rollback();
 			throw $ex;
-			}
+		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '    RegistrationAnswer data Migration end.'));
 
