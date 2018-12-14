@@ -370,6 +370,16 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		$data = [];
 		$nc3ChoiceSequence = 0;
 		foreach ($nc2Choices as $nc2Choice) {
+			// NC2ではOKだった全角空白のみの選択肢も、NC3ではRegistrationChoiceモデルでvalidateエラーになるため、セットしない。
+			// @see https://github.com/NetCommons3/Registrations/blob/master/Model/RegistrationChoice.php#L80-L89
+			$checkEmpty = str_replace(['　', ' '], '', $nc2Choice);
+			if ($checkEmpty == '') {
+				continue;
+			}
+			// NC2ではOKだった「:」「|」を含む選択肢も、NC3ではRegistrationChoiceモデルでvalidateエラーになるため、全角に置換してセットする。
+			$nc2Choice = str_replace(':', '：', $nc2Choice);
+			$nc2Choice = str_replace('|', '｜', $nc2Choice);
+
 			$data[] = [
 				'choice_sequence' => $nc3ChoiceSequence,
 				'choice_label' => $nc2Choice,
