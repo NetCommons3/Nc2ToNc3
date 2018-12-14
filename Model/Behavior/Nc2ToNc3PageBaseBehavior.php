@@ -124,6 +124,7 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$url = '/' . $nc2Permalink;
 		$route = $this->__CakeRouter->parse($url);
 		if (!$route['pass']) {
+			$nc2Permalink = $this->__replacePermalink($nc2Permalink);
 			return $nc2Permalink;
 		}
 
@@ -139,7 +140,32 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 			unset($route['pass'][0]);
 		}
 
-		return implode('/', $route['pass']);
+		$permalink = implode('/', $route['pass']);
+		$permalink = $this->__replacePermalink($permalink);
+		return $permalink;
+	}
+
+/**
+ * Replace Converted permalink.
+ *
+ * @param string $permalink Converted Nc2Page permalink.
+ * @return string Replaced permalink.
+ * @see https://github.com/NetCommons3/Pages/blob/master/Model/Page.php#L235-L270
+ * @see https://github.com/NetCommons3/Pages/blob/master/Model/Page.php#L300-L311
+ */
+	private function __replacePermalink($permalink) {
+		// 半角を全角に置換
+		// 置換の羅列のため、phpcs除外
+		// @codingStandardsIgnoreStart
+		$search = ['%', ' ', '#', '<', '>', '+', '\\', '"', "'", '&', '?', '=', '~', ':', ';', ',', '$', '@', './', '/.', '|', ']', '[', '!', '(', ')', '*'];
+		$replace = ['％', '　', '＃', '＜', '＞', '＋', '￥￥', '”', '’', '＆', '？', '＝', '～', '：', '；', '，', '＄', '＠', '．／', '／．', '｜', '］', '［', '！', '（', '）', '＊'];
+		// @codingStandardsIgnoreEnd
+		$permalink = str_replace($search, $replace, $permalink);
+
+		// 「^/(最初にスラッシュ)」「/$(最後にスラッシュ)」「.$(最後にドット)」「^.(最初にドット)」は取り除く
+		// @see https://regexper.com/#%2F%28%5E%5C%2F%7C%5C%2F%24%7C%5C.%24%7C%5E%5C.%29%2F
+		$pattern = '/(^\/|\/$|\.$|^\.)/';
+		return preg_replace($pattern, '', $permalink);
 	}
 
 /**
