@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendors/autoload.php">
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".ctp">app/Plugin/Nc2ToNc3</directory>
+            <directory suffix=".php">app/Plugin/Nc2ToNc3</directory>
+            <exclude>
+                <directory suffix=".php">app/Plugin/Nc2ToNc3/Config/Migration</directory>
+                <directory suffix=".php">app/Plugin/Nc2ToNc3/Config/Schema</directory>
+                <directory suffix=".php">app/Plugin/Nc2ToNc3/Test/Case</directory>
+                <directory suffix=".php">app/Plugin/Nc2ToNc3/Test/Fixture</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+    <logging>
+        <log type="coverage-clover" target="build/logs/clover.xml"/>
+        <log type="coverage-html" target="build/logs/clover"/>
+    </logging>
+</phpunit>
