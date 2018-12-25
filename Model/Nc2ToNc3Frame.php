@@ -85,10 +85,12 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 			'conditions' => [
 				'Nc2Block.module_id !=' => '0',
 				'or' => [
-					// デフォルトのNc2Blockデータ（お知らせ３つ）、メニュー、imagineは移行しない方が良いと思う。
+					// デフォルトのメニュー、imagineは移行しない方が良いと思う。
 					'Nc2Block.block_id >' => '5',
-					// お知らせ=ようこそ（block_id=1）は書き換えて再利用しているパターンがあるため移行する
+					// Nc2Blockデータ（お知らせ３つ = block_id:1 ヘッダーのNCロゴ、block_id:2 検索リンク、block_id:3 welcometo）は書き換えて再利用しているパターンがあるため移行する
 					'Nc2Block.block_id' => '1',
+					'Nc2Block.block_id' => '2',
+					'Nc2Block.block_id' => '3',
 				]
 			],
 			// Nc2Block.parent_idから再帰処理するのと同じ結果になると思う。
