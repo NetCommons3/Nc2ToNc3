@@ -119,7 +119,8 @@ class Nc2ToNc3Plugin extends Nc2ToNc3AppModel {
 			//'imagine_view_main_init' => null,
 			//'language_view_main_init' => null,
 			'journal_view_main_init' => 'blogs',
-			'login_view_main_init' => 'auth',
+			// 左カラムなど常時表示の場所にログインモジュールを置いて移行するとNC3ではページ閲覧しようとするとログイン画面に強制リダイレクトされるため、移行しない
+			//'login_view_main_init' => 'auth',
 			'linklist_view_main_init' => 'links',
 			'menu_view_main_init' => 'menus',
 			'multidatabase_view_main_init' => 'multidatabases',
