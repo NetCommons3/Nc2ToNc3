@@ -404,6 +404,17 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			$defaultRoleKey = $this->getNc3DefaultRoleKeyByNc2SpaceType($nc2SpaceType);
 		}
 
+		$active = null;
+		if ($nc2Page['Nc2Page']['display_flag'] == '2') {
+			/* @see Room::beforeValidate() */
+			// activeのvalidateはbooleanのため、display_flag = 2はエラーになる。
+			// display_flag = 2 (プライベートスペース使用不可), 後からプライベートルーム使用不可にするとこのフラグ入る. データは残ってるため、非表示で移行
+			// 理由不明だけど、リストアしたグループルームでdisplay_flag = 2を見かけた。
+			$active = '0';
+		} else {
+			$active = $nc2Page['Nc2Page']['display_flag'];
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		// root_idは親Roomのroot_idを引き継いでいるっぽいが、Migratoinで親Roomのroot_idが変わったため正常なroot_idが不明
@@ -413,7 +424,8 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			'space_id' => $spaceId,
 			'root_id' => $spaces[$spaceId]['Space']['room_id_root'],
 			'parent_id' => $parenId,
-			'active' => $nc2Page['Nc2Page']['display_flag'],
+			//'active' => $nc2Page['Nc2Page']['display_flag'],
+			'active' => $active,
 			'default_role_key' => $defaultRoleKey,
 			'need_approval' => $needApproval,
 			'default_participation' => $nc2Page['Nc2Page']['default_entry_flag'],
