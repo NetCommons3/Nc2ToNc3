@@ -69,6 +69,9 @@ class Nc2ToNc3Shell extends AppShell {
 				__d('nc2_to_nc3', 'Enter upload path of nc2?')
 			);
 		}
+		if (substr($this->params['upload_path'], -1, 1) !== '/') {
+			$this->params['upload_path'] .= '/';
+		}
 		if (! array_key_exists('base_url', $this->params)) {
 			$this->params['base_url'] = $this->in(
 				__d(
