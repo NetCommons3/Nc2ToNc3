@@ -78,11 +78,12 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$nc3RoomId = $roomMap['Room']['id'];
 		$nc3Frame = $Frame->findByRoomIdAndPluginKey($nc3RoomId, 'blogs', 'id', null, -1);
-		if (!$nc3Frame) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Journal));
-			$this->_writeMigrationLog($message);
-			return [];
-		}
+		// フレーム配置がなくても移行する
+		//if (!$nc3Frame) {
+		//	$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Journal));
+		//	$this->_writeMigrationLog($message);
+		//	return [];
+		//}
 
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$nc2JournalId = $nc2Journal['Nc2Journal']['journal_id'];
@@ -98,9 +99,9 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2Journal['Nc2Journal']);
 		$nc3Created = $this->_convertDate($nc2Journal['Nc2Journal']['insert_time']);
 		$data = [
-			'Frame' => [
-				'id' => $nc3Frame['Frame']['id']
-			],
+			//'Frame' => [
+			//	'id' => $nc3Frame['Frame']['id']
+			//],
 			'Block' => [
 				'id' => '',
 				'room_id' => $nc3RoomId,
@@ -136,6 +137,12 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'created' => $nc3Created,
 			],
 		];
+		if ($nc3Frame) {
+			// フレームがあったらセット
+			$data['Frame'] = [
+					'id' => $nc3Frame['Frame']['id']
+			];
+		}
 
 		return $data;
 	}
