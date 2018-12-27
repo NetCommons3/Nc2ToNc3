@@ -86,7 +86,6 @@ class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data = [];
 		$data = [
 			'Frame' => [
 				'id' => $frameMap['Frame']['id']
@@ -127,6 +126,42 @@ class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
 				'plugin_key' => $nc3FramePluginKey
 			]
 		];
+		// 指定したルームのみ表示する=ONなら、room_id登録
+		if ($nc2WhatsnewBlock['Nc2WhatsnewBlock']['select_room']) {
+			/* @see Nc2ToNc3Map::getMapIdList() */
+			$mapRoomIdList = $Nc2ToNc3Map->getMapIdList('Room');
+
+			/* @see Nc2ToNc3BaseBehavior::getNc2Model() */
+			$Nc2SelectRoom = $model->getNc2Model('whatsnew_select_room');
+			$nc2SelectRooms = $Nc2SelectRoom->find('all', [
+				'recursive' => -1,
+				'conditions' => [
+					'block_id' => $nc2BlockId
+				],
+			]);
+
+			$nc3RoomIds = [];
+			foreach ($nc2SelectRooms as $nc2SelectRoom) {
+				$nc2RoomId = $nc2SelectRoom['Nc2WhatsnewSelectRoom']['room_id'];
+				if (! isset($mapRoomIdList[$nc2RoomId])) {
+					$message = __d('nc2_to_nc3', '%s No room ID corresponding to nc3',
+						$model->getLogArgument($nc2WhatsnewBlock) . 'nc2_room_id:' . $nc2RoomId);
+					$model->writeMigrationLog($message);
+					continue;
+				}
+				$nc3RoomIds[] = $mapRoomIdList[$nc2RoomId];
+			}
+			if ($nc3RoomIds) {
+				/* @see TopicFramesRoom::saveTopicFramesRoom() */
+				/* @see TopicFrameSetting::afterSave() */
+				// 指定したルームのみ表示する room_idは配列でセット可能
+				// また、TopicFrameSetting::afterSave()からTopicFramesRoom->saveTopicFramesRoom()を呼び出している
+				$data['TopicFramesRoom'] = [
+					'frame_key' => $frameMap['Frame']['key'],
+					'room_id' => $nc3RoomIds
+				];
+			}
+		}
 
 		return $data;
 	}
