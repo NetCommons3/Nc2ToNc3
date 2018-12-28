@@ -119,16 +119,33 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
 
+		/* @see Nc2ToNc3Map::getMapIdList() */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapRoomIdList = $Nc2ToNc3Map->getMapIdList('Room');
+
 		foreach ($nc2Bbses as $nc2Bbs) {
 			//var_dump($nc2Bbs);exit;
 			/** @var array $nc2BbsBlock */
 			$nc2BbsBlock = $Nc2BbsBlock->findByBbsId($nc2Bbs['Nc2Bb']['bbs_id'], null, null, -1);
-			if (!$nc2BbsBlock) {
-				continue;
-			}
+			// nc2配置してなくても移行する
+			//if (!$nc2BbsBlock) {
+			//	continue;
+			//}
 			$Bbs->begin();
 			try {
-				$data = $this->generateNc3BbsData($nc2Bbs, $nc2BbsBlock);
+				$nc2RoomId = $nc2Bbs['Nc2Bb']['room_id'];
+				// nc3 room_id取得
+				if (! isset($mapRoomIdList[$nc2RoomId])) {
+					// 基本ありえない想定
+					$message = __d('nc2_to_nc3', '%s No room ID corresponding to nc3',
+						'nc2_room_id:' . $nc2RoomId);
+					$this->writeMigrationLog($message);
+					$Bbs->rollback();
+					continue;
+				}
+				$nc3RoomId = $mapRoomIdList[$nc2RoomId];
+
+				$data = $this->generateNc3BbsData($nc2Bbs, $nc2BbsBlock, $nc3RoomId);
 				if (!$data) {
 					$Bbs->rollback();
 					continue;
@@ -227,7 +244,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$Block = ClassRegistry::init('Blocks.Block');
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 
@@ -248,8 +264,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Bbses/blob/3.1.0/Model/BbsArticle.php#L138-L141
 				$BbsArticle->validate = [];
 				$BbsArticleTree->validate = [];
-
-				//error_log(print_r('dddddddddddddddddddddddddddddddddddd', true)."\n\n", 3, LOGS."/debug.log");
 
 				if (!$BbsArticle->saveBbsArticle($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
