@@ -50,7 +50,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * @param array $nc2Linklist Nc2Linklist data.
  * @return array Nc3Link data.
  */
-	public function generateNc3LinkBlockData(Model $model, $frameMap, $nc2Linklist) {
+	public function generateNc3LinkBlockData(Model $model, $frameMap, $nc2Linklist, $nc3RoomId) {
 		$nc2LinklistId = $nc2Linklist['Nc2Linklist']['linklist_id'];
 		$linklistMap = $this->_getMap($nc2LinklistId);
 		if ($linklistMap) {
@@ -60,13 +60,16 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data['Frame'] = [
-			'id' => $frameMap['Frame']['id'],
-		];
+		if ($frameMap) {
+			$data['Frame'] = [
+				'id' => $frameMap['Frame']['id'],
+			];
+		}
 		$data['Block'] = [
 			'id' => '',
 			'key' => '',
-			'room_id' => $frameMap['Frame']['room_id'],
+			//'room_id' => $frameMap['Frame']['room_id'],
+			'room_id' => $nc3RoomId,
 			'plugin_key' => 'links',
 			'public_type' => 1,
 		];
