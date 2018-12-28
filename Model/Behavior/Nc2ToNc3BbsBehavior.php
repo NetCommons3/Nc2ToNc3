@@ -62,18 +62,22 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $nc2Bbs Nc2Bbs data.
  * @param array $nc2BbsBlock Nc2BbsBlock data.
+ * @param int $nc3RoomId nc3 room id.
  * @return array Nc3Bbs data.
  */
 
-	public function generateNc3BbsData(Model $model, $nc2Bbs, $nc2BbsBlock) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$nc2BlockId = $nc2BbsBlock['Nc2BbsBlock']['block_id'];
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2BbsBlock));
-			$this->_writeMigrationLog($message);
-			return [];
+	public function generateNc3BbsData(Model $model, $nc2Bbs, $nc2BbsBlock, $nc3RoomId) {
+		$frameMap = [];
+		if ($nc2BbsBlock) {
+			/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+			$nc2BlockId = $nc2BbsBlock['Nc2BbsBlock']['block_id'];
+			$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+			//if (!$frameMap) {
+			//	$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2BbsBlock));
+			//	$this->_writeMigrationLog($message);
+			//	return [];
+			//}
 		}
 
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
@@ -85,17 +89,15 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
-		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		/* @var $Nc2ToNc3User Nc2ToNc3User */
-		$data = [];
-
+		//$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data = [
-			'Frame' => [
-				'id' => $frameMap['Frame']['id']
-			],
+			//'Frame' => [
+			//	'id' => $frameMap['Frame']['id']
+			//],
 			'Block' => [
 				'id' => '',
-				'room_id' => $frameMap['Frame']['room_id'],
+				//'room_id' => $frameMap['Frame']['room_id'],
+				'room_id' => $nc3RoomId,
 				'plugin_key' => 'bbses',
 				'name' => $nc2Bbs['Nc2Bb']['bbs_name'],
 				'public_type' => $nc2Bbs['Nc2Bb']['activity']
@@ -104,7 +106,8 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'id' => '',
 				'key' => '',
 				'name' => $nc2Bbs['Nc2Bb']['bbs_name'],
-				'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
+				//'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
+				'created' => $this->_convertDate($nc2Bbs['Nc2Bb']['insert_time']),
 			],
 			//'BbsFrameSetting' => [
 			//	'id' => '',
@@ -125,6 +128,12 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			//	'use_workflow' => $nc2Bbs['Nc2Bb']['sns_flag'],
 			]
 		];
+		if ($frameMap) {
+			$data['Frame'] = [
+				'id' => $frameMap['Frame']['id'],
+			];
+		}
+
 		return $data;
 	}
 
