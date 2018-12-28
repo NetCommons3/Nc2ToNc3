@@ -34,6 +34,13 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 
 /**
+ * NC3のダミーのフレームキー。NC2でモジュール未配置の場合に一時的に利用する. 基本ここでは活用されない
+ *
+ * @var string
+ */
+	const DUMMY_FRAME_KEY = 'Nc2toNc3Dummy';
+
+/**
  * Custom database table name, or null/false if no table association is desired.
  *
  * @var string
@@ -64,6 +71,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		if (!$this->__saveLinkBlockFromNc2($nc2Linklists)) {
 			return false;
 		}
+		unset($nc2Linklists);
 
 		/* @var $Nc2LinklistLink AppModel */
 		$Nc2LinklistLink = $this->getNc2Model('linklist_link');
@@ -75,6 +83,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		if (!$this->__saveLinkFromNc2($nc2LinklistLinks)) {
 			return false;
 		}
+		unset($nc2LinklistLinks);
 
 		/* @var $Nc2LinklistBlock AppModel */
 		$Nc2LinklistBlock = $this->getNc2Model('linklist_block');
@@ -82,6 +91,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		if (!$this->__saveLinkFrameSettingFromNc2($nc2LinklistBlocks)) {
 			return false;
 		}
+		unset($nc2LinklistBlocks);
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Link Migration end.'));
 
@@ -113,27 +123,46 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+
+		/* @see Nc2ToNc3Map::getMapIdList() */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapRoomIdList = $Nc2ToNc3Map->getMapIdList('Room');
+
 		foreach ($nc2Linklists as $nc2Linklist) {
 			$LinkBlock->begin();
 			try {
 				$nc2RoomId = $nc2Linklist['Nc2Linklist']['room_id'];
 				$nc2LinklistBlock = $Nc2LinklistBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
-				if (!$nc2LinklistBlock) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
+				//if (!$nc2LinklistBlock) {
+				//	$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
+				//	$this->writeMigrationLog($message);
+				//	$LinkBlock->rollback();
+				//	continue;
+				//}
+				//$frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
+				//if (!$frameMap) {
+				//	$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
+				//	$this->writeMigrationLog($message);
+				//	$LinkBlock->rollback();
+				//	continue;
+				//}
+				$frameMap = [];
+				if ($nc2LinklistBlock) {
+					$frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
+				}
+
+				// nc3 room_id取得
+				if (! isset($mapRoomIdList[$nc2RoomId])) {
+					// 基本ありえない想定
+					$message = __d('nc2_to_nc3', '%s No room ID corresponding to nc3',
+						'nc2_room_id:' . $nc2RoomId);
 					$this->writeMigrationLog($message);
 					$LinkBlock->rollback();
 					continue;
 				}
+				$nc3RoomId = $mapRoomIdList[$nc2RoomId];
 
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2LinklistBlock['Nc2LinklistBlock']['block_id']);
-				if (!$frameMap) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Linklist));
-					$this->writeMigrationLog($message);
-					$LinkBlock->rollback();
-					continue;
-				}
-
-				$data = $this->generateNc3LinkBlockData($frameMap, $nc2Linklist);
+				$data = $this->generateNc3LinkBlockData($frameMap, $nc2Linklist, $nc3RoomId);
 				if (!$data) {
 					$LinkBlock->rollback();
 					continue;
@@ -148,7 +177,8 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('linklist_category', $query);
 				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
 
-				$this->writeCurrent($frameMap, 'links');
+				//$this->writeCurrent($frameMap, 'links');
+				$this->__writeCurrent($frameMap, 'links', $nc3RoomId);
 				$LinkBlock->create();
 				$BlocksLanguage->create();
 				if (!$LinkBlock->saveLinkBlock($data)) {
@@ -159,12 +189,11 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Linklist) . "\n" .
 						var_export($LinkBlock->validationErrors, true);
 					$this->writeMigrationLog($message);
-					$LinkBlock->rollback();
 					continue;
 				}
 
 				// 登録処理で使用しているデータを空に戻す
-				$nc3RoomId = $frameMap['Frame']['room_id'];
+				//$nc3RoomId = $frameMap['Frame']['room_id'];
 				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2LinklistId = $nc2Linklist['Nc2Linklist']['linklist_id'];
@@ -362,6 +391,31 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  LinkFrameSetting data Migration end.'));
 
 		return true;
+	}
+
+/**
+ * Write Current.
+ *
+ * @param array $frameMap array data.
+ * @param string $pluginKey plugin key.
+ * @param string $nc3RoomId nc3 room id.
+ * @return void
+ * @see Nc2ToNc3BaseBehavior::_writeCurrent()からコピー
+ */
+	private function __writeCurrent($frameMap, $pluginKey, $nc3RoomId) {
+		if ($frameMap) {
+			Current::write('Frame.key', $frameMap['Frame']['key']);
+		} else {
+			// 基本ここでは使ってない
+			Current::write('Frame.key', self::DUMMY_FRAME_KEY);
+		}
+		Current::write('Frame.room_id', $nc3RoomId);
+		Current::write('Frame.plugin_key', $pluginKey);
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', $pluginKey);
+		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		Current::write('Room.id', $nc3RoomId);
+		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 	}
 }
 
