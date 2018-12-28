@@ -79,11 +79,12 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		$nc3RoomId = $roomMap['Room']['id'];
 		$nc3Frame = $Frame->findByRoomIdAndPluginKey($nc3RoomId, 'multidatabases', ['id', 'key'],
 			null, -1);
-		if (!$nc3Frame) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Multidatabase));
-			$this->_writeMigrationLog($message);
-			return [];
-		}
+		// フレーム配置がなくても移行する
+		//if (!$nc3Frame) {
+		//	$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2Multidatabase));
+		//	$this->_writeMigrationLog($message);
+		//	return [];
+		//}
 
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2MultidatabaseId = $nc2Multidatabase['Nc2Multidatabase']['multidatabase_id'];
@@ -109,9 +110,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		$data = [
-			'Frame' => [
-				'id' => $nc3Frame['Frame']['id']
-			],
+			//'Frame' => [
+			//	'id' => $nc3Frame['Frame']['id']
+			//],
 			'Block' => [
 				'id' => '',
 				'room_id' => $nc3RoomId,
@@ -164,6 +165,12 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				3 => [],
 			]
 		];
+		if ($nc3Frame) {
+			// フレームがあったらセット
+			$data['Frame'] = [
+				'id' => $nc3Frame['Frame']['id']
+			];
+		}
 
 		// 権限データ
 		$data = Hash::merge($data, $this->_makePermissiondata($nc2Multidatabase['Nc2Multidatabase']['contents_authority'], $nc3RoomId));
