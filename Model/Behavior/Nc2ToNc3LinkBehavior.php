@@ -48,6 +48,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $frameMap FrameMap data.
  * @param array $nc2Linklist Nc2Linklist data.
+ * @param int $nc3RoomId Nc3 room id
  * @return array Nc3Link data.
  */
 	public function generateNc3LinkBlockData(Model $model, $frameMap, $nc2Linklist, $nc3RoomId) {

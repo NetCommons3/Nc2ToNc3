@@ -147,7 +147,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$this->__writeCurrent($frameMap,  'photo_albums', $nc3RoomId);
+				$this->__writeCurrent($frameMap, 'photo_albums', $nc3RoomId);
 
 				$FrameSetting->validate = [];
 				if (!$FrameSetting->savePhotoAlbumFrameSetting($data)) {
@@ -275,7 +275,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					Current::write('Block.id', $nc3Block['Block']['id']);
 
 					//$this->writeCurrent($frameMap, 'photo_albums');
-					$this->__writeCurrent($frameMap,  'photo_albums', $nc3RoomId);
+					$this->__writeCurrent($frameMap, 'photo_albums', $nc3RoomId);
 
 					$PhotoAlbum->create();
 					$PhotoAlbum->validate = [];
