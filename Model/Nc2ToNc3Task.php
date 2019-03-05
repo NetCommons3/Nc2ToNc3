@@ -155,7 +155,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 
 				// 登録処理で使用しているデータを空に戻す
 				$nc3RoomId = $frameMap['Frame']['room_id'];
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2TodoId = $nc2TodoData['Nc2Todo']['todo_id'];
 				$idMap = [
@@ -237,7 +237,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$nc3RoomId = $mapIdList[$nc2RoomId];
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				// 一応Model::validatの初期化
 				$TaskContent->validate = [];
@@ -251,7 +251,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2TaskId = $nc2TodoTask['Nc2TodoTask']['task_id'];
 				$idMap = [

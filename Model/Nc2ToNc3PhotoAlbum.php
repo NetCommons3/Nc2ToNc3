@@ -160,7 +160,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				}
 
 				// 登録処理で使用しているデータを空に戻す
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$idMap = [
 					$nc2BlockId => $FrameSetting->id,
@@ -317,8 +317,8 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					}
 
 					// 登録処理で使用しているデータを空に戻す
-					//unset(CurrentBase::$permission[$frameMap['Frame']['room_id']]['Permission']['content_publishable']['value']);
-					unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+					//unset(Current::$permission[$frameMap['Frame']['room_id']]['Permission']['content_publishable']['value']);
+					unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 					$idMap = [
 						$nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'] => $PhotoAlbum->id,
@@ -391,7 +391,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 		Current::write('Plugin.key', $pluginKey);
 		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 		Current::write('Room.id', $nc3RoomId);
-		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+		Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 	}
 }
 

@@ -120,7 +120,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			//Announcement テーブルの移行を実施。AVE前にCurrentのデータを書き換えが必要なため
 			Current::write('Plugin.key', 'announcements');
 			Current::write('Room.id', $nc3RoomId);
-			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+			Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 			// Model::idを初期化しないとUpdateになってしまう。
 			$Announcement->create();
@@ -139,7 +139,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+			unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 			$idMap = [
 				$nc2Blockld => $Announcement->id

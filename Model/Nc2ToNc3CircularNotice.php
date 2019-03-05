@@ -132,7 +132,7 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 				//$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
 				$nc3RoomId = $data['Block']['room_id'];
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 				Current::write('Plugin.key', 'circular_notices');
 
 				$BlocksLanguage->create();
@@ -154,7 +154,7 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2CircularBlockId = $nc2CircularBlock['Nc2CircularBlock']['block_id'];
 				$idMap = [];
@@ -235,7 +235,7 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 				$Block->create();
 				$Topic->create();
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
@@ -258,7 +258,7 @@ class Nc2ToNc3CircularNotice extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2CircularId = $nc2Circular['Nc2Circular']['circular_id'];
 				$idMap = [

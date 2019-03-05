@@ -174,7 +174,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
 				// 登録処理で使用しているデータを空に戻す
 				$nc3RoomId = $frameMap['Frame']['room_id'];
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2FaqId = $nc2Faq['Nc2Faq']['faq_id'];
 				$idMap = [
@@ -246,7 +246,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				$nc3RoomId = $mapIdList[$nc2RoomId];
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				// 一応Model::validatの初期化
 				$FaqQuestion->validate = [];
@@ -264,7 +264,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2FaqQuestionId = $nc2Question['Nc2FaqQuestion']['question_id'];
 				$idMap = [
