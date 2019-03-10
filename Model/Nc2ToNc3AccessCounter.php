@@ -110,7 +110,7 @@ class Nc2ToNc3AccessCounter extends Nc2ToNc3AppModel {
 			$nc3RoomId = $nc3Frame['Frame']['room_id'];
 			Current::write('Plugin.key', 'access_counters');
 			Current::write('Room.id', $nc3RoomId);
-			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+			Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 			// Model::idを初期化しないとUpdateになってしまう。
 			$AccessCounter->create();
@@ -129,7 +129,7 @@ class Nc2ToNc3AccessCounter extends Nc2ToNc3AppModel {
 				continue;
 			}
 
-			unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+			unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 			$data = $this->__generateNc3AccessCounterFrameSettingData($nc2Counter, $nc3Frame, $AccessCounter->id);
 			$CounterFrameSetting->create();

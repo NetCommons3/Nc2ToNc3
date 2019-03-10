@@ -182,7 +182,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				// いる？
 				$nc3RoomId = $data['Block']['room_id'];
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				$Multidatabase->create();
@@ -255,7 +255,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2MultidatabaseId = $nc2Multidatabase['Nc2Multidatabase']['multidatabase_id'];
 				$idMap = [
@@ -489,7 +489,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				$nc3Status = $data['MultidatabaseContent']['status'];
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
 				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
@@ -553,7 +553,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$Like->save($data);
 				}
 
-				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				//unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2PostId = $nc2MultidbContent['Nc2MultidatabaseContent']['content_id'];
 				$idMap = [
@@ -612,7 +612,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
 				$ContentComment->create();
 				// 一応Model::validatの初期化
@@ -629,7 +629,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2PostId = $nc2MultidbComment['Nc2MultidatabaseComment']['comment_id'];
 				$idMap = [

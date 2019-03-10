@@ -667,7 +667,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 
 		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 		Current::write('Room.id', $nc3RoomId);
-		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+		Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 	}
 
 /**

@@ -111,7 +111,7 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
 
 				// 登録処理で使用しているデータを空に戻す
 				$nc3RoomId = $frameMap['Frame']['room_id'];
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$idMap = [
 					$nc2BlockId => $TopicFrameSetting->id,

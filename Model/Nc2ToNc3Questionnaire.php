@@ -442,7 +442,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 
 		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 		Current::write('Room.id', $nc3RoomId);
-		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+		Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 		return true;
 	}
@@ -462,10 +462,10 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 
 		// Fatal error: Attempt to unset static property が発生。keyを指定した場合は発生しない。なんで？
-		//unset(CurrentBase::$permission);
-		$nc3RoomIds = array_keys(CurrentBase::$permission);
+		//unset(Current::$permission);
+		$nc3RoomIds = array_keys(Current::$permission);
 		foreach ($nc3RoomIds as $nc3RoomId) {
-			unset(CurrentBase::$permission[$nc3RoomId]);
+			unset(Current::$permission[$nc3RoomId]);
 		}
 	}
 }

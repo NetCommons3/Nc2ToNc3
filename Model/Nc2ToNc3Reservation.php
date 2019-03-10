@@ -820,7 +820,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					continue;
 				}
 				// 　権限セットしてたらここで解除
-				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				//unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2Id = $nc2Record['Nc2ReservationBlock']['block_id'];
 				$idMap = [
@@ -983,7 +983,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 					continue;
 				}
 				// 　権限セットしてたらここで解除
-				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				//unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2TimeframeId = $nc2Timeframe['Nc2ReservationTimeframe']['timeframe_id'];
 				$idMap = [

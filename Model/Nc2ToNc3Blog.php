@@ -141,7 +141,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				// いる？
 				$nc3RoomId = $data['Block']['room_id'];
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				$Blog->create();
@@ -161,7 +161,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2JournalId = $nc2Journal['Nc2Journal']['journal_id'];
 				$idMap = [
@@ -326,7 +326,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				$nc3Status = $data['BlogEntry']['status'];
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
 				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
@@ -349,7 +349,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
 				$idMap = [
@@ -407,7 +407,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
 				// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
 				$ContentComment->create();
 				// 一応Model::validatの初期化
@@ -424,7 +424,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2PostId = $nc2JournalPost['Nc2JournalPost']['post_id'];
 				$idMap = [

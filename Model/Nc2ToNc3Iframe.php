@@ -145,7 +145,7 @@ class Nc2ToNc3Iframe extends Nc2ToNc3AppModel {
 
 				// 登録処理で使用しているデータを空に戻す
 				$nc3RoomId = $frameMap['Frame']['room_id'];
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2IframeId = $nc2Iframe['Nc2Iframe']['block_id'];
 				$idMap = [

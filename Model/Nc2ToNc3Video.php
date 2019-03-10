@@ -129,7 +129,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 				//$nc3RoomId = $nc3Room['Room']['id'];
 				Current::write('Room.id', $nc3RoomId);
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				//$VideoFrameSetting->create();
@@ -153,7 +153,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 					$VideoSetting->rollback();
 					continue;
 				}
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2MultimediaId = $nc2Multimedia['Nc2Multimedia']['multimedia_id'];
 				$idMap = [
@@ -282,7 +282,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 				$Block->create();
 				$Topic->create();
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				// Hash::merge で VideoEntry::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
@@ -305,7 +305,7 @@ class Nc2ToNc3Video extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2ItemId = $nc2MultimediaItem['Nc2MultimediaItem']['item_id'];
 				$idMap = [

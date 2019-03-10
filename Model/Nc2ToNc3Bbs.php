@@ -158,7 +158,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$nc3Room = $Nc2ToNc3Room->getMap($nc2Bbs['Nc2Bb']['room_id']);
 				$nc3RoomId = $nc3Room['Room']['id'];
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				$Bbs->create();
@@ -181,7 +181,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2BbsId = $nc2Bbs['Nc2Bb']['bbs_id'];
 				$idMap = [
@@ -257,7 +257,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$Block->create();
 				$Topic->create();
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				// Hash::merge で BbsArticle::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
@@ -280,7 +280,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2PostId = $nc2BbsPost['Nc2BbsPost']['post_id'];
 				$idMap = [
