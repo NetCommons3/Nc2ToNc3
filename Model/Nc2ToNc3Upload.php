@@ -69,7 +69,7 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			return $data;
 		}
 
-		$name = $nc2Upload['Nc2Upload']['file_name'];
+		$name = $nc2Upload['Nc2Upload']['physical_file_name'];
 
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$tmpName = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'upload_path']) .
