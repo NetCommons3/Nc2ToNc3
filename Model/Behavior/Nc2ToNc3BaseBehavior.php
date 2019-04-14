@@ -66,6 +66,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 				'file' => 'Nc2ToNc3.log',
 			]
 		);
+
+		// パフォーマンスログ
+		CakeLog::config(
+			'Nc2ToNc3PerformanceFile',
+			[
+				'engine' => 'FileLog',
+				'types' => ['debug'],
+				'scopes' => ['Nc2ToNc3Performance'],
+				'file' => 'Nc2ToNc3Performance.log',
+			]
+		);
 	}
 
 /**
@@ -218,6 +229,31 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	public function convertTimezone(Model $model, $timezoneOffset) {
 		return $this->_convertTimezone($timezoneOffset);
+	}
+
+/**
+ * 実行時間の計測開始時間
+ *
+ * @param Model $model Model using this behavior.
+ * @return float 現在の Unix タイムスタンプのマイクロ秒
+ */
+	public function executionTimeStart(Model $model) {
+		return $this->_executionTimeStart();
+	}
+
+/**
+ * 実行時間の計測終了
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $methodName メソッド名
+ * @param float $timeStart 計測開始時間(秒)
+ * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
+ * @param bool $isOutputLog パフォーマンスログ出力. true:出力|false:出力しない
+ * @return void
+ */
+	public function executionTimeEnd(Model $model, $methodName, $timeStart,
+									$executionFlushTime, $isOutputLog = false) {
+		$this->_executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog);
 	}
 
 /**
@@ -683,5 +719,54 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		Current::remove('Frame.plugin_key');
 		Current::remove('Plugin.key');
 		Current::remove('Room.id');
+	}
+
+/**
+ * 実行時間の計測開始時間
+ *
+ * @return float 現在の Unix タイムスタンプのマイクロ秒
+ */
+	protected function _executionTimeStart() {
+		return microtime(true);
+	}
+
+/**
+ * 実行時間の計測終了<br>
+ * <br>
+ * Nc2ToNc3Frame, Nc2ToNc3Announcement, Nc2ToNc3Menu, Nc2ToNc3Registration<br>
+ * にざっくり実装した処、実行速度が実装前より遅くなった。<br>
+ * Nc2ToNc3User, Nc2ToNc3Room, Nc2ToNc3Pageは実行速度が早くなった。
+ *
+ * @param string $methodName メソッド名
+ * @param float $timeStart 計測開始時間(秒)
+ * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
+ * @param bool $isOutputLog パフォーマンスログ出力. true:出力|false:出力しない
+ * @return void
+ * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+ */
+	protected function _executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog = false) {
+		$executionTime = microtime(true) - $timeStart;
+
+		if ($isOutputLog) {
+			CakeLog::debug(
+				__d('nc2_to_nc3', '[%s] execution time: %s sec', [$methodName, $executionTime]),
+				['Nc2ToNc3Performance']
+			);
+			$memory = memory_get_usage(true) / (1024 * 1024);
+			CakeLog::debug(
+				__d('nc2_to_nc3', '[%s] memory: %s MB', [$methodName, $memory]),
+				['Nc2ToNc3Performance']
+			);
+		}
+
+		// $User->saveUserをループすると、UserのSaveUserBehaviorのafterSaveで、{$spaceModel}->afterUserSaveを繰り返すことにより
+		// 繰り返す事で使用メモリが増え続ける。 メモリが増えると徐々にsaveの処理速度が遅くなる
+		// ClassRegistry::flush()でクリアできるが、毎回実行するには処理が重い。
+		// そのため、実行時間が例えば1.5秒以上かかり処理が遅くなってきたら、ClassRegistryをいったんクリアするよう対応する。
+		// この現象はバッチで使う移行プラグイン特有のもの。画面では問題ないと思われる。
+		if ($executionTime >= $executionFlushTime) {
+			//CakeLog::debug('[' . $methodName . '] ClassRegistry::flush()', ['Nc2ToNc3Performance']);
+			ClassRegistry::flush();
+		}
 	}
 }
