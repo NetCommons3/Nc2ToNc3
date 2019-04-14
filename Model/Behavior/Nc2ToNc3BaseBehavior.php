@@ -731,7 +731,11 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
- * 実行時間の計測終了
+ * 実行時間の計測終了<br>
+ * <br>
+ * Nc2ToNc3Frame, Nc2ToNc3Announcement, Nc2ToNc3Menu, Nc2ToNc3Registration<br>
+ * にざっくり実装した処、実行速度が実装前より遅くなった。<br>
+ * Nc2ToNc3User, Nc2ToNc3Room, Nc2ToNc3Pageは実行速度が早くなった。
  *
  * @param string $methodName メソッド名
  * @param float $timeStart 計測開始時間(秒)

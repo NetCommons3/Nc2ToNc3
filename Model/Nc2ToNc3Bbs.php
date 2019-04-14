@@ -52,6 +52,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Bbs Migration start.'));
@@ -98,7 +99,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
-
 	private function __saveNc3BbsFromNc2($nc2Bbses) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Bbs data Migration start.'));
 
@@ -177,7 +177,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Bbs) . "\n" .
 						var_export($Bbs->validationErrors, true);
 					$this->writeMigrationLog($message);
-					$Bbs->rollback();
 					continue;
 				}
 

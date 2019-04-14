@@ -54,6 +54,7 @@ class Nc2ToNc3Menu extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Menu Migration start.'));
@@ -128,8 +129,6 @@ class Nc2ToNc3Menu extends Nc2ToNc3AppModel {
 				$message = $this->getLogArgument($nc2MenuDetail) . "\n" .
 					var_export($MenuFrameSetting->validationErrors, true);
 				$this->writeMigrationLog($message);
-
-				$MenuFrameSetting->rollback();
 				return true;	// 処理を継続するためtrueを返す
 			}
 

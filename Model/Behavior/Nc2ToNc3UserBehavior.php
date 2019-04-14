@@ -419,5 +419,6 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
  */
 	protected function _executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog = false) {
 		parent::_executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog);
+		//parent::_executionTimeEnd($methodName, $timeStart, $executionFlushTime, true);
 	}
 }

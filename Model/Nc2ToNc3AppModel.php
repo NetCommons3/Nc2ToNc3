@@ -19,4 +19,10 @@
  */
 class Nc2ToNc3AppModel extends Model {
 
+/**
+ * この実行時間(秒)を越えたらClassRegistry::flush()
+ *
+ * @var float
+ */
+	public $executionFlushTime = 1.5;
 }

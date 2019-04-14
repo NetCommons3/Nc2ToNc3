@@ -66,6 +66,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Migration start.'));
@@ -136,7 +137,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			'order' => [
 				'Nc2Page.parent_id',
 			],
-			'limit' => $limit,
+			//'limit' => $limit,
 			'offset' => 0,
 		];
 
@@ -144,16 +145,17 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/M17n/blob/3.1.0/Model/Behavior/M17nBehavior.php#L228
 		$this->changeNc3CurrentLanguage($nc2LangDirName);
 
-		$numberOfPages = 0;
-		//$numberOfUsers = $Nc2Page->find('count', $query);
-		//$query['limit'] = $limit;
+		//$numberOfPages = 0;
+		$nc2PageCount = 0;
+		$numberOfPages = $Nc2Page->find('count', $query);
+		$query['limit'] = $limit;
 		while ($nc2Pages = $Nc2Page->find('all', $query)) {
 			if (!$this->__savePageFromNc2($nc2Pages)) {
 				$this->restoreNc3CurrentLanguage();
 				return false;
 			}
 
-			$numberOfPages += count($nc2Pages);
+			//$numberOfPages += count($nc2Pages);
 			$errorRate = round($this->__numberOfValidationError / $numberOfPages);
 			// 5割エラー発生で止める。英語ページは少ない可能性があるので、最低件数も判断する
 			if ($errorRate >= 0.5 && $numberOfPages > 100) {
@@ -169,6 +171,8 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				return false;
 			}
 
+			$nc2PageCount += count($nc2Pages);
+			$this->writeMigrationLog('  Nc2PagesCount: ' . $nc2PageCount);
 			$query['offset'] += $limit;
 		}
 
@@ -190,6 +194,10 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 		$this->saveExistingMap($nc2Pages);
 		foreach ($nc2Pages as $nc2Page) {
+			// 実行時間の計測開始時間
+			/* @see Nc2ToNc3BaseBehavior::executionTimeStart() */
+			$timeStart = $this->executionTimeStart();
+
 			$Page->begin();
 			try {
 				/*
@@ -201,6 +209,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
 					$Page->rollback();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
@@ -219,13 +228,14 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 					$this->__numberOfValidationError++;
 
-					$Page->rollback();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
 				$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 				if ($this->getMap($nc2PageId)) {
 					$Page->commit();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
@@ -235,6 +245,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				$this->saveMap('Page', $idMap);
 
 				$Page->commit();
+				$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない

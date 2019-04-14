@@ -65,6 +65,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Questionnaire Migration start.'));
@@ -117,6 +118,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
 		$Nc2QBlock = $this->getNc2Model('questionnaire_block');
 		$Frame = ClassRegistry::init('Frames.Frame');
+
 		foreach ($nc2Questionnaires as $nc2Questionnaire) {
 			$Questionnaire->begin();
 			try {
@@ -159,8 +161,6 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Questionnaire) . "\n" .
 						var_export($Questionnaire->validationErrors, true);
 					$this->writeMigrationLog($message);
-
-					$Questionnaire->rollback();
 					continue;
 				}
 
@@ -204,6 +204,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$QFrameSetting = ClassRegistry::init('Questionnaires.QuestionnaireFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
+
 		foreach ($nc2QBlocks as $nc2QBlock) {
 			$QFrameSetting->begin();
 			try {
@@ -286,6 +287,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$QAnswerSummary = ClassRegistry::init('Questionnaires.QuestionnaireAnswerSummary');
 		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
 		$nc2PreviousQId = null;
+
 		foreach ($nc2QSummaries as $nc2QSummary) {
 			$QAnswerSummary->begin();
 			try {

@@ -102,19 +102,20 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 				'Nc2Block.row_num DESC',
 				'Nc2Block.col_num DESC',
 			],
-			'limit' => $limit,
+			//'limit' => $limit,
 			'offset' => 0,
 		];
 
-		$numberOfBlocks = 0;
-		//$numberOfUsers = $Nc2Block->find('count', $query);
-		//$query['limit'] = $limit;
+		//$numberOfBlocks = 0;
+		$nc2BlockCount = 0;
+		$numberOfBlocks = $Nc2Block->find('count', $query);
+		$query['limit'] = $limit;
 		while ($nc2Blocks = $Nc2Block->find('all', $query)) {
 			if (!$this->__saveFrameFromNc2($nc2Blocks)) {
 				return false;
 			}
 
-			$numberOfBlocks += count($nc2Blocks);
+			//$numberOfBlocks += count($nc2Blocks);
 			$errorRate = round($this->__numberOfValidationError / $numberOfBlocks);
 			// 5割エラー発生で止める
 			if ($errorRate >= 0.5) {
@@ -128,6 +129,8 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 				return false;
 			}
 
+			$nc2BlockCount += count($nc2Blocks);
+			$this->writeMigrationLog('  Nc2BlockCount: ' . $nc2BlockCount);
 			$query['offset'] += $limit;
 		}
 

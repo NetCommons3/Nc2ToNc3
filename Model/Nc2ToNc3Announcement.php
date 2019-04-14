@@ -73,6 +73,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Topic = ClassRegistry::init('Topics.Topic');
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+
 		foreach ($nc2Announcements as $nc2Announcement) {
 			$Announcement->begin();
 
@@ -134,8 +135,6 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				$message = $this->getLogArgument($nc2Announcement) . "\n" .
 					var_export($Announcement->validationErrors, true);
 				$this->writeMigrationLog($message);
-
-				$Announcement->rollback();
 				continue;
 			}
 

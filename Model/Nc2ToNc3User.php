@@ -46,13 +46,6 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 /**
- * この実行時間(秒)を越えたらClassRegistry::flush()
- *
- * @var float
- */
-	public $executionFlushTime = 1.5;
-
-/**
  * Custom database table name, or null/false if no table association is desired.
  *
  * @var string

@@ -34,6 +34,13 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 /**
+ * この実行時間(秒)を越えたらClassRegistry::flush()
+ *
+ * @var float
+ */
+	public $executionFlushTime = 0;
+
+/**
  * The DataSource name for nc2
  *
  * @var string
@@ -299,7 +306,8 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			// migrationModelが切り替わるタイミングで、いったん初期化する。
 			//ClassRegistry::flush();
 			/* @see Nc2ToNc3BaseBehavior::executionTimeEnd() */
-			$this->executionTimeEnd(__METHOD__ . ' ' . $migrationModelName, $timeStart, 0, true);
+			$this->executionTimeEnd(__METHOD__ . ' ' . $migrationModelName, $timeStart,
+				$this->executionFlushTime, true);
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
