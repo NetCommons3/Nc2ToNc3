@@ -154,6 +154,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		// NC2ユーザ件数
 		//$numberOfUsers = 0;
+		$nc2UserCount = 0;
 		$numberOfUsers = $Nc2User->find('count', $query);
 
 		$query['limit'] = $limit;
@@ -176,6 +177,8 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				return false;
 			}
 
+			$nc2UserCount += count($nc2Users);
+			$this->writeMigrationLog('  Nc2UserCount: ' . $nc2UserCount);
 			$query['offset'] += $limit;
 		}
 

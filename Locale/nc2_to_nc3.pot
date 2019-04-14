@@ -65,7 +65,7 @@ msgstr ""
 msgid "Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3.php:309
+#: Model/Nc2ToNc3.php:305
 msgid "Migration end."
 msgstr ""
 
@@ -178,7 +178,7 @@ msgstr ""
 msgid "Cabinet Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3Cabinet.php:84;268
+#: Model/Nc2ToNc3Cabinet.php:84
 msgid "Cabinet Migration end."
 msgstr ""
 
@@ -189,7 +189,7 @@ msgstr ""
 #: Model/Nc2ToNc3Cabinet.php:119;296
 #: Model/Nc2ToNc3Calendar.php:274
 #: Model/Nc2ToNc3Faq.php:133;141
-#: Model/Nc2ToNc3Frame.php:247;256
+#: Model/Nc2ToNc3Frame.php:269;278
 #: Model/Nc2ToNc3Iframe.php:104
 #: Model/Nc2ToNc3Link.php:340
 #: Model/Nc2ToNc3PhotoAlbum.php:125
@@ -221,6 +221,10 @@ msgstr ""
 
 #: Model/Nc2ToNc3Cabinet.php:193
 msgid "  Cabinet file Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:268
+msgid "  Cabinet file Migration end."
 msgstr ""
 
 #: Model/Nc2ToNc3Cabinet.php:280
@@ -331,17 +335,17 @@ msgstr ""
 msgid "  FaqFrameSetting data Migration end."
 msgstr ""
 
-#: Model/Nc2ToNc3Frame.php:60
+#: Model/Nc2ToNc3Frame.php:68
 msgid "Frame Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3Frame.php:70
+#: Model/Nc2ToNc3Frame.php:78
 msgid "Frame Migration end."
 msgstr ""
 
-#: Model/Nc2ToNc3Frame.php:119
-#: Model/Nc2ToNc3Page.php:159
-#: Model/Nc2ToNc3User.php:160
+#: Model/Nc2ToNc3Frame.php:131
+#: Model/Nc2ToNc3Page.php:171
+#: Model/Nc2ToNc3User.php:172
 msgid "Many error data. Please check the log. %s"
 msgstr ""
 
@@ -385,11 +389,11 @@ msgstr ""
 msgid "  LinkFrameSetting data Migration end."
 msgstr ""
 
-#: Model/Nc2ToNc3Menu.php:59
+#: Model/Nc2ToNc3Menu.php:67
 msgid "Menu Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3Menu.php:77
+#: Model/Nc2ToNc3Menu.php:85
 msgid "Menu Migration end."
 msgstr ""
 
@@ -433,22 +437,22 @@ msgstr ""
 msgid "  Multidatabase Content Migration end."
 msgstr ""
 
-#: Model/Nc2ToNc3Page.php:71
+#: Model/Nc2ToNc3Page.php:79
 msgid "Page Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3Page.php:113
+#: Model/Nc2ToNc3Page.php:121
 msgid "Page Migration end."
 msgstr ""
 
-#: Model/Nc2ToNc3Page.php:294;300
-#: Model/Nc2ToNc3Room.php:252;322
+#: Model/Nc2ToNc3Page.php:315;321
+#: Model/Nc2ToNc3Room.php:267;337
 #: Model/Nc2ToNc3UserAttribute.php:348;375;459
 #: Model/Behavior/Nc2ToNc3UserAttributeBehavior.php:47;54;79;91;103
 msgid "%s is not migration."
 msgstr ""
 
-#: Model/Nc2ToNc3Page.php:329
+#: Model/Nc2ToNc3Page.php:350
 msgid "Permalink of %s is change , because of empty."
 msgstr ""
 
@@ -660,11 +664,11 @@ msgstr ""
 msgid "  ReservationTimeframe data Migration end."
 msgstr ""
 
-#: Model/Nc2ToNc3Room.php:84
+#: Model/Nc2ToNc3Room.php:91
 msgid "Room Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3Room.php:138
+#: Model/Nc2ToNc3Room.php:145
 msgid "Room Migration end."
 msgstr ""
 
@@ -738,11 +742,11 @@ msgstr ""
 msgid "%s not found ."
 msgstr ""
 
-#: Model/Nc2ToNc3User.php:114
+#: Model/Nc2ToNc3User.php:121
 msgid "User Migration start."
 msgstr ""
 
-#: Model/Nc2ToNc3User.php:124
+#: Model/Nc2ToNc3User.php:131
 msgid "User Migration end."
 msgstr ""
 
@@ -784,6 +788,22 @@ msgstr ""
 
 #: Model/Nc2ToNc3Video.php:328
 msgid "  Video data Migration end."
+msgstr ""
+
+#: Model/Behavior/Nc2ToNc3BaseBehavior.php:748
+#: Model/Behavior/Nc2ToNc3FrameBehavior.php:101
+#: Model/Behavior/Nc2ToNc3MenuBehavior.php:403
+#: Model/Behavior/Nc2ToNc3PageBehavior.php:204
+#: Model/Behavior/Nc2ToNc3RoomBehavior.php:307
+msgid "[%s] execution time: %s sec"
+msgstr ""
+
+#: Model/Behavior/Nc2ToNc3BaseBehavior.php:753
+#: Model/Behavior/Nc2ToNc3FrameBehavior.php:106
+#: Model/Behavior/Nc2ToNc3MenuBehavior.php:408
+#: Model/Behavior/Nc2ToNc3PageBehavior.php:209
+#: Model/Behavior/Nc2ToNc3RoomBehavior.php:312
+msgid "[%s] memory: %s MB"
 msgstr ""
 
 #: Model/Behavior/Nc2ToNc3PhotoAlbumBehavior.php:81

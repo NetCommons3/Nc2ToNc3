@@ -271,6 +271,10 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			if (in_array(substr($migrationModelName, 8), $excludePlugins, true)) {
 				continue;
 			}
+			// 実行時間の計測開始時間
+			/* @see Nc2ToNc3BaseBehavior::executionTimeStart() */
+			$timeStart = $this->executionTimeStart();
+
 			$migrationModelName = 'Nc2ToNc3.' . $migrationModelName;
 
 			/* @var $MigrationModel Nc2ToNc3UserAttribute */
@@ -293,7 +297,9 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 			// ClassRegistryが移行で各プラグインのモデルのsave系を実行すると、処理が遅くなる & メモリ食うため、
 			// migrationModelが切り替わるタイミングで、いったん初期化する。
-			ClassRegistry::flush();
+			//ClassRegistry::flush();
+			/* @see Nc2ToNc3BaseBehavior::executionTimeEnd() */
+			$this->executionTimeEnd(__METHOD__ . ' ' . $migrationModelName, $timeStart, 0, true);
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));

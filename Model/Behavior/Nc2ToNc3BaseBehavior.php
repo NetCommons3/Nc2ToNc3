@@ -66,6 +66,17 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 				'file' => 'Nc2ToNc3.log',
 			]
 		);
+
+		// パフォーマンスログ
+		CakeLog::config(
+			'Nc2ToNc3PerformanceFile',
+			[
+				'engine' => 'FileLog',
+				'types' => ['debug'],
+				'scopes' => ['Nc2ToNc3Performance'],
+				'file' => 'Nc2ToNc3Performance.log',
+			]
+		);
 	}
 
 /**
@@ -237,10 +248,12 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  * @param string $methodName メソッド名
  * @param float $timeStart 計測開始時間(秒)
  * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
+ * @param bool $isOutputLog パフォーマンスログ出力. true:出力|false:出力しない
  * @return void
  */
-	public function executionTimeEnd(Model $model, $methodName, $timeStart, $executionFlushTime) {
-		$this->_executionTimeEnd($methodName, $timeStart, $executionFlushTime);
+	public function executionTimeEnd(Model $model, $methodName, $timeStart,
+									$executionFlushTime, $isOutputLog = false) {
+		$this->_executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog);
 	}
 
 /**
@@ -717,20 +730,30 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		return microtime(true);
 	}
 
-// @codingStandardsIgnoreStart
 /**
  * 実行時間の計測終了
  *
  * @param string $methodName メソッド名
  * @param float $timeStart 計測開始時間(秒)
  * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
+ * @param bool $isOutputLog パフォーマンスログ出力. true:出力|false:出力しない
  * @return void
+ * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
  */
-	protected function _executionTimeEnd($methodName, $timeStart, $executionFlushTime) {
-		// @codingStandardsIgnoreEnd
+	protected function _executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog = false) {
 		$executionTime = microtime(true) - $timeStart;
-		//CakeLog::debug('[' . $methodName . '] ' . $executionTime . ' 秒');
-		//CakeLog::debug('[' . $methodName . '] ' . "memory: " . memory_get_usage(true));
+
+		if ($isOutputLog) {
+			CakeLog::debug(
+				__d('nc2_to_nc3', '[%s] execution time: %s sec', [$methodName, $executionTime]),
+				['Nc2ToNc3Performance']
+			);
+			$memory = memory_get_usage(true) / (1024 * 1024);
+			CakeLog::debug(
+				__d('nc2_to_nc3', '[%s] memory: %s MB', [$methodName, $memory]),
+				['Nc2ToNc3Performance']
+			);
+		}
 
 		// $User->saveUserをループすると、UserのSaveUserBehaviorのafterSaveで、{$spaceModel}->afterUserSaveを繰り返すことにより
 		// 繰り返す事で使用メモリが増え続ける。 メモリが増えると徐々にsaveの処理速度が遅くなる
@@ -738,7 +761,7 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		// そのため、実行時間が例えば1.5秒以上かかり処理が遅くなってきたら、ClassRegistryをいったんクリアするよう対応する。
 		// この現象はバッチで使う移行プラグイン特有のもの。画面では問題ないと思われる。
 		if ($executionTime >= $executionFlushTime) {
-			//CakeLog::debug('[' . $methodName . '] ClassRegistry::flush()');
+			//CakeLog::debug('[' . $methodName . '] ClassRegistry::flush()', ['Nc2ToNc3Performance']);
 			ClassRegistry::flush();
 		}
 	}
