@@ -55,6 +55,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Frame Migration start.'));
@@ -75,6 +76,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
  * Save Frame from Nc2 while dividing.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	private function __saveFrameFromNc2WhileDividing() {
 		$limit = 1000;
@@ -105,6 +107,8 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 		];
 
 		$numberOfBlocks = 0;
+		//$numberOfUsers = $Nc2Block->find('count', $query);
+		//$query['limit'] = $limit;
 		while ($nc2Blocks = $Nc2Block->find('all', $query)) {
 			if (!$this->__saveFrameFromNc2($nc2Blocks)) {
 				return false;
@@ -116,7 +120,9 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 			if ($errorRate >= 0.5) {
 				$this->validationErrors = [
 					'database' => [
-						__d('nc2_to_nc3', 'Many error data.Please check the log.')
+						__d('nc2_to_nc3',
+							'Many error data. Please check the log. %s',
+							['ValidationErrorCount: ' . $this->__numberOfValidationError . ' Nc2BlockCount: ' . $numberOfBlocks])
 					]
 				];
 				return false;

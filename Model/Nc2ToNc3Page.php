@@ -120,6 +120,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
  *
  * @param string $nc2LangDirName Nc2Page lang_dirname.
  * @return bool True on success.
+ * @throws Exception
  */
 	private function __savePageFromNc2WhileDividing($nc2LangDirName) {
 		$limit = 1000;
@@ -144,6 +145,8 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		$this->changeNc3CurrentLanguage($nc2LangDirName);
 
 		$numberOfPages = 0;
+		//$numberOfUsers = $Nc2Page->find('count', $query);
+		//$query['limit'] = $limit;
 		while ($nc2Pages = $Nc2Page->find('all', $query)) {
 			if (!$this->__savePageFromNc2($nc2Pages)) {
 				$this->restoreNc3CurrentLanguage();
@@ -156,7 +159,9 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			if ($errorRate >= 0.5 && $numberOfPages > 100) {
 				$this->validationErrors = [
 					'database' => [
-						__d('nc2_to_nc3', 'Many error data.Please check the log.')
+						__d('nc2_to_nc3',
+							'Many error data. Please check the log. %s',
+							['ValidationErrorCount: ' . $this->__numberOfValidationError . ' Nc2PagesCount: ' . $numberOfPages])
 					]
 				];
 

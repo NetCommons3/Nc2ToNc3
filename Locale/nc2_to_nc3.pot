@@ -13,39 +13,792 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: Console/Command/Nc2ToNc3Shell.php:32
-msgid "Nc2 version is %s. It must be %s"
+#: Console/Command/Nc2ToNc3Shell.php:36
+msgid "Enter database name of nc2?"
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:14
-msgid "Input the database connection information of NetCommons2."
+#: Console/Command/Nc2ToNc3Shell.php:41
+msgid "Enter table prefix name of nc2?"
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:23
-msgid "Datasource"
+#: Console/Command/Nc2ToNc3Shell.php:69
+msgid "Enter upload path of nc2?"
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:30
-msgid "Host"
+#: Console/Command/Nc2ToNc3Shell.php:77
+msgid "Enter url of nc2 for converting link in WYSIWYG content?(ex.http://example.com/nc2)"
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:31
-msgid "Port"
+#: Console/Command/Nc2ToNc3Shell.php:85
+msgid "Enter sub directory name?(ex.\"/dirname1/dirname2\") If root is top, enter \"/\"."
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:32
+#: Model/Nc2ToNc3.php:84
 msgid "Database"
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:33
-msgid "Prefix"
+#: Model/Nc2ToNc3.php:103
+msgid "Upload file path"
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:34
-msgid "Login"
+#: Model/Nc2ToNc3.php:111
+msgid "The above Upload file path does not exist."
 msgstr ""
 
-#: View/Nc2ToNc3/migration.ctp:35
-msgid "Password"
+#: Model/Nc2ToNc3.php:119
+msgid "Base url"
+msgstr ""
+
+#: Model/Nc2ToNc3.php:120
+msgid "Input URL of NetCommons2 for converting link in WYSIWYG content."
+msgstr ""
+
+#: Model/Nc2ToNc3.php:179
+msgid "NetCommons2 version is not %s"
+msgstr ""
+
+#: Model/Nc2ToNc3.php:188
+msgid "NetCommons2 table is not found."
+msgstr ""
+
+#: Model/Nc2ToNc3.php:237
+msgid "Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3.php:309
+msgid "Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3AccessCounter.php:56
+msgid "AccessCounter Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3AccessCounter.php:65
+msgid "AccessCounter Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3AccessCounter.php:77
+msgid "  AccessCounter data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3AccessCounter.php:168
+msgid "  AccessCounter data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Announcement.php:60
+msgid "Announcement Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Announcement.php:155
+msgid "Announcement Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:57
+msgid "Bbs Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:90
+msgid "Bbs Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:103
+msgid "  Bbs data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:140
+#: Model/Nc2ToNc3Link.php:157
+#: Model/Nc2ToNc3PhotoAlbum.php:362
+#: Model/Behavior/Nc2ToNc3TopicBehavior.php:147
+msgid "%s No room ID corresponding to nc3"
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:204
+msgid "  Bbs data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:217
+msgid "  Bbs Article data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:303
+msgid "  Bbs Article data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:315
+msgid "  BbsFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Bbs.php:377
+msgid "  BbsFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:59
+msgid "Blog Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:95
+msgid "Blog Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:108
+msgid "  Blog data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:195
+msgid "  Blog data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:207
+msgid "  BlogFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:269
+msgid "  BlogFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:282
+msgid "  Blog Entry data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:373
+msgid "  Blog Entry data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:385
+#: Model/Nc2ToNc3Multidatabase.php:590
+msgid "  Content Comment data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Blog.php:454
+#: Model/Nc2ToNc3Multidatabase.php:659
+msgid "  Content Comment Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:54
+msgid "Cabinet Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:84;268
+msgid "Cabinet Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:97
+msgid "  Cabinet data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:119;296
+#: Model/Nc2ToNc3Calendar.php:274
+#: Model/Nc2ToNc3Faq.php:133;141
+#: Model/Nc2ToNc3Frame.php:247;256
+#: Model/Nc2ToNc3Iframe.php:104
+#: Model/Nc2ToNc3Link.php:340
+#: Model/Nc2ToNc3PhotoAlbum.php:125
+#: Model/Nc2ToNc3Questionnaire.php:132;140;219
+#: Model/Nc2ToNc3Quiz.php:132;140;224
+#: Model/Nc2ToNc3Registration.php:118;125;217;333
+#: Model/Nc2ToNc3Reservation.php:882
+#: Model/Nc2ToNc3Search.php:97
+#: Model/Nc2ToNc3Task.php:121;302
+#: Model/Behavior/Nc2ToNc3BbsBehavior.php:291
+#: Model/Behavior/Nc2ToNc3BlogBehavior.php:70;168
+#: Model/Behavior/Nc2ToNc3CabinetBehavior.php:57;169
+#: Model/Behavior/Nc2ToNc3CalendarBehavior.php:68;76;172;276
+#: Model/Behavior/Nc2ToNc3CircularNoticeBehavior.php:58
+#: Model/Behavior/Nc2ToNc3FaqBehavior.php:195
+#: Model/Behavior/Nc2ToNc3MenuBehavior.php:49;116;357
+#: Model/Behavior/Nc2ToNc3MultidatabaseBehavior.php:70;393
+#: Model/Behavior/Nc2ToNc3QuestionnaireBehavior.php:161;203;530;553;561
+#: Model/Behavior/Nc2ToNc3QuizBehavior.php:148;190;536;559;567
+#: Model/Behavior/Nc2ToNc3RegistrationBehavior.php:101;194;487;510;518
+#: Model/Behavior/Nc2ToNc3TopicBehavior.php:54
+#: Model/Behavior/Nc2ToNc3VideoBehavior.php:73
+msgid "%s does not migration."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:180
+msgid "  Cabinet data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:193
+msgid "  Cabinet file Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:280
+#: Model/Nc2ToNc3Registration.php:317
+#: Model/Nc2ToNc3Task.php:286
+msgid "  Frame data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Cabinet.php:351
+#: Model/Nc2ToNc3Registration.php:391
+#: Model/Nc2ToNc3Task.php:357
+msgid "  Frame data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:68
+msgid "Calendar Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:109
+msgid "Calendar Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:121
+msgid "  CalendarPermission data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:162
+msgid "  CalendarPermission data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:175
+msgid "  CalendarFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:216
+msgid "  CalendarFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:229
+msgid "  CalendarEvent data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Calendar.php:319
+msgid "  CalendarEvent data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:54
+msgid "CircularNotice Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:60
+msgid "CircularNotice is not installed."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:79
+msgid "CircularNotice Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:92
+msgid "  CircularNoticeFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:185
+msgid "  CircularNoticeFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:198
+msgid "  CircularNoticeContent data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3CircularNotice.php:280
+msgid "  CircularNoticeContent data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:63
+msgid "Faq Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:69
+msgid "Faq is not installed."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:98
+msgid "Faq Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:111
+msgid "  Faq data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:205
+msgid "  Faq data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:218
+msgid "  FaqQuestion data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:286
+msgid "  FaqQuestion data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:299
+msgid "  FaqFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Faq.php:353
+msgid "  FaqFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Frame.php:60
+msgid "Frame Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Frame.php:70
+msgid "Frame Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Frame.php:119
+#: Model/Nc2ToNc3Page.php:159
+#: Model/Nc2ToNc3User.php:160
+msgid "Many error data. Please check the log. %s"
+msgstr ""
+
+#: Model/Nc2ToNc3Iframe.php:60
+msgid "Iframe Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Iframe.php:69
+msgid "Iframe Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Iframe.php:82
+msgid "  Iframe data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Iframe.php:166
+msgid "  Iframe data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Link.php:66
+msgid "Link Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Link.php:96
+msgid "Link Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Link.php:109;242
+msgid "  Link data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Link.php:229;314
+msgid "  Link data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Link.php:327
+msgid "  LinkFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Link.php:391
+msgid "  LinkFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Menu.php:59
+msgid "Menu Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Menu.php:77
+msgid "Menu Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:59
+msgid "Multidatabase Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:138
+msgid "Multidatabase Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:151
+msgid "  Multidatabase data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:286
+msgid "  Blog Multidatabase Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:298
+msgid "  MultidatabaseFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:360
+msgid "  MultidatabaseFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:373
+msgid "  MultidatabaseMetadata Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:431
+msgid "  MultidatabaseMetadata Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:444
+msgid "  Multidatabase Content Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Multidatabase.php:578
+msgid "  Multidatabase Content Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Page.php:71
+msgid "Page Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Page.php:113
+msgid "Page Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Page.php:294;300
+#: Model/Nc2ToNc3Room.php:252;322
+#: Model/Nc2ToNc3UserAttribute.php:348;375;459
+#: Model/Behavior/Nc2ToNc3UserAttributeBehavior.php:47;54;79;91;103
+msgid "%s is not migration."
+msgstr ""
+
+#: Model/Nc2ToNc3Page.php:329
+msgid "Permalink of %s is change , because of empty."
+msgstr ""
+
+#: Model/Nc2ToNc3PhotoAlbum.php:69
+msgid "PhotoAlbum Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3PhotoAlbum.php:90
+msgid "PhotoAlbum Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3PhotoAlbum.php:103
+msgid "  PhotoAlbumFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3PhotoAlbum.php:180
+msgid "  PhotoAlbumFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3PhotoAlbum.php:197
+msgid "  PhotoAlbum data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3PhotoAlbum.php:339
+msgid "  PhotoAlbum data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:70
+msgid "Questionnaire Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:100
+msgid "Questionnaire Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:112
+msgid "  Questionnaire data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:186
+msgid "  Questionnaire data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:199
+msgid "  QuestionnaireFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:269
+msgid "  QuestionnaireFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:282
+msgid "  QuestionnaireAnswerSummary data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:356
+msgid "  QuestionnaireAnswerSummary data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:372
+msgid "    QuestionnaireAnswer data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Questionnaire.php:411
+msgid "    QuestionnaireAnswer data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:70
+msgid "Quiz Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:100
+msgid "Quiz Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:112
+msgid "  Quiz data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:191
+msgid "  Quiz data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:204
+msgid "  QuizFrameSetting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:274
+msgid "  QuizFrameSetting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:287
+msgid "  QuizAnswerSummary data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:361
+msgid "  QuizAnswerSummary data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:377
+msgid "    QuizAnswer data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Quiz.php:416
+msgid "    QuizAnswer data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:63
+msgid "Registration Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:85
+msgid "Registration Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:98
+msgid "  Registration data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:185
+msgid "  Registration data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:198
+msgid "  RegistrationData data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:262
+msgid "  RegistrationAnswerSummary data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:277
+msgid "    RegistrationAnswer data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Registration.php:304
+msgid "    RegistrationAnswer data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:59
+msgid "Reservation Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:108
+msgid "Reservation Reservation start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:114
+msgid "Reservation Reservation is exist."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:155
+msgid "Reservation Reservation end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:196
+msgid "Reservation Location start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:299
+msgid "Reservation Location end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:366
+msgid "Reservation LocationsRoom start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:409
+msgid "Reservation LocationsRoom end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:471
+msgid "Reservation LocationReservable start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:503
+msgid "Reservation LocationReservable end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:514
+msgid "Reservation Rrule start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:556
+msgid "Reservation Rrule end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:632
+msgid "Reservation Event start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:674
+msgid "Reservation Event end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:775
+msgid "Reservation FrameSetting start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:783
+msgid "Reservation FrameSetting end."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:954
+msgid "  Reservation Timeframe Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Reservation.php:1002
+msgid "  ReservationTimeframe data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Room.php:84
+msgid "Room Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Room.php:138
+msgid "Room Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3RssReader.php:61
+msgid "RssReader Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3RssReader.php:70
+msgid "RssReader Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3RssReader.php:83
+msgid "  RssReader data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3RssReader.php:161
+msgid "  RssReader data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Search.php:61
+msgid "Search Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Search.php:70
+msgid "Search Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Search.php:83
+msgid "  Search data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Search.php:146
+msgid "  Search data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Task.php:58
+msgid "Task Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Task.php:85
+msgid "Task Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Task.php:98
+msgid "  Task data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Task.php:193
+msgid "  Task data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Task.php:206
+msgid "  TaskContent data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Task.php:273
+msgid "  TaskContent data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Topic.php:59
+msgid "Topic Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Topic.php:68
+msgid "Topic Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Upload.php:67;80
+#: Model/Behavior/Nc2ToNc3PhotoAlbumBehavior.php:258
+#: Model/Behavior/Nc2ToNc3WysiwygBehavior.php:169
+msgid "%s not found ."
+msgstr ""
+
+#: Model/Nc2ToNc3User.php:114
+msgid "User Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3User.php:124
+msgid "User Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3UserAttribute.php:79
+msgid "UserAttribute Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3UserAttribute.php:90
+msgid "UserAttribute Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3UserAttribute.php:394
+msgid "%s does not merge."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:54
+msgid "Video Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:60
+msgid "Multimedia is not installed."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:78
+msgid "Video Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:91
+msgid "  Video Setting data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:184
+msgid "  Video Setting data Migration end."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:244
+msgid "  Video data Migration start."
+msgstr ""
+
+#: Model/Nc2ToNc3Video.php:328
+msgid "  Video data Migration end."
+msgstr ""
+
+#: Model/Behavior/Nc2ToNc3PhotoAlbumBehavior.php:81
+msgid "%s does not migration. Not placed in nc2 room"
+msgstr ""
+
+#: Model/Behavior/Nc2ToNc3UserBehavior.php:53
+msgid "%s is not active.Resend approval mail."
+msgstr ""
+
+#: Model/Behavior/Nc2ToNc3UserValidationBehavior.php:86
+msgid "The require attribute of nc3 missing in nc2."
+msgstr ""
+
+#: View/Nc2ToNc3/migration.ctp:13
+msgid "Go here for the migration from NetCommons2 documentation."
 msgstr ""
 

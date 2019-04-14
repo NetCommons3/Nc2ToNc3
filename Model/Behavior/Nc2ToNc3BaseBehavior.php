@@ -221,6 +221,29 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 	}
 
 /**
+ * 実行時間の計測開始時間
+ *
+ * @param Model $model Model using this behavior.
+ * @return float 現在の Unix タイムスタンプのマイクロ秒
+ */
+	public function executionTimeStart(Model $model) {
+		return $this->_executionTimeStart();
+	}
+
+/**
+ * 実行時間の計測終了
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $methodName メソッド名
+ * @param float $timeStart 計測開始時間(秒)
+ * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
+ * @return void
+ */
+	public function executionTimeEnd(Model $model, $methodName, $timeStart, $executionFlushTime) {
+		$this->_executionTimeEnd($methodName, $timeStart, $executionFlushTime);
+	}
+
+/**
  * Write migration log.
  *
  * @param string $message Migration message.
@@ -683,5 +706,40 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		Current::remove('Frame.plugin_key');
 		Current::remove('Plugin.key');
 		Current::remove('Room.id');
+	}
+
+/**
+ * 実行時間の計測開始時間
+ *
+ * @return float 現在の Unix タイムスタンプのマイクロ秒
+ */
+	protected function _executionTimeStart() {
+		return microtime(true);
+	}
+
+// @codingStandardsIgnoreStart
+/**
+ * 実行時間の計測終了
+ *
+ * @param string $methodName メソッド名
+ * @param float $timeStart 計測開始時間(秒)
+ * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
+ * @return void
+ */
+	protected function _executionTimeEnd($methodName, $timeStart, $executionFlushTime) {
+		// @codingStandardsIgnoreEnd
+		$executionTime = microtime(true) - $timeStart;
+		//CakeLog::debug('[' . $methodName . '] ' . $executionTime . ' 秒');
+		//CakeLog::debug('[' . $methodName . '] ' . "memory: " . memory_get_usage(true));
+
+		// $User->saveUserをループすると、UserのSaveUserBehaviorのafterSaveで、{$spaceModel}->afterUserSaveを繰り返すことにより
+		// 繰り返す事で使用メモリが増え続ける。 メモリが増えると徐々にsaveの処理速度が遅くなる
+		// ClassRegistry::flush()でクリアできるが、毎回実行するには処理が重い。
+		// そのため、実行時間が例えば1.5秒以上かかり処理が遅くなってきたら、ClassRegistryをいったんクリアするよう対応する。
+		// この現象はバッチで使う移行プラグイン特有のもの。画面では問題ないと思われる。
+		if ($executionTime >= $executionFlushTime) {
+			//CakeLog::debug('[' . $methodName . '] ClassRegistry::flush()');
+			ClassRegistry::flush();
+		}
 	}
 }

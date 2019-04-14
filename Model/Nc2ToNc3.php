@@ -224,6 +224,10 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @return bool True on success
  */
 	public function migration($data) {
+		// 移行ツールは、コントローラ経由で当メソッド（migration）を呼び出してるため、システム設定＞サーバ設定＞PHP最大メモリ数(初期値:128M)
+		// がセットされる。バッチ実行がメインのため、ここでメモリを無制限に設定
+		ini_set('memory_limit', '-1');
+
 		$this->set($data);
 
 		if (!$this->validates()) {
@@ -286,6 +290,10 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 				$MigrationModel->calledCakeMigration) {
 				ClassRegistry::addObject('Nc2ToNc3', $this);
 			}
+
+			// ClassRegistryが移行で各プラグインのモデルのsave系を実行すると、処理が遅くなる & メモリ食うため、
+			// migrationModelが切り替わるタイミングで、いったん初期化する。
+			ClassRegistry::flush();
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
