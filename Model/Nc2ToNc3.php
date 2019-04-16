@@ -35,10 +35,13 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 
 /**
  * この実行時間(秒)を越えたらClassRegistry::flush()
+ * 実行したら、お知らせ等の移行でupload_idなしのエラーが出たため、ClassRegistry::flushさせない数字にする。
+ * [エラー内容]
+ * Nc2Upload upload_id:999 not found . - announcement/9999.png : Nc2ToNc3Upload on line 88
  *
  * @var float
  */
-	public $executionFlushTime = 0;
+	public $executionFlushTime = 99999999;
 
 /**
  * The DataSource name for nc2
