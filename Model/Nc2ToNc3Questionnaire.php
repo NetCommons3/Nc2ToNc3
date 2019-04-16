@@ -371,7 +371,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
  * @throws Exception
  */
 	private function __saveQuestionnaireAnswerFromNc2($nc2QSummary, $nc3QAnswerSummary, $nc3Questionnaire, $questionMap) {
-		$this->writeMigrationLog(__d('nc2_to_nc3', '    QuestionnaireAnswer data Migration start.'));
+		//$this->writeMigrationLog(__d('nc2_to_nc3', '    QuestionnaireAnswer data Migration start.'));
 
 		/* @var $Nc2QAnswer AppModel */
 		$Nc2QAnswer = $this->getNc2Model('questionnaire_answer');
@@ -410,7 +410,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 			throw $ex;
 		}
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '    QuestionnaireAnswer data Migration end.'));
+		//$this->writeMigrationLog(__d('nc2_to_nc3', '    QuestionnaireAnswer data Migration end.'));
 
 		return true;
 	}
