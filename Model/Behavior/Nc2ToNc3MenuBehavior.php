@@ -331,7 +331,7 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
  * Convert to Nc3MenuFrameSetting display_type.
  *
  * @param array $nc2MenuDetail Nc2MenuDetail data.
- * @return string nc2 template name.
+ * @return Model converted date.
  */
 	private function __convertDisplayType($nc2MenuDetail) {
 		$nc3DisplayType = null;

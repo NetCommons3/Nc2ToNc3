@@ -55,7 +55,6 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Frame Migration start.'));
@@ -76,7 +75,6 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
  * Save Frame from Nc2 while dividing.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	private function __saveFrameFromNc2WhileDividing() {
 		$limit = 1000;
@@ -102,35 +100,28 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 				'Nc2Block.row_num DESC',
 				'Nc2Block.col_num DESC',
 			],
-			//'limit' => $limit,
+			'limit' => $limit,
 			'offset' => 0,
 		];
 
-		//$numberOfBlocks = 0;
-		$nc2BlockCount = 0;
-		$numberOfBlocks = $Nc2Block->find('count', $query);
-		$query['limit'] = $limit;
+		$numberOfBlocks = 0;
 		while ($nc2Blocks = $Nc2Block->find('all', $query)) {
 			if (!$this->__saveFrameFromNc2($nc2Blocks)) {
 				return false;
 			}
 
-			//$numberOfBlocks += count($nc2Blocks);
+			$numberOfBlocks += count($nc2Blocks);
 			$errorRate = round($this->__numberOfValidationError / $numberOfBlocks);
 			// 5割エラー発生で止める
 			if ($errorRate >= 0.5) {
 				$this->validationErrors = [
 					'database' => [
-						__d('nc2_to_nc3',
-							'Many error data. Please check the log. %s',
-							['ValidationErrorCount: ' . $this->__numberOfValidationError . ' Nc2BlockCount: ' . $numberOfBlocks])
+						__d('nc2_to_nc3', 'Many error data.Please check the log.')
 					]
 				];
 				return false;
 			}
 
-			$nc2BlockCount += count($nc2Blocks);
-			$this->writeMigrationLog('  Nc2BlockCount: ' . $nc2BlockCount);
 			$query['offset'] += $limit;
 		}
 

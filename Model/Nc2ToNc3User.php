@@ -108,7 +108,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'User Migration start.'));
@@ -129,7 +128,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * Save User from Nc2 while dividing.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	private function __saveUserFromNc2WhileDividing() {
 		$limit = 1000;
@@ -141,37 +139,28 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				'Nc2User.insert_time',
 				'Nc2User.user_id'
 			],
-			//'limit' => $limit,
+			'limit' => $limit,
 			'offset' => 0,
 		];
 
-		// NC2ユーザ件数
-		//$numberOfUsers = 0;
-		$nc2UserCount = 0;
-		$numberOfUsers = $Nc2User->find('count', $query);
-
-		$query['limit'] = $limit;
+		$numberOfUsers = 0;
 		while ($nc2Users = $Nc2User->find('all', $query)) {
 			if (!$this->__saveUserFromNc2($nc2Users)) {
 				return false;
 			}
 
-			//$numberOfUsers += count($nc2Users);
+			$numberOfUsers += count($nc2Users);
 			$errorRate = round($this->__numberOfValidationError / $numberOfUsers);
 			// 5割エラー発生で止める
 			if ($errorRate >= 0.5) {
 				$this->validationErrors = [
 					'database' => [
-						__d('nc2_to_nc3',
-							'Many error data. Please check the log. %s',
-							['ValidationErrorCount: ' . $this->__numberOfValidationError . ' Nc2UserCount: ' . $numberOfUsers])
+						__d('nc2_to_nc3', 'Many error data.Please check the log.')
 					]
 				];
 				return false;
 			}
 
-			$nc2UserCount += count($nc2Users);
-			$this->writeMigrationLog('  Nc2UserCount: ' . $nc2UserCount);
 			$query['offset'] += $limit;
 		}
 
@@ -191,22 +180,16 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 		$this->saveExistingMap($nc2Users);
 		foreach ($nc2Users as $nc2User) {
-			// 実行時間の計測開始時間
-			/* @see Nc2ToNc3BaseBehavior::executionTimeStart() */
-			$timeStart = $this->executionTimeStart();
-
 			$User->begin();
 			try {
 				if (!$this->isMigrationRow($nc2User)) {
 					$User->rollback();
-					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
 				$data = $this->__generateNc3Data($nc2User);
 				if (!$data) {
 					$User->rollback();
-					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
@@ -227,21 +210,19 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 					$this->__numberOfValidationError++;
 
-					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
+					$User->rollback();
 					continue;
 				}
 
 				// Nc3Room,Nc3Pageの値をNC2Pageの値に更新
 				if (!$this->__saveRoomAndPageFromNc2($nc2User, $User->id)) {
 					$User->rollback();
-					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
 				$nc2UserId = $nc2User['Nc2User']['user_id'];
 				if ($this->getMap($nc2UserId)) {
 					$User->commit();
-					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
@@ -251,7 +232,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 				$this->saveMap('User', $idMap);
 
 				$User->commit();
-				$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
@@ -588,7 +568,6 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
  * @param array $nc2User Nc2User data.
  * @param string $nc3UserId Nc3User id.
  * @return bool True on success
- * @throws Exception
  */
 	private function __saveRoomAndPageFromNc2($nc2User, $nc3UserId) {
 		$nc2Page = $this->getNc2PrivateRoomByUserId($nc2User['Nc2User']['user_id']);

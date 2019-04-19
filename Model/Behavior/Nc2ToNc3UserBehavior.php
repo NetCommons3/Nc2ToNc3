@@ -407,18 +407,4 @@ class Nc2ToNc3UserBehavior extends Nc2ToNc3UserBaseBehavior {
 		return $Room->find('first', $query);
 	}
 
-/**
- * 実行時間の計測終了
- *
- * @param string $methodName メソッド名
- * @param float $timeStart 計測開始時間(秒)
- * @param float $executionFlushTime この実行時間(秒)を越えたらClassRegistry::flush()
- * @param bool $isOutputLog パフォーマンスログ出力. true:出力|false:出力しない
- * @return void
- * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
- */
-	protected function _executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog = false) {
-		parent::_executionTimeEnd($methodName, $timeStart, $executionFlushTime, $isOutputLog);
-		//parent::_executionTimeEnd($methodName, $timeStart, $executionFlushTime, true);
-	}
 }

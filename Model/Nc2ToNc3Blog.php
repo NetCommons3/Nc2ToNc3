@@ -54,7 +54,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration start.'));
@@ -158,6 +157,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Journal) . "\n" .
 						var_export($Blog->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Blog->rollback();
 					continue;
 				}
 
@@ -311,7 +311,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$nc2CategoryId = $nc2JournalPost['Nc2JournalPost']['category_id'];
 				$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
 
-				//$Block = ClassRegistry::init('Blocks.Block');
+				$Block = ClassRegistry::init('Blocks.Block');
 				$Blocks = $Block->findById($nc3BlockId, null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 
@@ -345,6 +345,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
 						var_export($BlogEntry->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$BlogEntry->rollback();
 					continue;
 				}
 

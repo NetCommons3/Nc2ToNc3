@@ -54,7 +54,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration start.'));
@@ -66,19 +65,19 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		/* @var $Nc2MultidbBlock AppModel */
-		$Nc2MultidbBlock = $this->getNc2Model('multidatabase_block');
-		$nc2MultidbBlocks = $Nc2MultidbBlock->find('all');
-		if (!$this->__saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidbBlocks)) {
+		/* @var $Nc2MultidatabaseBlock AppModel */
+		$Nc2MultidatabaseBlock = $this->getNc2Model('multidatabase_block');
+		$nc2MultidatabaseBlocks = $Nc2MultidatabaseBlock->find('all');
+		if (!$this->__saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks)) {
 			return false;
 		}
 
-		$Nc2MultidbMetadata = $this->getNc2Model('multidatabase_metadata');
+		$Nc2MultidatabaseMetadata = $this->getNc2Model('multidatabase_metadata');
 		// col_noをうめるためにmultidatabase_id
-		$nc2MultidbMetadatas = $Nc2MultidbMetadata->find('all', [
+		$nc2MultidatabaseMetadatas = $Nc2MultidatabaseMetadata->find('all', [
 			'order' => 'multidatabase_id ASC'
 		]);
-		if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidbMetadatas)) {
+		if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidatabaseMetadatas)) {
 			return false;
 		}
 
@@ -147,6 +146,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
+
 	private function __saveNc3MultidatabaseFromNc2($nc2Multidatabases) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase data Migration start.'));
 
@@ -200,6 +200,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Multidatabase) . "\n" .
 						var_export($Multidatabase->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
 					continue;
 				}
 
@@ -227,6 +228,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($data) . "\n" .
 						var_export($Multidatabase->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
 					continue;
 				}
 
@@ -249,6 +251,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($data) . "\n" .
 						var_export($Multidatabase->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
 					continue;
 				}
 
@@ -287,21 +290,21 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 /**
  * Save BlogFrameSetting from Nc2.
  *
- * @param array $nc2MultidbBlocks Nc2MultidatabaseBlock data.
+ * @param array $nc2MultidatabaseBlocks Nc2ournalBlock data.
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidbBlocks) {
+	private function __saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseFrameSetting data Migration start.'));
 
 		/* @var $MultidbFrameSetting BlogFrameSetting */
 		/* @var $Frame Frame */
 		$MultidbFrameSetting = ClassRegistry::init('Multidatabases.MultidatabaseFrameSetting');
 		$Frame = ClassRegistry::init('Frames.Frame');
-		foreach ($nc2MultidbBlocks as $nc2MultidbBlock) {
+		foreach ($nc2MultidatabaseBlocks as $nc2MultidatabaseBlock) {
 			$MultidbFrameSetting->begin();
 			try {
-				$data = $this->generateNc3MultidatabaseFrameSettingData($nc2MultidbBlock);
+				$data = $this->generateNc3MultidatabaseFrameSettingData($nc2MultidatabaseBlock);
 				if (!$data) {
 					$MultidbFrameSetting->rollback();
 					continue;
@@ -312,7 +315,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2MultidbBlock) . "\n" .
+					$message = $this->getLogArgument($nc2MultidatabaseBlock) . "\n" .
 						var_export($MultidbFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -324,7 +327,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2MultidbBlock) . "\n" .
+					$message = $this->getLogArgument($nc2MultidatabaseBlock) . "\n" .
 						var_export($MultidbFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -332,7 +335,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$nc2BlockId = $nc2MultidbBlock['Nc2MultidatabaseBlock']['block_id'];
+				$nc2BlockId = $nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['block_id'];
 				$idMap = [
 					$nc2BlockId => $MultidbFrameSetting->id
 				];
@@ -440,20 +443,23 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 	private function __saveNc3MultidbContentFromNc2($nc2MultidbContents) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase Content Migration start.'));
 
-		/* @var $DbContent MultidatabaseContent */
+		/* @var $DbContent BlogEntry */
 		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
 		$DbContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
 
 		Current::write('Plugin.key', 'multidatabases');
 
-		//$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
-		//$Block = ClassRegistry::init('Blocks.Block');
+		//$Nc2Journal = $this->getNc2Model('journal');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		$Block = ClassRegistry::init('Blocks.Block');
 		//$Topic = ClassRegistry::init('Topics.Topic');
-		//$Nc2MultidbFile = $this->getNc2Model('multidatabase_file');
+
+		$Nc2MultidbFile = $this->getNc2Model('multidatabase_file');
+
 		$AuthorizationKey = ClassRegistry::init('AuthorizationKeys.AuthorizationKey');
 		$UploadFile = ClassRegistry::init('Files.UploadFile');
-		$Like = ClassRegistry::init('Likes.Like');
 
+		$Like = ClassRegistry::init('Likes.Like');
 		foreach ($nc2MultidbContents as $nc2MultidbContent) {
 			$DbContent->begin();
 			//$DbContent->Behaviors->disable('Attachment');
@@ -503,6 +509,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2MultidbContent) . "\n" .
 						var_export($DbContent->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$DbContent->rollback();
 					continue;
 				}
 
