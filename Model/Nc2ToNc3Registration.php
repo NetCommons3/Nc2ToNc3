@@ -58,7 +58,6 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Registration Migration start.'));
@@ -159,6 +158,8 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Registration) . "\n" .
 						var_export($Registration->validationErrors, true);
 					$this->writeMigrationLog($message);
+
+					$Registration->rollback();
 					continue;
 				}
 
@@ -273,7 +274,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
  * @throws Exception
  */
 	private function __saveRegistrationAnswerFromNc2($nc2ItemData, $nc3Registration, $nc3Summary) {
-		//$this->writeMigrationLog(__d('nc2_to_nc3', '    RegistrationAnswer data Migration start.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '    RegistrationAnswer data Migration start.'));
 
 		/* @var $RegistrationAnswer RegistrationAnswer */
 		$RegistrationAnswer = ClassRegistry::init('Registrations.RegistrationAnswer');
@@ -300,7 +301,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 			throw $ex;
 		}
 
-		//$this->writeMigrationLog(__d('nc2_to_nc3', '    RegistrationAnswer data Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '    RegistrationAnswer data Migration end.'));
 
 		return true;
 	}
@@ -365,10 +366,10 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($nc2RBlocks) . "\n" .
 						var_export($Frame->validationErrors, true);
-					$this->writeMigrationLog($message);
+						$this->writeMigrationLog($message);
 
-					$Frame->rollback();
-					continue;
+						$Frame->rollback();
+						continue;
 				}
 
 				$idMap = [

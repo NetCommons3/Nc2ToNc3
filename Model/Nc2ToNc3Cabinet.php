@@ -265,7 +265,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Cabinet file Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Cabinet Migration end.'));
 		return true;
 	}
 

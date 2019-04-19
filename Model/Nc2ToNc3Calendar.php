@@ -63,7 +63,6 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Calendar Migration start.'));

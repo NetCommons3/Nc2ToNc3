@@ -65,7 +65,6 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Quiz Migration start.'));
@@ -160,6 +159,8 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Quiz) . "\n" .
 						var_export($Quiz->validationErrors, true);
 					$this->writeMigrationLog($message);
+
+					$Quiz->rollback();
 					continue;
 				}
 
@@ -208,7 +209,6 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		$QFrameSetting = ClassRegistry::init('Quizzes.QuizFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
-
 		foreach ($nc2QBlocks as $nc2QBlock) {
 			$QFrameSetting->begin();
 			try {
@@ -290,7 +290,6 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		/* @var $Quiz Quiz */
 		$QAnswerSummary = ClassRegistry::init('Quizzes.QuizAnswerSummary');
 		$Quiz = ClassRegistry::init('Quizzes.Quiz');
-
 		$nc2PreviousQId = null;
 		foreach ($nc2QSummaries as $nc2QSummary) {
 			$QAnswerSummary->begin();
