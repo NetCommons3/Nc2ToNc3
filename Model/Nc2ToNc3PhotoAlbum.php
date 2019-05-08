@@ -110,6 +110,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 		/* @var $Block Block */
 		$PhotoAlbum = ClassRegistry::init('PhotoAlbums.PhotoAlbum');
 		$FrameSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumFrameSetting');
+		$PhotoAlbumSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumSetting');
 		$PhotoAlbumsComponent = new PhotoAlbumsComponent(new ComponentCollection());
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
@@ -133,13 +134,12 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				Current::write('Room.id', $nc3RoomId);
 				$Block->create();
 				$BlocksLanguage->create();
+				$PhotoAlbumSetting->create(false);
 				$PhotoAlbumsComponent->initializeSetting();
 				$frameSetting = $FrameSetting->read();
 				$data = [
 					'PhotoAlbumFrameSetting' => $frameSetting['PhotoAlbumFrameSetting'],
 				];
-				//error_log(print_r('fddsdfdfs', true)."\n\n", 3, LOGS."/tail.log");
-				//error_log(print_r($frameSetting, true)."\n\n", 3, LOGS."/tail.log");
 
 				$data = $this->generateNc3PhotoAlbumFrameSettingData($data, $frameMap, $nc2PhotoalbumBlock);
 				if (!$data) {
@@ -205,8 +205,6 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 		$PhotoAlbum = ClassRegistry::init('PhotoAlbums.PhotoAlbum');
 		$PhotoAlbumPhoto = ClassRegistry::init('PhotoAlbums.PhotoAlbumPhoto');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$DisplayAlbum = ClassRegistry::init('PhotoAlbums.PhotoAlbumDisplayAlbum');
-		$Block = ClassRegistry::init('Blocks.Block');
 		$Nc2PhotoalbumBlock = $this->getNc2Model('photoalbum_block');
 		$Nc2PhotoalbumPhoto = $this->getNc2Model('photoalbum_photo');
 		$Nc2PhotoalbumAlbum = $this->getNc2Model('photoalbum_album');
@@ -223,59 +221,41 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				],
 			]);
 
-			// nc2 ブロック(=nc3のフレーム)なくてもデータは移行する
-			$frameMap = [];
-			foreach ($nc2PhotoalbumAlbums as $nc2PhotoalbumAlbum) {
-				$nc2PhotoalbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['photoalbum_id'];
-				$nc2PhotoalbumBlock = $Nc2PhotoalbumBlock->findByPhotoalbumId($nc2PhotoalbumId);
-				if ($nc2PhotoalbumBlock) {
-					$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
-					break;
-				}
-			}
-
 			foreach ($nc2PhotoalbumAlbums as $nc2PhotoalbumAlbum) {
 				$PhotoAlbum->begin();
 				try {
-					//$nc2PhotoalbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['photoalbum_id'];
-					//$nc2PhotoalbumBlock = $Nc2PhotoalbumBlock->findByPhotoalbumId($nc2PhotoalbumId);
-					//if (!$nc2PhotoalbumBlock) {
-					//	$PhotoAlbum->rollback();
-					//	continue;
-					//}
-					//$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
-
-					$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
-					$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_sequence' => 'ASC'], -1);
-					if (count($nc2Photos) === 0) {
-						$message = $this->getLogArgument($nc2Photos);
-						$this->writeMigrationLog($message);
-
-						$PhotoAlbum->rollback();
-						continue;
+					$frameMap = [];
+					// 最初のblock_idを取得。残りは後処理の__saveDisplayAlbumで登録する。
+					$nc2PhotoalbumBlock = $Nc2PhotoalbumBlock->find('first', [
+						'conditions' => [
+							'photoalbum_id' => $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['photoalbum_id'],
+							'display_album_id' => ['0', $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id']]
+						],
+						'fields' => 'block_id',
+						'order' => 'block_id',
+						'recursive' => -1,
+					]);
+					if ($nc2PhotoalbumBlock) {
+						$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
 					}
-					$firstPhoto = array_shift($nc2Photos);
-					//$data = $this->generateNc3PhotoAlbumData($frameMap, $nc2PhotoalbumAlbum, $firstPhoto);
-					$data = $this->generateNc3PhotoAlbumData($frameMap, $nc2PhotoalbumAlbum, $firstPhoto, $nc3RoomId);
+
+					$data = $this->generateNc3PhotoAlbumData($frameMap, $nc2PhotoalbumAlbum, $nc3RoomId);
 					if (!$data) {
 						$PhotoAlbum->rollback();
 						continue;
 					}
 
-					$nc3Block = $Block->findByRoomIdAndPluginKey(
-						//$frameMap['Frame']['room_id'],
-						$nc3RoomId,
-						'photo_albums',
-						null,
-						null,
-						-1
-					);
-					$data['Block'] = $nc3Block['Block'];
-					$data['PhotoAlbum']['block_id'] = $nc3Block['Block']['id'];
-					Current::write('Block.id', $nc3Block['Block']['id']);
-
 					//$this->writeCurrent($frameMap, 'photo_albums');
 					$this->__writeCurrent($frameMap, 'photo_albums', $nc3RoomId);
+
+					if (!($data = $this->__savePhotoAlbumSetting($nc3RoomId, $data))) {
+						$message = $this->getLogArgument($nc2PhotoalbumAlbum);
+						$this->writeMigrationLog($message);
+
+						$PhotoAlbum->rollback();
+						continue;
+					}
+					Current::write('Block.id', $data['Block']['id']);
 
 					$PhotoAlbum->create();
 					$PhotoAlbum->validate = [];
@@ -287,21 +267,18 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 						$PhotoAlbum->rollback();
 						continue;
 					}
-					if (Current::read('Frame.key') == self::DUMMY_FRAME_KEY) {
-						// $PhotoAlbum->saveAlbumForAdd($data)では、新規登録時に$PhotoAlbumDisplayAlbumが必須で登録される。
-						// ダミーで登録したFrameKeyのデータを削除
-						$conditions = array('frame_key' => self::DUMMY_FRAME_KEY);
-						if (!$DisplayAlbum->deleteAll($conditions, false)) {
-							// 基本ありえない
-							$message = $this->getLogArgument($nc2PhotoalbumAlbum) . "\n";
-							$this->writeMigrationLog($message);
-
-							$PhotoAlbum->rollback();
-							continue;
-						}
-					}
 
 					$nc3PhotoAlbum = $PhotoAlbum->read();
+					if (!$this->__saveDisplayAlbum($nc2PhotoalbumAlbum, $nc3PhotoAlbum)) {
+						$message = $this->getLogArgument($nc2PhotoalbumAlbum);
+						$this->writeMigrationLog($message);
+
+						$PhotoAlbum->rollback();
+						continue;
+					}
+
+					$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
+					$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_sequence' => 'ASC'], -1);
 					foreach ($nc2Photos as $nc2Photo) {
 						$data = $this->generateNc3PhotoData($nc3PhotoAlbum['PhotoAlbum'], $nc2Photo);
 						$PhotoAlbumPhoto->create();
@@ -311,7 +288,6 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 								var_export($PhotoAlbumPhoto->validationErrors, true);
 							$this->writeMigrationLog($message);
 
-							$PhotoAlbumPhoto->rollback();
 							continue;
 						}
 					}
@@ -368,6 +344,111 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 			$nc2PhotoalbumIdList[$nc3RoomId][] = $nc2Photoalbum['Nc2Photoalbum']['photoalbum_id'];
 		}
 		return $nc2PhotoalbumIdList;
+	}
+
+/**
+ * Save PhotoAlbumSetting.
+ *
+ * @param string $nc3RoomId nc3 room id.
+ * @param array $nc3PhotoAlbum data.
+ * @return array Nc3PhotoAlbum data.
+ */
+	private function __savePhotoAlbumSetting($nc3RoomId, $nc3PhotoAlbum) {
+		/* @var $Block Block */
+		$Block = ClassRegistry::init('Blocks.Block');
+		$PhotoAlbumSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumSetting');
+
+		$nc3Block = $Block->findByRoomIdAndPluginKey(
+			$nc3RoomId,
+			'photo_albums',
+			['id', 'key'],
+			null,
+			-1
+		);
+
+		if (!$nc3Block) {
+			$data = $PhotoAlbumSetting->createBlockSetting();
+			if (!$PhotoAlbumSetting->savePhotoAlbumSetting($data)) {
+				return [];
+			}
+
+			$nc3Block = $Block->findByRoomIdAndPluginKey(
+				$nc3RoomId,
+				'photo_albums',
+				['id', 'key'],
+				null,
+				-1
+			);
+		}
+
+		$nc3PhotoAlbum['Block'] = [
+			'id' => $nc3Block['Block']['id'],
+			'key' => $nc3Block['Block']['key'],
+			'room_id' => $nc3RoomId,
+			'plugin_key' => 'photo_albums',
+			'public_type' => 1,
+		];
+		$nc3PhotoAlbum['PhotoAlbum']['block_id'] = $nc3Block['Block']['id'];
+
+		return $nc3PhotoAlbum;
+	}
+
+/**
+ * Save DisplayAlbum.
+ *
+ * @param array $nc2PhotoalbumAlbum data.
+ * @param array $nc3PhotoAlbum data.
+ * @return bool
+ */
+	private function __saveDisplayAlbum($nc2PhotoalbumAlbum, $nc3PhotoAlbum) {
+		$DisplayAlbum = ClassRegistry::init('PhotoAlbums.PhotoAlbumDisplayAlbum');
+		if (Current::read('Frame.key') == self::DUMMY_FRAME_KEY) {
+			// $PhotoAlbum->saveAlbumForAdd($data)では、新規登録時に$PhotoAlbumDisplayAlbumが必須で登録される。
+			// ダミーで登録したFrameKeyのデータを削除
+			$conditions = array('frame_key' => self::DUMMY_FRAME_KEY);
+			$DisplayAlbum->deleteAll($conditions, false);
+		}
+
+		if ($nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['public_flag'] === '0' ) {
+			$conditions = [
+				'frame_key' => Current::read('Frame.key'),
+				'album_key' => $nc3PhotoAlbum['PhotoAlbum']['key']
+			];
+			$DisplayAlbum->deleteAll($conditions, false);
+
+			// 非公開はどのフレームにも表示しない
+			return true;
+		}
+
+		$Nc2PhotoalbumBlock = $this->getNc2Model('photoalbum_block');
+		$nc2PhotoalbumBlocks = $Nc2PhotoalbumBlock->find('all', [
+			'conditions' => [
+				'photoalbum_id' => $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['photoalbum_id'],
+				'display_album_id' => ['0', $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id']]
+			],
+			'fields' => 'block_id',
+			'order' => 'block_id',
+			'recursive' => -1,
+		]);
+		// 先頭のblock_idは前処理で登録済み
+		array_shift($nc2PhotoalbumBlocks);
+
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		foreach($nc2PhotoalbumBlocks as $nc2PhotoalbumBlock) {
+			$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
+			if ($frameMap) {
+				$displayAlbum = [
+					'frame_key' => $frameMap['Frame']['key'],
+					'album_key' => $nc3PhotoAlbum['PhotoAlbum']['key']
+				];
+				$DisplayAlbum->create($displayAlbum);
+				if (!$DisplayAlbum->save()) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 /**

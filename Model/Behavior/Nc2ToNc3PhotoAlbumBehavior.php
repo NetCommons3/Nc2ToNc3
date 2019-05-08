@@ -51,35 +51,16 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $frameMap FrameMap data.
  * @param array $nc2PhotoalbumAlbum Nc2PhotoalbumAlbum data.
- * @param array $nc2Photo Nc2PhotoalbumPhoto data.
  * @param array $nc3RoomId nc3 room id.
  * @return array Nc3PhotoAlbum data.
  */
-	public function generateNc3PhotoAlbumData(Model $model, $frameMap, $nc2PhotoalbumAlbum, $nc2Photo, $nc3RoomId) {
-		/* @var $Block Block */
+	public function generateNc3PhotoAlbumData(Model $model, $frameMap, $nc2PhotoalbumAlbum, $nc3RoomId) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
-		$Block = ClassRegistry::init('Blocks.Block');
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('PhotoAlbum', $nc2AlbumId);
 		if ($mapIdList) {
 			// 移行済み
-			return [];
-		}
-
-		$nc3Block = $Block->findByRoomIdAndPluginKey(
-			//$frameMap['Frame']['room_id'],
-			$nc3RoomId,
-			'photo_albums',
-			['id', 'key'],
-			null,
-			-1
-		);
-		if (!$nc3Block) {
-			// 現状、nc2ルーム内に未配置だとnc3ブロックデータが作成されない移行プログラムなため、ここで返す
-			// そこまで追えなかった
-			$message = __d('nc2_to_nc3', '%s does not migration. Not placed in nc2 room', $this->__getLogArgument($nc2PhotoalbumAlbum));
-			$this->_writeMigrationLog($message);
 			return [];
 		}
 
@@ -94,7 +75,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 			$nc2Jacket = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_jacket'];
 			$jacket = $this->__generatePresetFile($nc2Jacket);
 		}
-		$nc3Photo = $Nc2ToNc3Upload->generateUploadFile($nc2Photo['Nc2PhotoalbumPhoto']['upload_id']);
+		$nc3Photo = $jacket;
 
 		if ($frameMap) {
 			// フレームがあったらセット
@@ -102,14 +83,6 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 				'id' => $frameMap['Frame']['id'],
 			];
 		}
-		$data['Block'] = [
-			'id' => $nc3Block['Block']['id'],
-			'key' => $nc3Block['Block']['key'],
-			//'room_id' => $frameMap['Frame']['room_id'],
-			'room_id' => $nc3RoomId,
-			'plugin_key' => 'photo_albums',
-			'public_type' => 1,
-		];
 		$data['PhotoAlbum'] = [
 			'id' => '',
 			'key' => '',
@@ -118,7 +91,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 			'name' => $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_name'],
 			'description' => $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_description'],
 			'selectedJacketIndex' => '0',
-			'jacket' => $jacket,
+			'jacket' => [],
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']),
 			'created' => $this->_convertDate($nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['insert_time']),
 		];
@@ -229,9 +202,9 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']),
 			'created' => $this->_convertDate($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['insert_time']),
 		];
-		$data += $photoAlbumFrameSet;
+		$photoAlbumFrameSet['PhotoAlbumFrameSetting'] += $data['PhotoAlbumFrameSetting'];
 
-		return $data;
+		return $photoAlbumFrameSet;
 	}
 
 /**
@@ -289,7 +262,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2Photoalbum) {
-		if (!isset($nc2Photoalbum['Nc2PhotoalbumBlock']['block_id'])) {
+		if (isset($nc2Photoalbum['Nc2PhotoalbumBlock']['block_id'])) {
 			return 'Nc2PhotoalbumBlock' .
 				'block_id' . $nc2Photoalbum['Nc2PhotoalbumBlock']['block_id'];
 		}
