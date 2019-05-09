@@ -88,7 +88,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		// https://github.com/cakephp/cakephp/blob/2.9.4/lib/Cake/Model/Validator/CakeValidationSet.php#L131
 		$this->set('database');
 
-		$this->validate = Hash::merge(
+		$this->validate = ValidateMerge::merge(
 			$this->validate,
 			[
 				'database' => [

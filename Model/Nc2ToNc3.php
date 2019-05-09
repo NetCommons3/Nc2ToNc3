@@ -74,7 +74,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
  * @see Model::save()
  */
 	public function beforeValidate($options = array()) {
-		$this->validate = Hash::merge(
+		$this->validate = ValidateMerge::merge(
 			$this->validate,
 			[
 				'database' => [
