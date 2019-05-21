@@ -184,9 +184,18 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		if (empty($nc2CalendarBlock['Nc2CalendarBlock']['display_count'])) {
+			$nc2CalendarBlock['Nc2CalendarBlock']['display_count'] = 1;
+		}
+		// NC3で無効なstart_pos値(2:1月表示、3:4月表示)は0で登録
+		$nc3StartPos = $nc2CalendarBlock['Nc2CalendarBlock']['start_pos'];
+		if ($nc3StartPos==2 || $nc3StartPos==3) {
+			$nc3StartPos=0;
+		}
+
 		$data = [
 			'display_type' => (string)((int)$nc2CalendarBlock['Nc2CalendarBlock']['display_type'] - 1),
-			'start_pos' => $nc2CalendarBlock['Nc2CalendarBlock']['start_pos'],
+			'start_pos' => $nc3StartPos,
 			'display_count' => $nc2CalendarBlock['Nc2CalendarBlock']['display_count'],
 			'is_myroom' => $nc2CalendarBlock['Nc2CalendarBlock']['myroom_flag'],
 			'is_select_room' => $nc2CalendarBlock['Nc2CalendarBlock']['select_room'],
@@ -317,6 +326,26 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			$dateFormat = 'Y-m-d';
 		}
 
+		$nc3TimezoneOffset = $this->_convertTimezone($nc2TimezoneOffset);
+		if ($nc3TimezoneOffset === 'UTC') {
+			$nc3TimezoneOffset = 'Etc/Greenwich';
+		}
+		if ($nc3TimezoneOffset === 'Europe/Brussels') {
+			$nc3TimezoneOffset = 'Europe/Amsterdam';
+		}
+		if ($nc3TimezoneOffset === 'Pacific/Honolulu') {
+			$nc3TimezoneOffset = 'US/Hawaii';
+		}
+		if ($nc3TimezoneOffset === 'America/Chicago') {
+			$nc3TimezoneOffset = 'US/Central';
+		}
+		if ($nc3TimezoneOffset === 'Asia/Vladivostok') {
+			$nc3TimezoneOffset = 'Australia/Brisbane';
+		}
+		if ($nc3TimezoneOffset === 'America/New_York') {
+			$nc3TimezoneOffset = 'US/Eastern';
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data += [
@@ -330,7 +359,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			'enable_time' => !$nc2AllDayFlag,
 			'detail_start_datetime' => date($dateFormat, strtotime($nc2StartTimeFull) + ($nc2TimezoneOffset * 3600)),
 			'detail_end_datetime' => date($dateFormat, strtotime($nc2EndTimeFull) + ($nc2TimezoneOffset * 3600)),
-			'timezone_offset' => $this->_convertTimezone($nc2TimezoneOffset),
+			'timezone_offset' => $nc3TimezoneOffset,
 			'plan_room_id' => $roomMap['Room']['id'],
 			'location' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['location'],
 			'contact' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['contact'],
