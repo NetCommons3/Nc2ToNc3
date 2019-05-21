@@ -147,6 +147,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireSetting.php#L129-L149
 				$Frame->create();
+				$data = $this->__cleansingChoiceText($data);
 
 				if (!$Questionnaire->saveQuestionnaire($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
@@ -186,6 +187,41 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Questionnaire data Migration end.'));
 
 		return true;
+	}
+
+/**
+ * choice_labelの予約文字を半角変換/改行等除去
+ * 「:」=>「：」「|」=>「｜」
+ *
+ * @param array $data Questionnaireデータ
+ * @return array
+ */
+	private function __cleansingChoiceText($data) {
+		if (!isset($data['QuestionnairePage'])) {
+			return $data;
+		}
+		foreach ($data['QuestionnairePage'] as $key => $questionnairePage) {
+			if (!isset($questionnairePage['QuestionnaireQuestion'])) {
+				continue;
+			}
+			foreach ($questionnairePage['QuestionnaireQuestion'] as $key2 => $questionnaireQuestion) {
+				if (!isset($questionnaireQuestion['QuestionnaireChoice'])) {
+					continue;
+				}
+				foreach ($questionnaireQuestion['QuestionnaireChoice'] as $key3 => $questionnaireChoice) {
+					if (isset($questionnaireChoice['choice_label'])) {
+						$rep = str_replace(':', '：',
+							$questionnaireChoice['choice_label']);
+						$rep = str_replace('|', '｜', $rep);
+						// 改行等を除去
+						$rep = preg_replace('/[\n\r\t\f\v]+/u', '', $rep);
+						$data['QuestionnairePage'][$key]['QuestionnaireQuestion'][$key2]['QuestionnaireChoice'][$key3]['choice_label']
+							= $rep;
+					}
+				}
+			}
+		}
+		return $data;
 	}
 
 /**
