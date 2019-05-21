@@ -367,6 +367,8 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 		);
 
 		if (!$nc3Block) {
+			$PhotoAlbumSetting->create(false);
+			$Block->create(false);
 			$data = $PhotoAlbumSetting->createBlockSetting();
 			if (!$PhotoAlbumSetting->savePhotoAlbumSetting($data)) {
 				return [];
