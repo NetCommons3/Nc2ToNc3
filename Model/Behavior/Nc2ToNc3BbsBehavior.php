@@ -267,6 +267,14 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'article_no' => $nc3BbsArticleNo
 			],
 		];
+		if ($nc2BbsPost['Nc2BbsPost']['vote_num']) {
+			$data['Like'] = [
+				'plugin_key' => 'bbses',
+				'block_key' => $nc3Blocks['Block']['key'],
+				'like_count' => $nc2BbsPost['Nc2BbsPost']['vote_num'],
+			];
+		}
+
 		return $data;
 	}
 

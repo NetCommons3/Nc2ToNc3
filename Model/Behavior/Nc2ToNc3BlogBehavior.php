@@ -279,8 +279,16 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 			'Block' => [
 				'id' => $nc3Blog['Blog']['block_id'],
 				'key' => $nc3BlockKey
-			]
+			],
 		];
+		if ($nc2JournalPost['Nc2JournalPost']['vote']) {
+			$data['Like'] = [
+				'plugin_key' => 'blogs',
+				'block_key' => $nc3BlockKey,
+				'like_count' => substr_count($nc2JournalPost['Nc2JournalPost']['vote'], '|') + 1,
+			];
+		}
+
 		return $data;
 	}
 
