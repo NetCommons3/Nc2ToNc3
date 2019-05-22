@@ -182,6 +182,12 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
+		// rm2.calendar_frame_settings.display_typeは、rm1.calendar_block.display_type -1で登録
+		// rm1.calendar_block.display_type=1の場合、rm2.calendar_frame_settings.display_type=2(月表示(拡大))で登録
+		$nc3DisplayType = (string)((int)$nc2CalendarBlock['Nc2CalendarBlock']['display_type'] - 1);
+		if ($nc3DisplayType==='0') {
+			$nc3DisplayType = (string)CalendarsComponent::CALENDAR_DISP_TYPE_LARGE_MONTHLY;
+		}
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		if (empty($nc2CalendarBlock['Nc2CalendarBlock']['display_count'])) {
@@ -194,7 +200,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		$data = [
-			'display_type' => (string)((int)$nc2CalendarBlock['Nc2CalendarBlock']['display_type'] - 1),
+			'display_type' => $nc3DisplayType,
 			'start_pos' => $nc3StartPos,
 			'display_count' => $nc2CalendarBlock['Nc2CalendarBlock']['display_count'],
 			'is_myroom' => $nc2CalendarBlock['Nc2CalendarBlock']['myroom_flag'],
