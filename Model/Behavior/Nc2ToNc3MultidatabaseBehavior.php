@@ -784,24 +784,24 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get Log argument.
  *
- * @param array $nc2Journal Array data of Nc2CalendarManage, Nc2CalendarBlock and Nc2CalendarPlan.
+ * @param array $nc2Multidatabase Array data of Nc2Multidatabase.
  * @return string Log argument
  */
-	private function __getLogArgument($nc2Journal) {
-		if (isset($nc2Journal['Nc2Journal'])) {
-			return 'Nc2Journal ' .
-				'journal_id:' . $nc2Journal['Nc2Journal']['journal_id'];
-		}
+    private function __getLogArgument($nc2Multidatabase) {
+        if (isset($nc2Multidatabase['Nc2Multidatabase'])) {
+            return 'Nc2Multidatabase ' .
+                'multidatabase_id:' . $nc2Multidatabase['Nc2Multidatabase']['multidatabase_id'] .
+                ' room_id:' . $nc2Multidatabase['Nc2Multidatabase']['room_id'];
+        }
 
-		if (isset($nc2Journal['Nc2MultidatabaseBlock'])) {
-			return 'Nc2MultidatabaseBlock ' .
-				'block_id:' . $nc2Journal['Nc2MultidatabaseBlock']['block_id'];
-		}
+        if (isset($nc2Multidatabase['Nc2MultidatabaseBlock'])) {
+            return 'Nc2MultidatabaseBlock ' .
+                'block_id:' . $nc2Multidatabase['Nc2MultidatabaseBlock']['block_id'];
+        }
 
-		if (isset($nc2Journal['Nc2MultidatabaseContent'])) {
-			return 'Nc2MultidatabaseContent ' .
-				'post_id:' . $nc2Journal['Nc2MultidatabaseContent']['post_id'];
-		}
-	}
-
+        if (isset($nc2Multidatabase['Nc2MultidatabaseContent'])) {
+            return 'Nc2MultidatabaseContent ' .
+                'post_id:' . $nc2Multidatabase['Nc2MultidatabaseContent']['post_id'];
+        }
+    }
 }
