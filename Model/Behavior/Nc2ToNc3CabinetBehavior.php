@@ -233,7 +233,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			'id' => $Cabinets['Cabinet']['block_id']
 		];
 		$data['CabinetFileTree'] = [
-			'parent_id' => $nc3CabinetFileTreeId
+			'cabinet_key' => $Cabinets['Cabinet']['key'],
+			'parent_id' => $nc3CabinetFileTreeId,
 		];
 
 		return $data;
