@@ -281,7 +281,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Multidatabase Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration end.'));
 		return true;
 	}
 
