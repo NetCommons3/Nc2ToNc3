@@ -226,7 +226,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($data) . "\n" .
-						var_export($MailSetting->validationErrors, true);
+						var_export($MultidatabaseSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 					$Multidatabase->rollback();
 					continue;
@@ -249,7 +249,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($data) . "\n" .
-						var_export($MultidatabaseSetting->validationErrors, true);
+						var_export($MailSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 					$Multidatabase->rollback();
 					continue;
