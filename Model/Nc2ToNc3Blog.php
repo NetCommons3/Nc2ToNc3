@@ -298,6 +298,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$Like = ClassRegistry::init('Likes.Like');
 
 		foreach ($nc2JournalPosts as $nc2JournalPost) {
 			$BlogEntry->begin();
@@ -333,7 +334,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
 				$BlogEntry->validate = [];
 
-				if (!$BlogEntry->saveEntry($data)) {
+				if (!($nc3BlogEntry = $BlogEntry->saveEntry($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
 					$BlogEntry->rollback();
@@ -347,6 +348,11 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					$BlogEntry->rollback();
 					continue;
+				}
+				if (isset($data['Like'])) {
+					$data['Like']['content_key'] = $nc3BlogEntry['BlogEntry']['key'];
+					$Like->create();
+					$Like->save($data);
 				}
 
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);

@@ -184,8 +184,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		//ファイルの場合は、ファイルアップロードの準備
 		if (!$nc2CabinetFile['Nc2CabinetFile']['file_type']) {
+			//ファイルの場合は、ファイルアップロードの準備
 			$nc2UploadId = $nc2CabinetFile['Nc2CabinetFile']['upload_id'];
 			$nc2ToNc3Upload = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Upload');
 			$nc3CabinetFile = $nc2ToNc3Upload->generateUploadFile($nc2UploadId);
@@ -209,8 +209,10 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				// キャビネットで更新日をunsetさせない
 				'_is_no_unset_modified' => 1,
 			];
-			//フォルダの場合
+
+			$data['DownloadCount'] = $nc2CabinetFile['Nc2CabinetFile']['download_num'];
 		} else {
+			//フォルダの場合
 			$data['CabinetFile'] = [
 				'key' => '',
 				'is_folder' => $nc2CabinetFile['Nc2CabinetFile']['file_type'],
@@ -231,7 +233,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			'id' => $Cabinets['Cabinet']['block_id']
 		];
 		$data['CabinetFileTree'] = [
-			'parent_id' => $nc3CabinetFileTreeId
+			'cabinet_key' => $Cabinets['Cabinet']['key'],
+			'parent_id' => $nc3CabinetFileTreeId,
 		];
 
 		return $data;
