@@ -107,6 +107,7 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 
 				$Frame->create();
 				$BlocksLanguage->create();
+				$RssReader->create();
 				if (!$RssReader->saveRssReader($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
