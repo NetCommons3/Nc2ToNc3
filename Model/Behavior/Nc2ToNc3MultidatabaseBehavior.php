@@ -1,6 +1,6 @@
 <?php
 /**
- * Nc2ToNc3BlogBehavior
+ * Nc2ToNc3MultidatabaseBehavior
  *
  * @copyright Copyright 2014, NetCommons Project
  * @author Fujiki Hideyuki <TriangleShooter@gmail.com>
@@ -11,7 +11,7 @@
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
- * Nc2ToNc3BlogBehavior
+ * Nc2ToNc3MultidatabaseBehavior
  *
  */
 
@@ -116,7 +116,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			'Block' => [
 				'id' => '',
 				'room_id' => $nc3RoomId,
-				'plugin_key' => 'blogs',
+				'plugin_key' => 'multidatabase',
 				'name' => $nc2Multidatabase['Nc2Multidatabase']['multidatabase_name'],
 				'public_type' => $nc2Multidatabase['Nc2Multidatabase']['active_flag'],
 				'created_user' => $nc3CreatedUser,
@@ -429,8 +429,15 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			case 'vote' : // 投票順　
 				$sortType = '0'; // 指定無しにマッピングしておく
 				break;
-			case '1': // タイトル順
-				$sortType = 'value1';
+            default:
+			    // タイトル順
+                //  default_sortが数字（seq, date, date_asc, vote以外）ならそれは並び順についかいたいカラムのmetadata_id
+                $metadataId = $nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['default_sort'];
+                //  nc3のmetadata_idを取得
+                //  nc3のmetadataからcol_noを取得
+                // 'value' . col_noを$sort_typeにすればOK
+                $colNo = $this->__getColNoByNc2MetadataId($metadataId);
+				$sortType = 'value' . $colNo;
 				break;
 		}
 
@@ -450,6 +457,28 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		return $data;
 	}
+
+    private function __getColNoByNc2MetadataId($nc2MetadataId) {
+        // nc3のmetadata_idを取得
+        /** @var Nc2ToNc3Map $Nc2ToNc3Map */
+        $Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+        $multidbMetadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+
+        $mapIdList = $Nc2ToNc3Map->getMapIdList('MultidatabaseMetadata', $nc2MetadataId);
+        $nc3metadataId = $mapIdList[$nc2MetadataId];
+
+        //  nc3のmetadataからcol_noを取得
+        $result = $multidbMetadata->find('first', [
+            'recursive' => -1,
+            'callbacks' => false,
+            'fields' => ['MultidatabaseMetadata.col_no'],
+            'conditions' => [
+                'MultidatabaseMetadata.id' => $nc3metadataId
+            ]
+        ]);
+
+        return isset($result['MultidatabaseMetadata']['col_no']) ? $result['MultidatabaseMetadata']['col_no'] : null;
+    }
 
 /**
  * NC3 metadataの準備

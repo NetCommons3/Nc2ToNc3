@@ -65,19 +65,20 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		/* @var $Nc2MultidatabaseBlock AppModel */
+		// 先にmetadataを移行しないとframeの移行で並び順カラムを設定できない
+        $Nc2MultidatabaseMetadata = $this->getNc2Model('multidatabase_metadata');
+        // col_noをうめるためにmultidatabase_id
+        $nc2MultidatabaseMetadatas = $Nc2MultidatabaseMetadata->find('all', [
+            'order' => 'multidatabase_id ASC'
+        ]);
+        if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidatabaseMetadatas)) {
+            return false;
+        }
+
+        /* @var $Nc2MultidatabaseBlock AppModel */
 		$Nc2MultidatabaseBlock = $this->getNc2Model('multidatabase_block');
 		$nc2MultidatabaseBlocks = $Nc2MultidatabaseBlock->find('all');
 		if (!$this->__saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks)) {
-			return false;
-		}
-
-		$Nc2MultidatabaseMetadata = $this->getNc2Model('multidatabase_metadata');
-		// col_noをうめるためにmultidatabase_id
-		$nc2MultidatabaseMetadatas = $Nc2MultidatabaseMetadata->find('all', [
-			'order' => 'multidatabase_id ASC'
-		]);
-		if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidatabaseMetadatas)) {
 			return false;
 		}
 
