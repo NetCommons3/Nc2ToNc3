@@ -85,6 +85,14 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 			'plugin_key' => 'faqs',
 		];
 
+		// 権限データ設定
+		$data['FaqSetting'] = ['id' => ''];
+		$data = Hash::merge($data, $model->makeContentPermissionData(
+			$nc2Faq['Nc2Faq']['faq_authority'],
+			$frameMap['Frame']['room_id']));
+		unset($data['BlockRolePermission']['content_comment_publishable'],
+			$data['BlockRolePermission']['content_comment_creatable']);
+
 		return $data;
 	}
 
