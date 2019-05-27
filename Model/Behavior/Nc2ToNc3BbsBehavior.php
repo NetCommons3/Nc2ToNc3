@@ -126,13 +126,32 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'use_comment' => $nc2Bbs['Nc2Bb']['child_flag'],
 			//	'use_comment_approval' => $nc2Bbs['Nc2Bb']['sns_flag'],
 			//	'use_workflow' => $nc2Bbs['Nc2Bb']['sns_flag'],
-			]
+			],
+			'MailSetting' => [
+				'plugin_key' => 'bbses',
+				'block_key' => null,
+				'is_mail_send' => $nc2Bbs['Nc2Bb']['mail_send'],
+			],
+			'MailSettingFixedPhrase' => [
+				[
+					'language_id' => $this->getLanguageIdFromNc2($model),
+					'plugin_key' => 'bbses',
+					'block_key' => null,
+					'type_key' => 'contents',
+					'mail_fixed_phrase_subject' => $nc2Bbs['Nc2Bb']['mail_subject'],
+					'mail_fixed_phrase_body' =>$nc2Bbs['Nc2Bb']['mail_body'],
+				],
+			],
 		];
 		if ($frameMap) {
 			$data['Frame'] = [
 				'id' => $frameMap['Frame']['id'],
 			];
 		}
+
+		// 権限データ設定
+		$data = Hash::merge($data, $model->makeContentPermissionData($nc2Bbs['Nc2Bb']['topic_authority'], $nc3RoomId));
+		$data = Hash::merge($data, $model->makeMailPermissionData($nc2Bbs['Nc2Bb']['mail_authority'], $nc3RoomId));
 
 		return $data;
 	}

@@ -46,6 +46,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 	public $actsAs = [
 		'Nc2ToNc3.Nc2ToNc3Bbs',
 		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
 	];
 
 /**
@@ -118,6 +119,8 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$BbsSetting = ClassRegistry::init('Bbses.BbsSetting');
+		$MailSetting = ClassRegistry::init('Mails.MailSetting');
 
 		/* @see Nc2ToNc3Map::getMapIdList() */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
@@ -164,6 +167,8 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$Bbs->create();
 				$Block->create();
 				$Topic->create();
+				$BbsSetting->create();
+				$MailSetting->create();
 
 				if (!$Bbs->saveBbs($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
@@ -176,6 +181,45 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 
 					$message = $this->getLogArgument($nc2Bbs) . "\n" .
 						var_export($Bbs->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Bbs->rollback();
+					continue;
+				}
+
+				$bbs = $Bbs->findById($Bbs->id, 'block_id', null, -1);
+				$block = $Block->findById($bbs['Bbs']['block_id'], null, null, -1);
+				Current::write('Block', $block['Block']);
+				foreach ($data['BlockRolePermission'] as &$permission) {
+					foreach ($permission as &$role) {
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$BbsSetting->saveBbsSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$BbsSetting->rollback();
+
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($BbsSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Bbs->rollback();
+
+					continue;
+				}
+
+				// MailSetting
+				$data['MailSetting']['block_key'] = $block['Block']['key'];
+				$data['MailSettingFixedPhrase'][0]['block_key'] = $block['Block']['key'];
+
+				// メールの権限については先に権限設定保存じに保存できちゃってるので、ここでは保存させない
+				unset($data['BlockRolePermission']);
+				if (!$MailSetting->saveMailSettingAndFixedPhrase($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$MailSetting->rollback();
+
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($MailSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 					$Bbs->rollback();
 					continue;
@@ -196,8 +240,9 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$Bbs->rollback($ex);
 				throw $ex;
 			}
+
+			Current::remove('Block');
 		}
-		Current::remove('Block.id');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
