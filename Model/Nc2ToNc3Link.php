@@ -55,7 +55,10 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Link'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Link',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
+	];
 
 /**
  * Migration method.
@@ -123,6 +126,8 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$LinkSetting = ClassRegistry::init('Links.LinkSetting');
 
 		/* @see Nc2ToNc3Map::getMapIdList() */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
@@ -181,6 +186,8 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				$this->__writeCurrent($frameMap, 'links', $nc3RoomId);
 				$LinkBlock->create();
 				$BlocksLanguage->create();
+				$Block->create();
+				$LinkSetting->create();
 				if (!$LinkBlock->saveLinkBlock($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
@@ -189,6 +196,31 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Linklist) . "\n" .
 						var_export($LinkBlock->validationErrors, true);
 					$this->writeMigrationLog($message);
+
+					$LinkBlock->rollback();
+					continue;
+				}
+
+				// LinkBlock::saveLinkBlockで$this->useTableがfalseになっているため、
+				// Blockモデルから直接idを取得する
+				$block = $Block->findById($Block->id, null, null, -1);
+				Current::write('Block', $block['Block']);
+				foreach ($data['BlockRolePermission'] as &$permission) {
+					foreach ($permission as &$role) {
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$LinkSetting->saveLinkSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$LinkSetting->rollback();
+
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($LinkSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$LinkBlock->rollback();
+
 					continue;
 				}
 
@@ -222,6 +254,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 				$LinkBlock->rollback($ex);
 				throw $ex;
 			}
+			Current::remove('Block');
 		}
 
 		$this->removeUseCurrent();
