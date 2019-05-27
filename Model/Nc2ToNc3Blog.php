@@ -48,6 +48,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 	public $actsAs = [
 		'Nc2ToNc3.Nc2ToNc3Blog',
 		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
 	];
 
 /**
@@ -123,6 +124,8 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$BlogSetting = ClassRegistry::init('Blogs.BlogSetting');
+		$MailSetting = ClassRegistry::init('Mails.MailSetting');
 
 		foreach ($nc2Journals as $nc2Journal) {
 			$Blog->begin();
@@ -147,6 +150,8 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$Blog->create();
 				$Block->create();
 				$Topic->create();
+				$BlogSetting->create();
+				$MailSetting->create();
 
 				if (!$Blog->saveBlog($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
@@ -161,6 +166,41 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				$nc3Blog = $Blog->findById($Blog->id, 'block_id', null, -1);
+				$block = $Block->findById($nc3Blog['Blog']['block_id'], null, null, -1);
+				Current::write('Block', $block['Block']);
+				foreach ($data['BlockRolePermission'] as &$permission) {
+					foreach ($permission as &$role) {
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$BlogSetting->saveBlogSetting($data)) {
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($BlogSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Blog->rollback();
+
+					continue;
+				}
+
+				// MailSetting
+				$data['MailSetting']['block_key'] = $block['Block']['key'];
+				$data['MailSettingFixedPhrase'][0]['block_key'] = $block['Block']['key'];
+
+				// メールの権限については先に権限設定保存じに保存できちゃってるので、ここでは保存させない
+				unset($data['BlockRolePermission']);
+				if (!$MailSetting->saveMailSettingAndFixedPhrase($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、ここでrollback
+					$MailSetting->rollback();
+
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($MailSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Blog->rollback();
+					continue;
+				}
+
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2JournalId = $nc2Journal['Nc2Journal']['journal_id'];
@@ -169,7 +209,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				];
 				$this->saveMap('Blog', $idMap);
 
-				$nc3Blog = $Blog->findById($Blog->id, 'block_id', null, -1);
 				if (!$Nc2ToNc3Category->saveCategoryMap($nc2CategoryList, $nc3Blog['Blog']['block_id'])) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -187,6 +226,8 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$Blog->rollback($ex);
 				throw $ex;
 			}
+
+			Current::remove('Block');
 		}
 
 		Current::remove('Room.id');
