@@ -201,8 +201,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// LinkBlock::saveLinkBlockで$this->useTableがfalseになっているため、
-				// Blockモデルから直接idを取得する
+				// LinkBlockに対応するテーブルが存在しないためBlockモデルから直接idを取得する
 				$block = $Block->findById($Block->id, null, null, -1);
 				Current::write('Block', $block['Block']);
 				foreach ($data['BlockRolePermission'] as &$permission) {
