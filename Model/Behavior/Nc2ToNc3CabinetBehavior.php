@@ -88,7 +88,7 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				'name' => $nc2CabinetManage['Nc2CabinetManage']['cabinet_name'],
 			],
 			'CabinetSetting' => [
-				'use_workflow' => '1',
+				'id' => '',
 			],
 			'BlocksLanguage' => [
 				'language_id' => '',
@@ -102,6 +102,12 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				'convert_fields' => 'Block.publish_start,Block.publish_end'
 			]
 		];
+
+		// 権限データ設定
+		$data = Hash::merge($data, $model->makeContentPermissionData(
+			$nc2CabinetManage['Nc2CabinetManage']['add_authority_id'],
+			$frameMap['Frame']['room_id']));
+
 		return $data;
 	}
 
