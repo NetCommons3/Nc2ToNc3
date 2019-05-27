@@ -163,8 +163,6 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-
 				$cabinet = $Cabinet->findById($Cabinet->id, 'block_id', null, -1);
 				$block = $Block->findById($cabinet['Cabinet']['block_id'], null, null, -1);
 				Current::write('Block', $block['Block']);
@@ -183,6 +181,8 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+
 				$nc2CabinetId = $nc2CabinetManage['Nc2CabinetManage']['cabinet_id'];
 				$idMap = [
 					$nc2CabinetId => $Cabinet->id
@@ -196,6 +196,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$Cabinet->rollback($ex);
 				throw $ex;
 			}
+			Current::remove('Block');
 		}
 		Current::remove('Room.id');
 

@@ -107,6 +107,8 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 		$data = Hash::merge($data, $model->makeContentPermissionData(
 			$nc2CabinetManage['Nc2CabinetManage']['add_authority_id'],
 			$frameMap['Frame']['room_id']));
+		unset($data['BlockRolePermission']['content_comment_publishable'],
+			$data['BlockRolePermission']['content_comment_creatable']);
 
 		return $data;
 	}
