@@ -162,8 +162,9 @@ class Nc2ToNc3BlockRolePermissionBehavior extends Nc2ToNc3BaseBehavior {
 				];
 			}
 
-			// コメント投稿権限とコメント承認権限はroom_administrator, chief_editor以外を設定する
-			if (!in_array($roleKey, ['room_administrator', 'chief_editor'])) {
+			// コメント投稿権限とコメント承認権限は
+			// room_administrator, chief_editor, visitor以外を設定する
+			if (!in_array($roleKey, ['room_administrator', 'chief_editor', 'visitor'])) {
 				$data['BlockRolePermission']['content_comment_publishable'][$roleKey] = [
 					'id' => null,
 					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
