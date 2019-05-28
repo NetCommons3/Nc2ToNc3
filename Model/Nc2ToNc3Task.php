@@ -47,7 +47,10 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Task'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Task',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
+	];
 
 /**
  * Migration method.
@@ -112,6 +115,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		$TaskSetting = ClassRegistry::init('Tasks.TaskSetting');
 		foreach ($nc2TodoDatas as $nc2TodoData) {
 			$Task->begin();
 			try {
@@ -142,6 +146,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$Task->create(false);
 				$Block->create();
 				$BlocksLanguage->create();
+				$TaskSetting->create();
 				if (!$Task->saveTask($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
@@ -150,6 +155,24 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 						var_export($Task->validationErrors, true);
 					$this->writeMigrationLog($message);
 					$Task->rollback();
+					continue;
+				}
+
+				$task = $Task->findById($Task->id, 'block_id', null, -1);
+				$block = $Block->findById($task['Task']['block_id'], null, null, -1);
+				Current::write('Block', $block['Block']);
+				foreach ($data['BlockRolePermission'] as &$permission) {
+					foreach ($permission as &$role) {
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$TaskSetting->saveTaskSetting($data)) {
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($TaskSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Task->rollback();
+
 					continue;
 				}
 
@@ -186,6 +209,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$Task->rollback($ex);
 				throw $ex;
 			}
+			Current::remove('Block');
 		}
 
 		$this->removeUseCurrent();
