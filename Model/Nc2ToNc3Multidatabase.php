@@ -234,6 +234,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				// MailSetting
 				$data['MailSetting']['block_key'] = $block['Block']['key'];
+				$data['MailSettingFixedPhrase'][0]['block_key'] = $block['Block']['key'];
 				//
 				//foreach($data['BlockRolePermission'] as &$permission){
 				//	foreach ($permission as &$role){
