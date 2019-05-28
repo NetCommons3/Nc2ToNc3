@@ -70,6 +70,9 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 		}
 		$data = [];
 
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2CabinetManage['Nc2CabinetManage']);
+		$nc3Created = $this->_convertDate($nc2CabinetManage['Nc2CabinetManage']['insert_time']);
 		$data = [
 			'Frame' => [
 				'id' => $frameMap['Frame']['id']
@@ -80,22 +83,32 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				'name' => $nc2CabinetManage['Nc2CabinetManage']['cabinet_name'],
 				'public_type' => $nc2CabinetManage['Nc2CabinetManage']['active_flag'],
 				'publish_start' => '',
-				'publish_end' => ''
+				'publish_end' => '',
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'Cabinet' => [
 				'id' => '',
 				'key' => '',
 				'name' => $nc2CabinetManage['Nc2CabinetManage']['cabinet_name'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'CabinetSetting' => [
 				'id' => '',
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'BlocksLanguage' => [
 				'language_id' => '',
-				'name' => $nc2CabinetManage['Nc2CabinetManage']['cabinet_name']
+				'name' => $nc2CabinetManage['Nc2CabinetManage']['cabinet_name'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'CabinetFile' => [
-				'status' => '1'
+				'status' => '1',
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'_NetCommonsTime' => [
 				'user_timezone' => 'Asia/Tokyo',
