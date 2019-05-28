@@ -163,7 +163,24 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				1 => [],
 				2 => [],
 				3 => [],
-			]
+			],
+			'MailSetting' => [
+				'plugin_key' => 'multidatabases',
+				'block_key' => null,
+				'is_mail_send' => $nc2Multidatabase['Nc2Multidatabase']['mail_flag'],
+				'is_mail_send_approval' => $nc2Multidatabase['Nc2Multidatabase']['agree_flag'], // ワークフローを使うなら承認メール有効にする
+
+			],
+			'MailSettingFixedPhrase' => [
+				[
+					'language_id' => $this->getLanguageIdFromNc2($model),
+					'plugin_key' => 'multidatabases',
+					'block_key' => null,
+					'type_key' => 'contents',
+					'mail_fixed_phrase_subject' => $this->_convertMailValiable($nc2Multidatabase['Nc2Multidatabase']['mail_subject']),
+					'mail_fixed_phrase_body' => $this->_convertMailValiable($nc2Multidatabase['Nc2Multidatabase']['mail_body']),
+				],
+			],
 		];
 		if ($nc3Frame) {
 			// フレームがあったらセット
@@ -172,11 +189,11 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			];
 		}
 
-		// 権限データ
-		$data = Hash::merge($data, $this->_makePermissiondata($nc2Multidatabase['Nc2Multidatabase']['contents_authority'], $nc3RoomId));
-
-		// Mail設定
-		$data = Hash::merge($data, $this->_makeMailSetting($model, $nc2Multidatabase['Nc2Multidatabase'], $nc3RoomId));
+		// 権限データ設定
+		$data = Hash::merge($data, $model->makeContentPermissionData(
+			$nc2Multidatabase['Nc2Multidatabase']['contents_authority'], $nc3RoomId));
+		$data = Hash::merge($data, $model->makeMailPermissionData(
+			$nc2Multidatabase['Nc2Multidatabase']['mail_authority'], $nc3RoomId));
 
 		return $data;
 	}
@@ -190,186 +207,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 	protected function _convertMailValiable($text) {
 		// X-DATA, X-MDB使えるようになったし、ここでやることは特になさそう
 		return $text;
-	}
-
-/**
- * メール設定配列データ作成
- *
- * @param Model $model Nc2ToNc3Multidatabase
- * @param array $nc2Multidb NC2汎用DB配列
- * @param array $nc3RoomId ルームID
- * @return array
- */
-	protected function _makeMailSetting($model, $nc2Multidb, $nc3RoomId) {
-		//  Mail
-		$data = [
-			'MailSetting' => [
-				'plugin_key' => 'multidatabases',
-				'block_key' => null,
-				'is_mail_send' => $nc2Multidb['mail_flag'],
-				'is_mail_send_approval' => $nc2Multidb['agree_flag'], // ワークフローを使うなら承認メール有効にする
-
-			],
-			'MailSettingFixedPhrase' => [
-				[
-					'language_id' => $this->getLanguageIdFromNc2($model),
-					'plugin_key' => 'multidatabases',
-					'block_key' => null,
-					'type_key' => 'contents',
-					'mail_fixed_phrase_subject' => $this->_convertMailValiable($nc2Multidb['mail_subject']),
-					'mail_fixed_phrase_body' => $this->_convertMailValiable($nc2Multidb['mail_body']),
-				],
-			],
-		];
-
-		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
-		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
-		$rolesRooms = $RolesRoom->find('all', [
-			'conditions' => [
-				'RolesRoom.room_id' => $nc3RoomId
-			],
-			'fields' => ['RolesRoom.id', 'RolesRoom.role_key'],
-			'recursive' => -1
-		]);
-		$rolesRoomIdByRoleKey = Hash::combine($rolesRooms, '{n}.RolesRoom.role_key', '{n}.RolesRoom.id');
-
-		switch ($nc2Multidb['mail_authority']) {
-			case 4:
-				// NC2主担以上→Nc3ルーム管理者以上
-				$borderLine = 'room_administrator';
-				break;
-			case 3:
-				//NC2モデレータ以上→NC3編集者以上
-				$borderLine = 'editor';
-				break;
-			case 2:
-				// NC2一般以上→NC3一般以上
-				$borderLine = 'general_user';
-				break;
-			case 1:
-				// NC2ゲスト→NC3ゲスト
-				$borderLine = 'visitor';
-				break;
-		}
-		// Roleをレベル低い順に取得
-		$roomRoles = $RoomRole->find('all', ['order' => 'level ASC']);
-		$receivable = 0;
-		foreach ($roomRoles as $roomRole) {
-			$roleKey = $roomRole['RoomRole']['role_key'];
-			if ($roleKey == $borderLine) {
-				$receivable = 1;
-			}
-
-			if (!in_array($roleKey, ['room_administrator', 'chief_editor'])) {
-				$data['BlockRolePermission']['mail_content_receivable'][$roleKey] = [
-					'id' => null,
-					'block_key' => null,
-					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-					'value' => $receivable,
-					'permission' => 'mail_content_receivable'
-				];
-			}
-
-		}
-		return $data;
-	}
-
-/**
- * 権限配列の作成
- *
- * @param int $nc2AuthorityCode NC2での投稿権限
- * @param int $nc3RoomId ルームID
- * @return mixed
- */
-	protected function _makePermissiondata($nc2AuthorityCode, $nc3RoomId) {
-		$RoomRole = ClassRegistry::init('Rooms.RoomRole');
-		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
-		$rolesRooms = $RolesRoom->find('all', [
-			'conditions' => [
-				'RolesRoom.room_id' => $nc3RoomId
-			],
-			'fields' => ['RolesRoom.id', 'RolesRoom.role_key'],
-			'recursive' => -1
-		]);
-		$rolesRoomIdByRoleKey = Hash::combine($rolesRooms, '{n}.RolesRoom.role_key', '{n}.RolesRoom.id');
-
-		switch ($nc2AuthorityCode) {
-			case 4:
-				// NC2主担以上→Nc3ルーム管理者以上
-				$borderLine = 'room_administrator';
-				break;
-			case 3:
-				//NC2モデレータ以上→NC3編集者以上
-				$borderLine = 'editor';
-				break;
-			case 2:
-				// NC2一般以上→NC3一般以上
-				$borderLine = 'general_user';
-				break;
-		}
-
-		// Roleをレベル低い順に取得
-		$roomRoles = $RoomRole->find('all', ['order' => 'level ASC']);
-		$creatable = 0;
-		$commentPublishable = 0;
-		$commentPublishableBorderLine = 'chief_editor'; // NC3のデフォルトにしとく
-		foreach ($roomRoles as $roomRole) {
-			$roleKey = $roomRole['RoomRole']['role_key'];
-			if ($roleKey == $borderLine) {
-				$creatable = 1;
-			}
-			if ($roleKey == $commentPublishableBorderLine) {
-				$commentPublishable = 1;
-			}
-
-			// content_publishable はデータとして挿入しなくなったのでコメントアウト
-			//// content_publishableはルーム管理, visitor のレコードはつくらない
-			//if (!in_array($roleKey, ['room_administrator', 'visitor'])){
-			//	$data['BlockRolePermission']['content_publishable'][$roleKey] = [
-			//		'id' => null,
-			//		'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-			//		'value' => 0,
-			//		'permission' => 'content_publishable'
-			//	];
-			//}
-
-			// content_creatableはgeneral_userだけ
-			if ($roleKey == 'general_user') {
-				$data['BlockRolePermission']['content_creatable'][$roleKey] = [
-					'id' => null,
-					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-					'value' => $creatable,
-					'permission' => 'content_creatable'
-				];
-			}
-
-			// コメント投稿権限とコメント承認権限はroom_administrator, chief_editor以外を設定する
-			if (!in_array($roleKey, ['room_administrator', 'chief_editor'])) {
-				$data['BlockRolePermission']['content_comment_publishable'][$roleKey] = [
-					'id' => null,
-					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-					'value' => $commentPublishable,
-					'permission' => 'content_comment_publishable'
-				];
-
-				$data['BlockRolePermission']['content_comment_creatable'][$roleKey] = [
-					'id' => null,
-					'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-					'value' => 1,
-					'permission' => 'content_comment_creatable'
-				];
-			}
-
-		}
-		/*
-		 * roles_room_id, block_key, permission
-		 */
-		//$data['BlockRolePermission']['content_comment_creatable']['visitor'] = [
-		//	'roles_room_id' => $rolesRoomIdByRoleKey[$roleKey],
-		//	'value' => 0,
-		//	'permission' => 'content_comment_creatable'
-		//];
-		return $data;
 	}
 
 /**

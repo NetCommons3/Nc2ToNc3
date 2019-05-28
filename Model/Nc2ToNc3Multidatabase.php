@@ -48,6 +48,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 	public $actsAs = [
 		'Nc2ToNc3.Nc2ToNc3Multidatabase',
 		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
 	];
 
 /**
