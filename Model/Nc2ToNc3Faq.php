@@ -52,6 +52,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 	public $actsAs = [
 		'Nc2ToNc3.Nc2ToNc3Faq',
 		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
 	];
 
 /**
@@ -124,6 +125,8 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$FaqSetting = ClassRegistry::init('Faqs.FaqSetting');
 		foreach ($nc2Faqs as $nc2Faq) {
 			$Faq->begin();
 			try {
@@ -159,6 +162,8 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				$this->writeCurrent($frameMap, 'faqs');
 
 				$BlocksLanguage->create();
+				$Block->create();
+				$FaqSetting->create();
 				if (!$Faq->saveFaq($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
@@ -169,6 +174,28 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 
 					$Faq->rollback();
+					continue;
+				}
+
+				$faq = $Faq->findById($Faq->id, 'block_id', null, -1);
+				$block = $Block->findById($faq['Faq']['block_id'], null, null, -1);
+				Current::write('Block', $block['Block']);
+				foreach ($data['BlockRolePermission'] as &$permission) {
+					foreach ($permission as &$role) {
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$FaqSetting->saveFaqSetting($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$FaqSetting->rollback();
+
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($FaqSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Faq->rollback();
+
 					continue;
 				}
 
@@ -199,6 +226,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				$Faq->rollback($ex);
 				throw $ex;
 			}
+			Current::remove('Block');
 		}
 		$this->removeUseCurrent();
 

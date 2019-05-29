@@ -43,7 +43,10 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3Cabinet'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3Cabinet',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
+	];
 
 /**
  * Migration method.
@@ -108,6 +111,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
+		$CabinetSetting = ClassRegistry::init('Cabinets.CabinetSetting');
 
 		foreach ($nc2CabinetManages as $nc2CabinetManage) {
 
@@ -138,6 +142,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$BlocksLanguage->create();
 				$Cabinet->create();
 				$Block->create();
+				$CabinetSetting->create();
 
 				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
@@ -158,10 +163,27 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					continue;
 				}
 
+				$cabinet = $Cabinet->findById($Cabinet->id, 'block_id', null, -1);
+				$block = $Block->findById($cabinet['Cabinet']['block_id'], null, null, -1);
+				Current::write('Block', $block['Block']);
+				foreach ($data['BlockRolePermission'] as &$permission) {
+					foreach ($permission as &$role) {
+						$role['block_key'] = $block['Block']['key'];
+					}
+				}
+
+				if (!$CabinetSetting->saveCabinetSetting($data)) {
+					$message = $this->getLogArgument($data) . "\n" .
+						var_export($CabinetSetting->validationErrors, true);
+					$this->writeMigrationLog($message);
+					$Cabinet->rollback();
+
+					continue;
+				}
+
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2CabinetId = $nc2CabinetManage['Nc2CabinetManage']['cabinet_id'];
-
 				$idMap = [
 					$nc2CabinetId => $Cabinet->id
 				];
@@ -174,6 +196,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$Cabinet->rollback($ex);
 				throw $ex;
 			}
+			Current::remove('Block');
 		}
 		Current::remove('Room.id');
 

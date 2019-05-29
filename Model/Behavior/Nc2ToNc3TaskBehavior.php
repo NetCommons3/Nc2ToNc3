@@ -94,6 +94,13 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 			'plugin_key' => 'tasks',
 		];
 
+		// 権限データ設定
+		$data = Hash::merge($data, $model->makeContentPermissionData(
+			$nc2TodoData['Nc2Todo']['task_authority'],
+			$frameMap['Frame']['room_id']));
+		unset($data['BlockRolePermission']['content_comment_publishable'],
+			$data['BlockRolePermission']['content_comment_creatable']);
+
 		return $data;
 	}
 

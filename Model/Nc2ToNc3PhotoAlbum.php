@@ -57,7 +57,10 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3PhotoAlbum'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3PhotoAlbum',
+		'Nc2ToNc3.Nc2ToNc3BlockRolePermission',
+	];
 
 /**
  * Migration method.
@@ -135,7 +138,24 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				$Block->create();
 				$BlocksLanguage->create();
 				$PhotoAlbumSetting->create(false);
+
 				$PhotoAlbumsComponent->initializeSetting();
+				$nc3Block = $Block->findByRoomIdAndPluginKey(
+					$nc3RoomId,
+					'photo_albums',
+					['key'],
+					null,
+					-1
+				);
+				if (!$this->__saveBlockRolePermission(
+					$nc3RoomId,
+					$nc3Block['Block']['key'],
+					$nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['room_id'])
+				) {
+					$PhotoAlbum->rollback();
+					continue;
+				}
+
 				$frameSetting = $FrameSetting->read();
 				$data = [
 					'PhotoAlbumFrameSetting' => $frameSetting['PhotoAlbumFrameSetting'],
@@ -248,7 +268,11 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					//$this->writeCurrent($frameMap, 'photo_albums');
 					$this->__writeCurrent($frameMap, 'photo_albums', $nc3RoomId);
 
-					if (!($data = $this->__savePhotoAlbumSetting($nc3RoomId, $data))) {
+					if (!($data = $this->__savePhotoAlbumSetting(
+						$nc3RoomId,
+						$data,
+						$nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['room_id']))
+					) {
 						$message = $this->getLogArgument($nc2PhotoalbumAlbum);
 						$this->writeMigrationLog($message);
 
@@ -351,9 +375,10 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
  *
  * @param string $nc3RoomId nc3 room id.
  * @param array $nc3PhotoAlbum data.
+ * @param array $nc2RoomId nc2 room id.
  * @return array Nc3PhotoAlbum data.
  */
-	private function __savePhotoAlbumSetting($nc3RoomId, $nc3PhotoAlbum) {
+	private function __savePhotoAlbumSetting($nc3RoomId, $nc3PhotoAlbum, $nc2RoomId) {
 		/* @var $Block Block */
 		$Block = ClassRegistry::init('Blocks.Block');
 		$PhotoAlbumSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumSetting');
@@ -381,6 +406,10 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				null,
 				-1
 			);
+
+			if (!$this->__saveBlockRolePermission($nc3RoomId, $nc3Block['Block']['key'], $nc2RoomId)) {
+				return [];
+			}
 		}
 
 		$nc3PhotoAlbum['Block'] = [
@@ -393,6 +422,37 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 		$nc3PhotoAlbum['PhotoAlbum']['block_id'] = $nc3Block['Block']['id'];
 
 		return $nc3PhotoAlbum;
+	}
+
+/**
+ * Save BlockRolePermission.
+ *
+ * @param string $nc3RoomId nc3 room id.
+ * @param array $nc2RoomId nc2 room id.
+ * @return array Nc3PhotoAlbum data.
+ */
+	private function __saveBlockRolePermission($nc3RoomId, $nc3BlockKey, $nc2RoomId) {
+		$Nc2Photoalbum = $this->getNc2Model('photoalbum');
+		$PhotoAlbumSetting = ClassRegistry::init('PhotoAlbums.PhotoAlbumSetting');
+
+		$nc2Photoalbum = $Nc2Photoalbum->findByRoomId(
+			$nc2RoomId,
+			'album_authority',
+			'album_authority',
+			-1
+		);
+		$data = [
+			'PhotoAlbumSetting' => ['id' => null],
+		];
+		$data = Hash::merge($data, $this->makeContentPermissionData(
+			$nc2Photoalbum['Nc2Photoalbum']['album_authority'], $nc3RoomId));
+		unset($data['BlockRolePermission']['content_comment_publishable'],
+			$data['BlockRolePermission']['content_comment_creatable']);
+		foreach ($data['BlockRolePermission']['content_creatable'] as &$role) {
+			$role['block_key'] = $nc3BlockKey;
+		}
+
+		return $PhotoAlbumSetting->savePhotoAlbumSetting($data);
 	}
 
 /**

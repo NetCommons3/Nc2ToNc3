@@ -84,6 +84,14 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 			'use_workflow' => '0',
 		];
 
+		// 権限データ設定
+		$data['LinkSetting'] = ['id' => ''];
+		$data = Hash::merge($data, $model->makeContentPermissionData(
+			$nc2Linklist['Nc2Linklist']['link_authority'],
+			$nc3RoomId));
+		unset($data['BlockRolePermission']['content_comment_publishable'],
+			$data['BlockRolePermission']['content_comment_creatable']);
+
 		return $data;
 	}
 

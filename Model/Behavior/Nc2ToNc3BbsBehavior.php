@@ -89,7 +89,9 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
-		//$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2Bbs['Nc2Bb']);
+		$nc3Created = $this->_convertDate($nc2Bbs['Nc2Bb']['insert_time']);
 		$data = [
 			//'Frame' => [
 			//	'id' => $frameMap['Frame']['id']
@@ -100,14 +102,16 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'room_id' => $nc3RoomId,
 				'plugin_key' => 'bbses',
 				'name' => $nc2Bbs['Nc2Bb']['bbs_name'],
-				'public_type' => $nc2Bbs['Nc2Bb']['activity']
+				'public_type' => $nc2Bbs['Nc2Bb']['activity'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'Bbs' => [
 				'id' => '',
 				'key' => '',
 				'name' => $nc2Bbs['Nc2Bb']['bbs_name'],
-				//'created' => $this->_convertDate($nc2BbsBlock['Nc2BbsBlock']['insert_time']),
-				'created' => $this->_convertDate($nc2Bbs['Nc2Bb']['insert_time']),
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			//'BbsFrameSetting' => [
 			//	'id' => '',
@@ -118,7 +122,9 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			//],
 			'BlocksLanguage' => [
 				'language_id' => '',
-				'name' => $nc2Bbs['Nc2Bb']['bbs_name']
+				'name' => $nc2Bbs['Nc2Bb']['bbs_name'],
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
 			],
 			'BbsSetting' => [
 				'use_like' => $nc2Bbs['Nc2Bb']['vote_flag'],
@@ -126,13 +132,34 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'use_comment' => $nc2Bbs['Nc2Bb']['child_flag'],
 			//	'use_comment_approval' => $nc2Bbs['Nc2Bb']['sns_flag'],
 			//	'use_workflow' => $nc2Bbs['Nc2Bb']['sns_flag'],
-			]
+				'created_user' => $nc3CreatedUser,
+				'created' => $nc3Created,
+			],
+			'MailSetting' => [
+				'plugin_key' => 'bbses',
+				'block_key' => null,
+				'is_mail_send' => $nc2Bbs['Nc2Bb']['mail_send'],
+			],
+			'MailSettingFixedPhrase' => [
+				[
+					'language_id' => $this->getLanguageIdFromNc2($model),
+					'plugin_key' => 'bbses',
+					'block_key' => null,
+					'type_key' => 'contents',
+					'mail_fixed_phrase_subject' => $nc2Bbs['Nc2Bb']['mail_subject'],
+					'mail_fixed_phrase_body' =>$nc2Bbs['Nc2Bb']['mail_body'],
+				],
+			],
 		];
 		if ($frameMap) {
 			$data['Frame'] = [
 				'id' => $frameMap['Frame']['id'],
 			];
 		}
+
+		// 権限データ設定
+		$data = Hash::merge($data, $model->makeContentPermissionData($nc2Bbs['Nc2Bb']['topic_authority'], $nc3RoomId));
+		$data = Hash::merge($data, $model->makeMailPermissionData($nc2Bbs['Nc2Bb']['mail_authority'], $nc3RoomId));
 
 		return $data;
 	}

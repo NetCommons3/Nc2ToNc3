@@ -94,6 +94,20 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
+		// use_workflowはRoom.need_approval = 0のときに変更可能。need_approval=1なら1で固定
+		$Room = ClassRegistry::init('Rooms.Room');
+		$room = $Room->findById($roomMap['Room']['id'], 'need_approval', null, -1);
+		if ($room['Room']['need_approval']) {
+			$useWorkflow = 1;
+			$useCommentApproval = 1;
+		} else {
+			$useWorkflow = $nc2Journal['Nc2Journal']['agree_flag'];
+			$useCommentApproval = $nc2Journal['Nc2Journal']['comment_agree_flag'];
+		}
+		if ($useWorkflow === 1) {
+			$useCommentApproval = 1;
+		}
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2Journal['Nc2Journal']);
@@ -128,13 +142,27 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 				'use_like' => $nc2Journal['Nc2Journal']['vote_flag'],
 				'use_unlike' => '0',
 				'use_comment' => $nc2Journal['Nc2Journal']['comment_flag'],
-				// NC3からルームに新しい設定「コンテンツの承認機能」＝コンテンツに承認が必要が追加されたため、
-				// 投稿承認=ON（use_workflow）、コメント承認=ON（use_comment_approval）で移行する。
-				'use_comment_approval' => '1',
-				'use_workflow' => '1',
+				'use_comment_approval' => $useCommentApproval,
+				'use_workflow' => $useWorkflow,
 				'use_sns' => $nc2Journal['Nc2Journal']['sns_flag'],
 				'created_user' => $nc3CreatedUser,
 				'created' => $nc3Created,
+			],
+			'MailSetting' => [
+				'plugin_key' => 'blogs',
+				'block_key' => null,
+				'is_mail_send' => $nc2Journal['Nc2Journal']['mail_flag'],
+				'is_mail_send_approval' => $nc2Journal['Nc2Journal']['agree_mail_flag'],
+			],
+			'MailSettingFixedPhrase' => [
+				[
+					'language_id' => $this->getLanguageIdFromNc2($model),
+					'plugin_key' => 'blogs',
+					'block_key' => null,
+					'type_key' => 'contents',
+					'mail_fixed_phrase_subject' => $nc2Journal['Nc2Journal']['mail_subject'],
+					'mail_fixed_phrase_body' => $nc2Journal['Nc2Journal']['mail_body'],
+				],
 			],
 		];
 		if ($nc3Frame) {
@@ -143,6 +171,10 @@ class Nc2ToNc3BlogBehavior extends Nc2ToNc3BaseBehavior {
 					'id' => $nc3Frame['Frame']['id']
 			];
 		}
+
+		// 権限データ設定
+		$data = Hash::merge($data, $model->makeContentPermissionData($nc2Journal['Nc2Journal']['post_authority'], $nc3RoomId));
+		$data = Hash::merge($data, $model->makeMailPermissionData($nc2Journal['Nc2Journal']['mail_authority'], $nc3RoomId));
 
 		return $data;
 	}
