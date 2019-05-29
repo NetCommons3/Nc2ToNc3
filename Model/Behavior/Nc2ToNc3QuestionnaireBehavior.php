@@ -109,11 +109,15 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$data['Questionnaire']['is_active'] = '1';
 			$data['Questionnaire']['status'] = '1';
 		}
-		if ($nc2Questionnaire['Nc2Questionnaire']['status'] != '2') {
-			$data['Questionnaire'] += [
-				'answer_timing' => '1',
-				'answer_end_period' => $this->_convertDate($nc2Questionnaire['Nc2Questionnaire']['insert_time']),
-			];
+		if ($nc2Questionnaire['Nc2Questionnaire']['status'] == '2') {
+			$data['Questionnaire']['answer_timing'] = '1';
+			$data['Questionnaire']['answer_end_period'] =
+				$this->_convertDate($nc2Questionnaire['Nc2Questionnaire']['insert_time']);
+		}
+		if ($nc2Questionnaire['Nc2Questionnaire']['period']) {
+			$data['Questionnaire']['answer_timing'] = '1';
+			$data['Questionnaire']['answer_end_period'] =
+				$this->_convertDate($nc2Questionnaire['Nc2Questionnaire']['period']);
 		}
 		if ($nc2Questionnaire['Nc2Questionnaire']['keypass_use_flag'] == '1' &&
 			$nc2Questionnaire['Nc2Questionnaire']['image_authentication'] == '1'
