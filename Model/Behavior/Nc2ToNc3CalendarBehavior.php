@@ -22,6 +22,44 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 	const NC2_ALL_MEMBERS_ROOM_ID = '0';
 
 /**
+ * Nc2ToNc3BaseBehaviour::_convertTimezoneのTimeZoneとCalendarsComponent::getTzTblのTimeZoneを対応づけ
+ *
+ * @var array
+ */
+	const TIMEZONE_CONVERSION_MAP = [
+		'Pacific/Kwajalein' => 'Etc/GMT+12',
+		'Pacific/Midway' => 'Pacific/Midway',
+		'Pacific/Honolulu' => 'US/Hawaii',
+		'America/Anchorage' => 'US/Alaska',
+		'America/Los_Angeles' => 'US/Pacific',
+		'America/Denver' => 'US/Mountain',
+		'America/Chicago' => 'US/Central',
+		'America/New_York' => 'US/Eastern',
+		'America/Dominica' => 'Atlantic/Bermuda',
+		'America/St_Johns' => 'Canada/Newfoundland',
+		'America/Argentina/Buenos_Aires' => 'Brazil/East',
+		'Atlantic/South_Georgia' => 'Atlantic/South_Georgia',
+		'Atlantic/Azores' => 'Atlantic/Azores',
+		'UTC' => 'Etc/Greenwich',
+		'Europe/Brussels' => 'Europe/Amsterdam',
+		'Europe/Athens' => 'Europe/Athens',
+		'Asia/Baghdad' => 'Asia/Baghdad',
+		'Asia/Tehran' => 'Asia/Tehran',
+		'Asia/Muscat' => 'Asia/Muscat',
+		'Asia/Kabul' => 'Asia/Kabul',
+		'Asia/Karachi' => 'Asia/Karachi',
+		'Asia/Kolkata' => 'Asia/Calcutta',
+		'Asia/Dhaka' => 'Asia/Almaty',
+		'Asia/Bangkok' => 'Asia/Bangkok',
+		'Asia/Singapore' => 'Asia/Singapore',
+		'Asia/Tokyo' => 'Asia/Tokyo',
+		'Australia/Darwin' => 'Australia/Adelaide',
+		'Asia/Vladivostok' => 'Australia/Brisbane',
+		'Australia/Sydney' => 'Etc/GMT-11',
+		'Asia/Kamchatka' => 'Pacific/Auckland',
+	];
+
+/**
  * Get Log argument.
  *
  * @param Model $model Model using this behavior.
@@ -339,25 +377,10 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			$dateFormat = 'Y-m-d';
 		}
 
+		// 時差からタイムゾーンを取得
 		$nc3TimezoneOffset = $this->_convertTimezone($nc2TimezoneOffset);
-		if ($nc3TimezoneOffset === 'UTC') {
-			$nc3TimezoneOffset = 'Etc/Greenwich';
-		}
-		if ($nc3TimezoneOffset === 'Europe/Brussels') {
-			$nc3TimezoneOffset = 'Europe/Amsterdam';
-		}
-		if ($nc3TimezoneOffset === 'Pacific/Honolulu') {
-			$nc3TimezoneOffset = 'US/Hawaii';
-		}
-		if ($nc3TimezoneOffset === 'America/Chicago') {
-			$nc3TimezoneOffset = 'US/Central';
-		}
-		if ($nc3TimezoneOffset === 'Asia/Vladivostok') {
-			$nc3TimezoneOffset = 'Australia/Brisbane';
-		}
-		if ($nc3TimezoneOffset === 'America/New_York') {
-			$nc3TimezoneOffset = 'US/Eastern';
-		}
+		// CalendarsComponent::getTzTblで使われているタイムゾーンに変換
+		$nc3TimezoneOffset = self::TIMEZONE_CONVERSION_MAP[$nc3TimezoneOffset];
 
 		// サマータイムが適用されている場合に予定の開始、終了時刻がずれないために、$nc2TimezoneOffsetを調整
 		$dateTimeZone = new DateTimeZone($nc3TimezoneOffset);
