@@ -239,6 +239,10 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				// QuestionnaireFrameDisplayQuestionnaireのquestionnaire_keyバリデーション用に初期化
 				$QFrameDisplay->chkQuestionnaireList = [];
 				if (!$QFrameSetting->saveFrameSettings($data)) {
+					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
+					// ここでrollback
+					$QFrameSetting->rollback();
+
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
