@@ -193,7 +193,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 						var_export($CalendarFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
-					$CalendarFrameSetting->rollback($ex);
+					$CalendarFrameSetting->rollback();
 					continue;
 				}
 
@@ -269,9 +269,11 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 				// Validation で throw されるため、事前にチェック
 				$validationData = $CalendarActionPlan->convertToPlanParamFormat($data);
 				if (!$CalendarEvent->checkMaxMinDate([$validationData['start_date']], 'start') ||
-					!$CalendarEvent->checkMaxMinDate([$validationData['end_date']], 'end')
+					!$CalendarEvent->checkMaxMinDate([$validationData['end_date']], 'end') ||
+					strlen($validationData['title']) === 0
 				) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CalendarPlan));
+					$message
+						= __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CalendarPlan));
 					$this->writeMigrationLog($message);
 
 					$CalendarActionPlan->rollback();
@@ -280,16 +282,20 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarEvent.php#L313
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Utility/CalendarPermissiveRooms.php#L202-L203
-				$creatableValue = CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'];
-				CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'] = true;
+				$creatableValue
+					= CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'];
+				CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value']
+					= true;
 
 				if (!$this->__saveCalendarEventFromGeneratedData($nc2CalendarPlan, $data)) {
 					$CalendarActionPlan->rollback();
-					CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'] = $creatableValue;
+					CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value']
+						= $creatableValue;
 					continue;
 				}
 
-				CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value'] = $creatableValue;
+				CalendarPermissiveRooms::$roomPermRoles['roomInfos'][$nc3RoomId]['content_creatable_value']
+					= $creatableValue;
 
 				// CalendarActionPlan::saveCalendarPlan から、まわりまわってCalendarEvent::save が呼ばれるので、
 				// CalendarEvent::idで取得できる
@@ -304,6 +310,9 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
 				// $CalendarActionPlan->saveCalendarPlanでthrowされるとこの処理に入ってこない
+				$this->writeMigrationLog(var_export($CalendarActionPlan->validationErrors, true));
+				$this->writeMigrationLog(var_export($nc2CalendarPlan, true));
+				$this->writeMigrationLog(var_export($data, true));
 				$CalendarActionPlan->rollback($ex);
 				throw $ex;
 			}
@@ -357,7 +366,8 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 
 		// 更新処理でしか使われてなさげだが、同じような処理にしとく
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L573-L598
-		$saveParameters = $CalendarActionPlan->getProcModeOriginRepeatAndModType($nc3ActionPlan, $nc3Event);
+		$saveParameters
+			= $CalendarActionPlan->getProcModeOriginRepeatAndModType($nc3ActionPlan, $nc3Event);
 		list($addOrEdit, $isRepeatEvent, $isChangedDteTime, $isChangedRepetition) = $saveParameters;
 
 		// Nc2CalendarPlan.insert_user_idに対応するNc3User.idで良い？

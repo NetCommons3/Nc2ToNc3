@@ -65,7 +65,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		if (!$roomMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarManage));
+			$message
+				= __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarManage));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -73,7 +74,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		// プライベートスペースのデータは移行できない
 		$nc3SpaceId = $roomMap['Room']['space_id'];
 		if ($nc3SpaceId == Space::PRIVATE_SPACE_ID) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarManage));
+			$message
+				= __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarManage));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -89,7 +91,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $RolesRoom RolesRoom */
 		$RolesRoom = ClassRegistry::init('Rooms.RolesRoom');
 		$nc3RoomId = $roomMap['Room']['id'];
-		$nc3RolesRoom = $RolesRoom->findByRoomIdAndRoleKey($nc3RoomId, 'general_user', 'RolesRoom.id', null, -1);
+		$nc3RolesRoom
+			= $RolesRoom->findByRoomIdAndRoleKey($nc3RoomId, 'general_user', 'RolesRoom.id', null, -1);
 
 		/* @var $Block Block */
 		$Block = ClassRegistry::init('Blocks.Block');
@@ -169,7 +172,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		$nc2BlockId = $nc2CalendarBlock['Nc2CalendarBlock']['block_id'];
 		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarBlock));
+			$message
+				= __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarBlock));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -185,7 +189,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		// rm2.calendar_frame_settings.display_typeは、rm1.calendar_block.display_type -1で登録
 		// rm1.calendar_block.display_type=1の場合、rm2.calendar_frame_settings.display_type=2(月表示(拡大))で登録
 		$nc3DisplayType = (string)((int)$nc2CalendarBlock['Nc2CalendarBlock']['display_type'] - 1);
-		if ($nc3DisplayType==='0') {
+		if ($nc3DisplayType === '0') {
 			$nc3DisplayType = (string)CalendarsComponent::CALENDAR_DISP_TYPE_LARGE_MONTHLY;
 		}
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
@@ -195,8 +199,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		}
 		// NC3で無効なstart_pos値(2:1月表示、3:4月表示)は0で登録
 		$nc3StartPos = $nc2CalendarBlock['Nc2CalendarBlock']['start_pos'];
-		if ($nc3StartPos==2 || $nc3StartPos==3) {
-			$nc3StartPos=0;
+		if ($nc3StartPos == 2 || $nc3StartPos == 3) {
+			$nc3StartPos = 0;
 		}
 
 		$data = [
@@ -211,10 +215,12 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $CalendarFrameSetting CalendarFrameSetting */
 		$CalendarFrameSetting = ClassRegistry::init('Calendars.CalendarFrameSetting');
-		$nc3CalendarSetting = $CalendarFrameSetting->findByFrameKey($frameMap['Frame']['key'], null, null, -1);
+		$nc3CalendarSetting
+			= $CalendarFrameSetting->findByFrameKey($frameMap['Frame']['key'], null, null, -1);
 
 		$data['CalendarFrameSetting'] = $data + $nc3CalendarSetting['CalendarFrameSetting'];
-		$nc3CalendarRooms = $this->__generateNc3CalendarSelectRoomData($nc2CalendarBlock, $nc3CalendarSetting);
+		$nc3CalendarRooms
+			= $this->__generateNc3CalendarSelectRoomData($nc2CalendarBlock, $nc3CalendarSetting);
 		$data['CalendarFrameSettingSelectRoom'] = $nc3CalendarRooms;
 
 		return $data;
@@ -288,7 +294,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		if (!$roomMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarPlan));
+			$message
+				= __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CalendarPlan));
 			$this->_writeMigrationLog($message);
 			return [];
 		}
@@ -355,7 +362,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		// サマータイムが適用されている場合に予定の開始、終了時刻がずれないために、$nc2TimezoneOffsetを調整
 		$dateTimeZone = new DateTimeZone($nc3TimezoneOffset);
 		$timeZoneOffset = $dateTimeZone->getOffset(new DateTime("now", $dateTimeZone));
-		$nc2TimezoneOffset = $timeZoneOffset/3600;
+		$nc2TimezoneOffset = $timeZoneOffset / 3600;
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
@@ -368,13 +375,21 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			'title_icon' => $this->_convertTitleIcon($nc2CalendarPlan['Nc2CalendarPlan']['title_icon']),
 			'title' => $nc2CalendarPlan['Nc2CalendarPlan']['title'],
 			'enable_time' => !$nc2AllDayFlag,
-			'detail_start_datetime' => date($dateFormat, strtotime($nc2StartTimeFull) + ($nc2TimezoneOffset * 3600)),
-			'detail_end_datetime' => date($dateFormat, strtotime($nc2EndTimeFull) + ($nc2TimezoneOffset * 3600)),
+			'detail_start_datetime' => date(
+				$dateFormat,
+				strtotime($nc2StartTimeFull) + ($nc2TimezoneOffset * 3600)
+			),
+			'detail_end_datetime' => date(
+				$dateFormat,
+				strtotime($nc2EndTimeFull) + ($nc2TimezoneOffset * 3600)
+			),
 			'timezone_offset' => $nc3TimezoneOffset,
 			'plan_room_id' => $roomMap['Room']['id'],
 			'location' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['location'],
 			'contact' => $nc2CalendarPDetail['Nc2CalendarPlanDetail']['contact'],
-			'description' => $model->convertWYSIWYG($nc2CalendarPDetail['Nc2CalendarPlanDetail']['description']),
+			'description' => $model->convertWYSIWYG(
+				$nc2CalendarPDetail['Nc2CalendarPlanDetail']['description']
+			),
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2CalendarPlan['Nc2CalendarPlan']),
 			'created' => $this->_convertDate($nc2CalendarPlan['Nc2CalendarPlan']['insert_time']),
 			// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/View/Elements/CalendarPlans/detail_edit_mail.ctp#L20-L21
@@ -385,7 +400,8 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			'is_repeat' => false,
 		];
 
-		$data['CalendarActionPlan'] = $this->__generateNc3RRuleData($nc2CalendarPlan, $nc2CalendarPDetail, $data);
+		$data['CalendarActionPlan']
+			= $this->__generateNc3RRuleData($nc2CalendarPlan, $nc2CalendarPDetail, $data);
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L549
 		$data['WorkflowComment'] = null;
 
