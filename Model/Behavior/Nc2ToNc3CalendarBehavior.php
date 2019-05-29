@@ -352,6 +352,11 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			$nc3TimezoneOffset = 'US/Eastern';
 		}
 
+		// サマータイムが適用されている場合に予定の開始、終了時刻がずれないために、$nc2TimezoneOffsetを調整
+		$dateTimeZone = new DateTimeZone($nc3TimezoneOffset);
+		$timeZoneOffset = $dateTimeZone->getOffset(new DateTime("now", $dateTimeZone));
+		$nc2TimezoneOffset = $timeZoneOffset/3600;
+
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$data += [
