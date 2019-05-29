@@ -384,9 +384,9 @@ class Nc2ToNc3QuestionnaireBehavior extends Nc2ToNc3QuestionBaseBehavior {
 			$data[$nc3PageSequence]['QuestionnaireQuestion'][$nc3QuestionSequence] = $nc3Question;
 
 			if ($nc2Questionnaire['Nc2Questionnaire']['questionnaire_type'] == '1') {
-				$nc3PageSequence++;
-			} else {
 				$nc3QuestionSequence++;
+			} else {
+				$nc3PageSequence++;
 			}
 		}
 

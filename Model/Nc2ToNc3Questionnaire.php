@@ -204,6 +204,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$QFrameSetting = ClassRegistry::init('Questionnaires.QuestionnaireFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
+		$QFrameDisplay = ClassRegistry::init('Questionnaires.QuestionnaireFrameDisplayQuestionnaire');
 		foreach ($nc2QBlocks as $nc2QBlock) {
 			$QFrameSetting->begin();
 			try {
@@ -235,6 +236,8 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				);
 				Current::write('Block.id', $nc3Block['Block']['id']);
 
+				// QuestionnaireFrameDisplayQuestionnaireのquestionnaire_keyバリデーション用に初期化
+				$QFrameDisplay->chkQuestionnaireList = [];
 				if (!$QFrameSetting->saveFrameSettings($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
