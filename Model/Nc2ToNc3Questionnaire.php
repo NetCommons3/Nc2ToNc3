@@ -113,10 +113,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 
 		/* @var $Questionnaire Questionnaire */
 		/* @var $Nc2Questionnaire AppModel */
-		/* @var $Frame Frame */
 		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
-		$Nc2QBlock = $this->getNc2Model('questionnaire_block');
-		$Frame = ClassRegistry::init('Frames.Frame');
 		foreach ($nc2Questionnaires as $nc2Questionnaire) {
 			$Questionnaire->begin();
 			try {
@@ -126,9 +123,11 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$nc2RoomId = $nc2Questionnaire['Nc2Questionnaire']['room_id'];
-				$nc2QBlock = $Nc2QBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
-				if (!$nc2QBlock) {
+				// Questionnaire::saveQuestionnaireで、Block,Frameデータを登録すると、
+				// Current::read('Frame.key')が空のままになり、
+				// QuestionnaireFrameDisplayQuestionnaire::saveDisplayQuestionnaireでエラーになるため、
+				// あらかじめ登録してFrame.keyを取得できるようにしておく
+				if (!$this->__saveBlockAndFrame($nc2Questionnaire['Nc2Questionnaire']['room_id'])) {
 					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Questionnaire));
 					$this->writeMigrationLog($message);
 					$Questionnaire->rollback();
@@ -136,18 +135,14 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 				}
 
 				// PHPMD.ExcessiveMethodLength になるので、別メソッドにした。
-				if (!$this->__setCurrentData($nc2QBlock)) {
+				if (!$this->__setCurrentData($nc2Questionnaire['Nc2Questionnaire']['room_id'])) {
 					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Questionnaire));
 					$this->writeMigrationLog($message);
 					$Questionnaire->rollback();
 					continue;
 				}
 
-				// Model::idを初期化しないとUpdateになってしまう。
-				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
-				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireSetting.php#L129-L149
-				$Frame->create();
-
+				$data = $this->__cleansingChoiceText($data);
 				if (!$Questionnaire->saveQuestionnaire($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
@@ -186,6 +181,130 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Questionnaire data Migration end.'));
 
 		return true;
+	}
+
+/**
+ * Save Block and Frame.
+ *
+ * @param string $nc2RoomId nc2RoomId.
+ * @return bool True on success
+ */
+	private function __saveBlockAndFrame($nc2RoomId) {
+		$frame = $this->__getFrameFromNc2RoomId($nc2RoomId);
+		if (!$frame) {
+			return false;
+		}
+
+		/* @var $Questionnaire Questionnaire */
+		/* @var $Nc2Questionnaire AppModel */
+		/* @var $Frame Frame */
+		$Questionnaire = ClassRegistry::init('Questionnaires.Questionnaire');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
+
+		// Model::idを初期化しないとUpdateになってしまう。
+		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
+		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireSetting.php#L129-L149
+		$Frame->create();
+		$Block->create();
+
+		$Questionnaire->afterFrameSave($frame);
+
+		return true;
+	}
+
+/**
+ * __getFrameFromNc2RoomId
+ *
+ * @param string $nc2RoomId nc2RoomId.
+ * @return array
+ */
+	private function __getFrameFromNc2RoomId($nc2RoomId) {
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$roomMap = $Nc2ToNc3Room->getMap($nc2RoomId);
+		if (!$roomMap) {
+			return [];
+		}
+
+		$data = [
+			'Frame' => [
+				'room_id' => $roomMap['Room']['id'],
+				'plugin_key' => 'questionnaires',
+				'key' => null,
+				'block_id' => null,
+			]
+		];
+
+		$nc2BlockId = 0;
+		$Nc2QBlock = $this->getNc2Model('questionnaire_block');
+		$nc2QBlock = $Nc2QBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
+		if ($nc2QBlock) {
+			$nc2BlockId = $nc2QBlock['Nc2QuestionnaireBlock']['block_id'];
+		}
+
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if ($frameMap) {
+			$data['Frame']['key'] = $frameMap['Frame']['key'];
+			$data['Frame']['block_id'] = $frameMap['Frame']['block_id'];
+		}
+
+		if (!$data['Frame']['key']) {
+			$Frame = ClassRegistry::init('Frames.Frame');
+			$frame = $Frame->find('first',
+				[
+					'fields' => ['key', 'block_id'],
+					'recursive' => -1,
+					'conditions' => [
+						'room_id' => $roomMap['Room']['id'],
+						'plugin_key' => 'questionnaires'
+					]
+				]);
+			if (!$frame) {
+				return $data;
+			}
+
+			$data['Frame']['key'] = $frame['Frame']['key'];
+			$data['Frame']['block_id'] = $frame['Frame']['block_id'];
+		}
+
+		return $data;
+	}
+
+/**
+ * choice_labelの予約文字を半角変換/改行等除去
+ * 「:」=>「：」「|」=>「｜」
+ *
+ * @param array $data Questionnaireデータ
+ * @return array
+ */
+	private function __cleansingChoiceText($data) {
+		if (!isset($data['QuestionnairePage'])) {
+			return $data;
+		}
+		foreach ($data['QuestionnairePage'] as $key => $questionnairePage) {
+			if (!isset($questionnairePage['QuestionnaireQuestion'])) {
+				continue;
+			}
+			foreach ($questionnairePage['QuestionnaireQuestion'] as $key2 => $questionnaireQuestion) {
+				if (!isset($questionnaireQuestion['QuestionnaireChoice'])) {
+					continue;
+				}
+				foreach ($questionnaireQuestion['QuestionnaireChoice'] as $key3 => $questionnaireChoice) {
+					if (isset($questionnaireChoice['choice_label'])) {
+						$rep = str_replace(':', '：',
+							$questionnaireChoice['choice_label']);
+						$rep = str_replace('|', '｜', $rep);
+						// 改行等を除去
+						$rep = preg_replace('/[\n\r\t\f\v]+/u', '', $rep);
+						$data['QuestionnairePage'][$key]['QuestionnaireQuestion'][$key2]['QuestionnaireChoice'][$key3]['choice_label']
+							= $rep;
+					}
+				}
+			}
+		}
+		return $data;
 	}
 
 /**
@@ -423,31 +542,21 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 /**
  * Set Current data.
  *
- * @param array $nc2QBlock Nc2QuizBlock data.
+ * @param string $nc2RoomId nc2RoomId.
  * @return bool True on success
  */
-	private function __setCurrentData($nc2QBlock) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-
-		// QuestionnaireFrameDisplayQuestionnaire::saveDisplayQuestionnaire でFrameに割り当てられてしまうが、
-		// Nc2ToNc3Questionnaire::__saveQuestionnaireFrameSettingFromNc2で再登録を行うことで調整
-		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L577-L578
-		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L631-L634
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2QBlock['Nc2QuestionnaireBlock']['block_id']);
-		if (!$frameMap) {
+	private function __setCurrentData($nc2RoomId) {
+		$frame = $this->__getFrameFromNc2RoomId($nc2RoomId);
+		if (!$frame) {
 			return false;
 		}
-		$nc3RoomId = $frameMap['Frame']['room_id'];
-		Current::write('Frame.key', $frameMap['Frame']['key']);
-		Current::write('Frame.room_id', $nc3RoomId);
-		Current::write('Frame.plugin_key', 'questionnaires');
-		Current::write('Frame.block_id', $frameMap['Frame']['block_id']);
+		Current::write('Frame', $frame['Frame']);
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
 		Current::write('Plugin.key', 'questionnaires');
 
 		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		$nc3RoomId = $frame['Frame']['room_id'];
 		Current::write('Room.id', $nc3RoomId);
 		Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
