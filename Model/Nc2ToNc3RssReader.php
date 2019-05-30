@@ -97,6 +97,16 @@ class Nc2ToNc3RssReader extends Nc2ToNc3AppModel {
 			try {
 				$nc2BlockId = $nc2RssBlock['Nc2RssBlock']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				if (!$frameMap) {
+					$message = __d(
+						'nc2_to_nc3',
+						'%s does not migration, because of Frame does not exist.',
+						$this->getLogArgument($nc2RssBlock));
+					$this->writeMigrationLog($message);
+
+					$RssReader->rollback();
+					continue;
+				}
 				$this->writeCurrent($frameMap, 'rss_readers');
 
 				$data = $this->generateNc3RssReaderData($frameMap, $nc2RssBlock);
