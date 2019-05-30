@@ -48,6 +48,15 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 	public $useTable = false;
 
 /**
+ * Contains models to load and instantiate
+ *
+ * @var array
+ */
+	public $uses = [
+		'Calendars.CalendarEvent'
+	];
+
+/**
  * List of behaviors to load when the model object is initialized. Settings can be
  * passed to behaviors by using the behavior name as index.
  *
@@ -243,6 +252,32 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		/* @var $CalendarActionPlan CalendarActionPlan */
 		$CalendarActionPlan = ClassRegistry::init('Calendars.CalendarActionPlan');
 		foreach ($nc2CalendarPlans as $nc2CalendarPlan) {
+			// 移行済みのplan_idの予定だったらcontinue
+			// (同じplan_idの予定はCalendarRruleEntryBehavior::insertRrule()でまとめて登録されるため)
+			$nc2CalendarPlanId = (int)$nc2CalendarPlan['Nc2CalendarPlan']['plan_id'];
+			$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+			$mapIdList = $Nc2ToNc3Map->getMapIdList('CalendarRrule');
+			$mapIdList = array_flip($mapIdList);
+			if (in_array($nc2CalendarPlanId, $mapIdList, true)) {
+				continue;
+			}
+
+			// plan_idが同じ予定のstart_time_fullをfind
+			$Nc2CalendarPlan = $this->getNc2Model('calendar_plan');
+			$nc2CalendarPlans = $Nc2CalendarPlan->find(
+				'list',
+				[
+					'fields' => ['calendar_id', 'start_time_full'],
+					'conditions' => [
+						'plan_id' => $nc2CalendarPlan['Nc2CalendarPlan']['plan_id'],
+					],
+					'recursive' => -1,
+				]
+			);
+			foreach ($nc2CalendarPlans as $nc2ExistCPlan) {
+				$nc2ExistCPlans[] = $nc2ExistCPlan;
+			}
+
 			$CalendarActionPlan->begin();
 			try {
 				$data = $this->generateNc3CalendarActionPlanData($nc2CalendarPlan);
@@ -304,6 +339,17 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 					$nc2CalendarId => $CalendarEvent->id
 				];
 				$this->saveMap('CalendarActionPlan', $idMap);
+
+				// 移行された予定のplan_idをnc2_to_nc3_mapsに登録する
+				/* @var $CalendarRrules CalendarRrules */
+				$CalendarRrules = ClassRegistry::init('Calendars.CalendarRrule');
+				$idMap = [
+					$nc2CalendarPlanId => $CalendarRrules->id
+				];
+				$this->saveMap('CalendarRrule', $idMap);
+
+				// nc2で削除済みの繰り返しデータに対応するnc3のデータを削除する
+				$this->__applyDeletingPlan($nc2CalendarId, $nc2ExistCPlans);
 
 				$CalendarActionPlan->commit();
 
@@ -404,5 +450,35 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		return true;
 	}
 
+/**
+ * Apply deleting recurring CalendarEvent.
+ *
+ * @param string $nc2CalendarId Nc2CalendarPlanId.
+ * @param array $nc2ExistCPlans Existing Nc2CalendarPlan start_time_full.
+ * @return bool True on success
+ */
+	private function __applyDeletingPlan($nc2CalendarId, $nc2ExistCPlans) {
+		// foreachの中で登録されたデータと同じcalendar_rrule_idのデータを取得
+		$nc3CalendarEventId = $this->getMap($nc2CalendarId);
+		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
+		$nc3CalendarRruleId = $CalendarEvent->find(
+			'first',
+			[
+				'fields' => 'calendar_rrule_id',
+				'conditions' => [
+					'CalendarEvent.id' => $nc3CalendarEventId['CalendarEvent']['id'],
+				],
+			]
+		);
+
+		// foreachの中で登録されたデータと同じcalendar_rrule_idのデータを削除
+		$CalendarEvent->deleteAll(
+			[
+				'calendar_rrule_id' => $nc3CalendarRruleId['CalendarEvent']['calendar_rrule_id'],
+				'dtstart !=' => $nc2ExistCPlans,
+			],
+			false
+		);
+	}
 }
 

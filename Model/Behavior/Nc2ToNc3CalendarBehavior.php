@@ -443,7 +443,6 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 		// 繰り返しデータとして移行すると、繰り返し予定のなかで、削除された予定も改めて登録されてしまうため、
 		// 繰り返しでの登録はしない方が良い。
 		// 改めて登録されても良いのであればっ場合でも、登録処理後に、繰り返し予定分のmapデータを作成しないと繰り返し数×繰り返し数分の予定を作成してしまう。
-		/*
 		$nc2RRule = $nc2CalendarPDetail['Nc2CalendarPlanDetail']['rrule'];
 		if ($nc2RRule) {
 			$nc3ActionPlan['is_repeat'] = true;
@@ -500,7 +499,6 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 				];
 			}
 		}
-		*/
 
 		return $nc3ActionPlan;
 	}
