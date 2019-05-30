@@ -256,9 +256,9 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			// (同じplan_idの予定はCalendarRruleEntryBehavior::insertRrule()でまとめて登録されるため)
 			$nc2CalendarPlanId = (int)$nc2CalendarPlan['Nc2CalendarPlan']['plan_id'];
 			$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
-			$mapIdList = $Nc2ToNc3Map->getMapIdList('CalendarRrule');
+			$mapIdList = $Nc2ToNc3Map->getMapIdList('CalendarRrule', $nc2CalendarPlanId);
 			$mapIdList = array_flip($mapIdList);
-			if (in_array($nc2CalendarPlanId, $mapIdList, true)) {
+			if ($mapIdList) {
 				continue;
 			}
 
@@ -274,9 +274,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 					'recursive' => -1,
 				]
 			);
-			foreach ($nc2CalendarPlans as $nc2ExistCPlan) {
-				$nc2ExistCPlans[] = $nc2ExistCPlan;
-			}
+			$nc2ExistCPlans = array_values($nc2CalendarPlans);
 
 			$CalendarActionPlan->begin();
 			try {
