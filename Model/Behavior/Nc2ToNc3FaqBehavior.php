@@ -49,9 +49,10 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $frameMap Frame mapping data.
  * @param array $nc2Faq Nc2Faq data.
+ * @param string $nc3RoomId nc3 room id.
  * @return array Nc3Faq data.
  */
-	public function generateNc3FaqData(Model $model, $frameMap, $nc2Faq) {
+	public function generateNc3FaqData(Model $model, $frameMap, $nc2Faq, $nc3RoomId) {
 		$nc2FaqId = $nc2Faq['Nc2Faq']['faq_id'];
 		$faqMap = $this->_getMap($nc2FaqId);
 		if ($faqMap) {
@@ -61,13 +62,15 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data['Frame'] = [
-			'id' => $frameMap['Frame']['id'],
-		];
+		if ($frameMap) {
+			$data['Frame'] = [
+				'id' => $frameMap['Frame']['id'],
+			];
+		}
 		$data['Block'] = [
 			'id' => '',
 			'key' => '',
-			'room_id' => $frameMap['Frame']['room_id'],
+			'room_id' => $nc3RoomId,
 			'plugin_key' => 'faqs',
 			'name' => $nc2Faq['Nc2Faq']['faq_name'],
 			'public_type' => 1,
@@ -89,7 +92,7 @@ class Nc2ToNc3FaqBehavior extends Nc2ToNc3BaseBehavior {
 		$data['FaqSetting'] = ['id' => ''];
 		$data = Hash::merge($data, $model->makeContentPermissionData(
 			$nc2Faq['Nc2Faq']['faq_authority'],
-			$frameMap['Frame']['room_id']));
+			$nc3RoomId));
 		unset($data['BlockRolePermission']['content_comment_publishable'],
 			$data['BlockRolePermission']['content_comment_creatable']);
 

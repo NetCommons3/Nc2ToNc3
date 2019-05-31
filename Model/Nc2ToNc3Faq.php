@@ -131,23 +131,28 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 			$Faq->begin();
 			try {
 				$nc2RoomId = $nc2Faq['Nc2Faq']['room_id'];
+				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+				$nc3Room = $Nc2ToNc3Room->getMap($nc2RoomId);
+				if (!$nc3Room) {
+					$message = __d(
+						'nc2_to_nc3',
+						'%s does not migration, because of Room does not exist.',
+						$this->getLogArgument($nc2Faq));
+					$this->writeMigrationLog($message);
+
+					$Faq->rollback();
+					continue;
+				}
+				$nc3RoomId = $nc3Room['Room']['id'];
+
+				$nc2BlockId = 0;
 				$nc2FaqBlock = $Nc2FaqBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
-				if (!$nc2FaqBlock) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Faq));
-					$this->writeMigrationLog($message);
-					$Faq->rollback();
-					continue;
+				if ($nc2FaqBlock) {
+					$nc2BlockId = $nc2FaqBlock['Nc2FaqBlock']['block_id'];
 				}
 
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2FaqBlock['Nc2FaqBlock']['block_id']);
-				if (!$frameMap) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Faq));
-					$this->writeMigrationLog($message);
-					$Faq->rollback();
-					continue;
-				}
-
-				$data = $this->generateNc3FaqData($frameMap, $nc2Faq);
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				$data = $this->generateNc3FaqData($frameMap, $nc2Faq, $nc3RoomId);
 				if (!$data) {
 					$Faq->rollback();
 					continue;
@@ -159,7 +164,8 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('faq_category', $query);
 				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
 
-				$this->writeCurrent($frameMap, 'faqs');
+				Current::write('Room.id', $nc3RoomId);
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				$Block->create();
@@ -200,7 +206,6 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 				}
 
 				// 登録処理で使用しているデータを空に戻す
-				$nc3RoomId = $frameMap['Frame']['room_id'];
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2FaqId = $nc2Faq['Nc2Faq']['faq_id'];
@@ -228,7 +233,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 			}
 			Current::remove('Block');
 		}
-		$this->removeUseCurrent();
+		Current::remove('Room.id');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Faq data Migration end.'));
 
