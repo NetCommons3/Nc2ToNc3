@@ -112,37 +112,25 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		foreach ($nc2Registrations as $nc2Registration) {
 			$Registration->begin();
 			try {
-				$nc2RoomId = $nc2Registration['Nc2Registration']['room_id'];
-				$nc2RBlock = $NcRBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
-				if (!$nc2RBlock) {
+				if (!$this->__saveBlockAndFrame($nc2Registration['Nc2Registration']['room_id'])) {
 					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Registration));
 					$this->writeMigrationLog($message);
 					$Registration->rollback();
 					continue;
 				}
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2RBlock['Nc2RegistrationBlock']['block_id']);
-				if (!$frameMap) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2RBlock));
+
+				if (!$this->__setCurrentData($nc2Registration['Nc2Registration']['room_id'])) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2Registration));
 					$this->writeMigrationLog($message);
 					$Registration->rollback();
 					continue;
 				}
-				$frame = $Frame->findById($frameMap['Frame']['id'], null, null, -1);
-				$nc3RoomId = $frameMap['Frame']['room_id'];
-				Current::write('Frame', $frame['Frame']);
-				Current::write('Room.id', $nc3RoomId);
-				$Frame->create();
-				$Block->create();
-				$BlocksLanguage->create();
-				$Registration->createBlock($frame);
 
 				$data = $this->generateNc3RegistrationData($nc2Registration);
 				if (!$data) {
 					$Registration->rollback();
 					continue;
 				}
-
-				$this->writeCurrent($frameMap, 'registrations');
 
 				// 本来 Registrationの独自ビヘイビアMailSettingBehaviorでcreate()した方がよい。
 				// とはいえ、ループで$Registration->saveRegistration()を繰り返し呼び出すのは、移行ツール位。
@@ -163,9 +151,6 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				// 登録処理で使用しているデータを空に戻す
-				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-
 				$nc2RegistrationId = $nc2Registration['Nc2Registration']['registration_id'];
 				$idMap = [
 					$nc2RegistrationId => $Registration->id,
@@ -180,11 +165,140 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 			}
 		}
 
-		$this->removeUseCurrent();
+		$this->__unSetCurrentData();
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Registration data Migration end.'));
 
 		return true;
+	}
+
+/**
+ * Save Block and Frame.
+ *
+ * @param string $nc2RoomId nc2RoomId.
+ * @return bool True on success
+ */
+	private function __saveBlockAndFrame($nc2RoomId) {
+		$frame = $this->__getFrameFromNc2RoomId($nc2RoomId);
+		if (!$frame) {
+			return false;
+		}
+
+		/* @var $Registration Registration */
+		/* @var $Frame Frame */
+		$Registration = ClassRegistry::init('Registrations.Registration');
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
+
+		$Frame->create();
+		$Block->create();
+
+		$Registration->createBlock($frame);
+
+		return true;
+	}
+
+/**
+ * __getFrameFromNc2RoomId
+ *
+ * @param string $nc2RoomId nc2RoomId.
+ * @return array
+ */
+	private function __getFrameFromNc2RoomId($nc2RoomId) {
+		$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+		$roomMap = $Nc2ToNc3Room->getMap($nc2RoomId);
+		if (!$roomMap) {
+			return [];
+		}
+
+		$data = [
+			'Frame' => [
+				'room_id' => $roomMap['Room']['id'],
+				'plugin_key' => 'registrations',
+				'key' => null,
+				'block_id' => null,
+			]
+		];
+
+		$nc2BlockId = 0;
+		$Nc2RBlock = $this->getNc2Model('registration_block');
+		$nc2RBlock = $Nc2RBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
+		if ($nc2RBlock) {
+			$nc2BlockId = $nc2RBlock['Nc2RegistrationBlock']['block_id'];
+		}
+
+		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+		if ($frameMap) {
+			$data['Frame']['key'] = $frameMap['Frame']['key'];
+			$data['Frame']['block_id'] = $frameMap['Frame']['block_id'];
+		}
+
+		if (!$data['Frame']['key']) {
+			$Frame = ClassRegistry::init('Frames.Frame');
+			$frame = $Frame->find('first',
+				[
+					'fields' => ['key', 'block_id'],
+					'recursive' => -1,
+					'conditions' => [
+						'room_id' => $roomMap['Room']['id'],
+						'plugin_key' => 'registrations'
+					]
+				]);
+			if (!$frame) {
+				return $data;
+			}
+
+			$data['Frame']['key'] = $frame['Frame']['key'];
+			$data['Frame']['block_id'] = $frame['Frame']['block_id'];
+		}
+
+		return $data;
+	}
+
+/**
+ * Set Current data.
+ *
+ * @param string $nc2RoomId nc2RoomId.
+ * @return bool True on success
+ */
+	private function __setCurrentData($nc2RoomId) {
+		$frame = $this->__getFrameFromNc2RoomId($nc2RoomId);
+		if (!$frame) {
+			return false;
+		}
+		Current::write('Frame', $frame['Frame']);
+
+		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
+		Current::write('Plugin.key', 'registrations');
+
+		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
+		$nc3RoomId = $frame['Frame']['room_id'];
+		Current::write('Room.id', $nc3RoomId);
+		Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+
+		return true;
+	}
+
+/**
+ * unset Current data.
+ *
+ * @return void
+ */
+	private function __unSetCurrentData() {
+		// 登録処理で使用しているデータを空に戻す
+		Current::remove('Frame.key');
+		Current::remove('Frame.room_id');
+		Current::remove('Frame.plugin_key');
+		Current::remove('Frame.block_id');
+		Current::remove('Plugin.key');
+		Current::remove('Room.id');
+
+		$nc3RoomIds = array_keys(Current::$permission);
+		foreach ($nc3RoomIds as $nc3RoomId) {
+			unset(Current::$permission[$nc3RoomId]);
+		}
 	}
 
 /**
