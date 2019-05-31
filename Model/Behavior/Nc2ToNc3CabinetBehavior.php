@@ -44,19 +44,17 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $nc2CabinetManage Nc2CabinetBlock data.
  * @param array $nc2CabinetBlock Nc2CabinetBlock data.
+ * @param string $nc3RoomId nc3 room id.
  * @return array Nc3Cabinet data.
  */
 
-	public function generateNc3CabinetData(Model $model, $nc2CabinetManage, $nc2CabinetBlock) {
-		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
-		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
-		$nc2BlockId = $nc2CabinetBlock['Nc2CabinetBlock']['block_id'];
-
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if (!$frameMap) {
-			$message = __d('nc2_to_nc3', '%s does not migration.', $this->__getLogArgument($nc2CabinetBlock));
-			$this->_writeMigrationLog($message);
-			return [];
+	public function generateNc3CabinetData(Model $model, $nc2CabinetManage, $nc2CabinetBlock, $nc3RoomId) {
+		$frameMap = [];
+		if ($nc2CabinetBlock) {
+			/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+			$nc2BlockId = $nc2CabinetBlock['Nc2CabinetBlock']['block_id'];
+			$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 		}
 
 		$nc2CabinetId = $nc2CabinetManage['Nc2CabinetManage']['cabinet_id'];
@@ -68,17 +66,14 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 			// 移行済み
 			return [];
 		}
-		$data = [];
 
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$nc3CreatedUser = $Nc2ToNc3User->getCreatedUser($nc2CabinetManage['Nc2CabinetManage']);
 		$nc3Created = $this->_convertDate($nc2CabinetManage['Nc2CabinetManage']['insert_time']);
 		$data = [
-			'Frame' => [
-				'id' => $frameMap['Frame']['id']
-			],
 			'Block' => [
 				'id' => '',
+				'room_id' => $nc3RoomId,
 				'plugin_key' => 'cabinets',
 				'name' => $nc2CabinetManage['Nc2CabinetManage']['cabinet_name'],
 				'public_type' => $nc2CabinetManage['Nc2CabinetManage']['active_flag'],
@@ -115,11 +110,16 @@ class Nc2ToNc3CabinetBehavior extends Nc2ToNc3BaseBehavior {
 				'convert_fields' => 'Block.publish_start,Block.publish_end'
 			]
 		];
+		if ($frameMap) {
+			$data['Frame'] =  [
+				'id' => $frameMap['Frame']['id']
+			];
+		}
 
 		// 権限データ設定
 		$data = Hash::merge($data, $model->makeContentPermissionData(
 			$nc2CabinetManage['Nc2CabinetManage']['add_authority_id'],
-			$frameMap['Frame']['room_id']));
+			$nc3RoomId));
 		unset($data['BlockRolePermission']['content_comment_publishable'],
 			$data['BlockRolePermission']['content_comment_creatable']);
 

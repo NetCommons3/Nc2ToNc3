@@ -116,26 +116,29 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		foreach ($nc2CabinetManages as $nc2CabinetManage) {
 
 			$Nc2CabinetBlock = $this->getNc2Model('cabinet_block');
-			//$nc2CabinetBlock = $Nc2CabinetBlock->find('all');
-
 			$nc2CabinetBlock = $Nc2CabinetBlock->findByRoomId($nc2CabinetManage['Nc2CabinetManage']['room_id'], null, null, -1);
-			if (!$nc2CabinetBlock) {
-				$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2CabinetManage));
-				$this->writeMigrationLog($message);
-				continue;
-			}
 
 			$Cabinet->begin();
 			try {
-				$data = $this->generateNc3CabinetData($nc2CabinetManage, $nc2CabinetBlock);
+				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+				$nc3Room = $Nc2ToNc3Room->getMap($nc2CabinetManage['Nc2CabinetManage']['room_id']);
+				if (!$nc3Room) {
+					$message = __d(
+						'nc2_to_nc3',
+						'%s does not migration, because of Room does not exist.',
+						$this->getLogArgument($nc2CabinetManage));
+					$this->writeMigrationLog($message);
+
+					$Cabinet->rollback();
+					continue;
+				}
+				$nc3RoomId = $nc3Room['Room']['id'];
+
+				$data = $this->generateNc3CabinetData($nc2CabinetManage, $nc2CabinetBlock, $nc3RoomId);
 				if (!$data) {
 					$Cabinet->rollback();
 					continue;
 				}
-
-				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
-				$nc3Room = $Nc2ToNc3Room->getMap($nc2CabinetManage['Nc2CabinetManage']['room_id']);
-				$nc3RoomId = $nc3Room['Room']['id'];
 
 				Current::write('Room.id', $nc3RoomId);
 
