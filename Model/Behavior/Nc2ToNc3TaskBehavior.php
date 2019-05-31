@@ -50,9 +50,10 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
  * @param Model $model Model using this behavior.
  * @param array $frameMap FrameMap data.
  * @param array $nc2TodoData Nc2TodoData data.
+ * @param string $nc3RoomId nc3 room id.
  * @return array Nc3Task data.
  */
-	public function generateNc3TaskData(Model $model, $frameMap, $nc2TodoData) {
+	public function generateNc3TaskData(Model $model, $frameMap, $nc2TodoData, $nc3RoomId) {
 		/* @var $Nc2ToNc3Map Nc2ToNc3Map */
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('Task', $nc2TodoData['Nc2Todo']['todo_id']);
@@ -61,19 +62,17 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 			return [];
 		}
 
-		if (!$frameMap) {
-			return [];
-		}
-
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
-		$data['Frame'] = [
-			'id' => $frameMap['Frame']['id'],
-		];
+		if ($frameMap) {
+			$data['Frame'] = [
+				'id' => $frameMap['Frame']['id'],
+			];
+		}
 		$data['Block'] = [
 			'id' => '',
 			'key' => '',
-			'room_id' => $frameMap['Frame']['room_id'],
+			'room_id' => $nc3RoomId,
 			'plugin_key' => 'tasks',
 			'public_type' => 1,
 		];
@@ -97,7 +96,7 @@ class Nc2ToNc3TaskBehavior extends Nc2ToNc3BaseBehavior {
 		// 権限データ設定
 		$data = Hash::merge($data, $model->makeContentPermissionData(
 			$nc2TodoData['Nc2Todo']['task_authority'],
-			$frameMap['Frame']['room_id']));
+			$nc3RoomId));
 		unset($data['BlockRolePermission']['content_comment_publishable'],
 			$data['BlockRolePermission']['content_comment_creatable']);
 

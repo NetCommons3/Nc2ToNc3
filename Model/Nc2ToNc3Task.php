@@ -120,16 +120,28 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 			$Task->begin();
 			try {
 				$nc2RoomId = $nc2TodoData['Nc2Todo']['room_id'];
-				$nc2TodoBlock = $Nc2TodoBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
-				if (!$nc2TodoBlock) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2TodoData));
+				$Nc2ToNc3Room = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Room');
+				$nc3Room = $Nc2ToNc3Room->getMap($nc2RoomId);
+				if (!$nc3Room) {
+					$message = __d(
+						'nc2_to_nc3',
+						'%s does not migration, because of Room does not exist.',
+						$this->getLogArgument($nc2TodoData));
 					$this->writeMigrationLog($message);
+
 					$Task->rollback();
 					continue;
 				}
+				$nc3RoomId = $nc3Room['Room']['id'];
 
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2TodoBlock['Nc2TodoBlock']['block_id']);
-				$data = $this->generateNc3TaskData($frameMap, $nc2TodoData);
+				$nc2BlockId = 0;
+				$nc2TodoBlock = $Nc2TodoBlock->findByRoomId($nc2RoomId, 'block_id', null, -1);
+				if ($nc2TodoBlock) {
+					$nc2BlockId = $nc2TodoBlock['Nc2TodoBlock']['block_id'];
+				}
+
+				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				$data = $this->generateNc3TaskData($frameMap, $nc2TodoData, $nc3RoomId);
 				if (!$data) {
 					$Task->rollback();
 					continue;
@@ -141,7 +153,8 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('todo_category', $query);
 				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
 
-				$this->writeCurrent($frameMap, 'tasks');
+				Current::write('Room.id', $nc3RoomId);
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$Task->create(false);
 				$Block->create();
@@ -177,7 +190,6 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 				}
 
 				// 登録処理で使用しているデータを空に戻す
-				$nc3RoomId = $frameMap['Frame']['room_id'];
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2TodoId = $nc2TodoData['Nc2Todo']['todo_id'];
@@ -211,8 +223,7 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 			}
 			Current::remove('Block');
 		}
-
-		$this->removeUseCurrent();
+		Current::remove('Room.id');
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Task data Migration end.'));
 
