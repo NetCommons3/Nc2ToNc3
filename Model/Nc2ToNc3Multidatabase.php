@@ -454,9 +454,13 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		$UploadFile = ClassRegistry::init('Files.UploadFile');
 
 		$Like = ClassRegistry::init('Likes.Like');
+
+		// ダミーでuploadの設定をしておく。何もないとAttachmentBehaviorでNotice発生するので
+		// \AttachmentBehavior::afterSave にファイルの保存等をまかせてるので AttachmentBehaviorをunloadはできない。
+		$DbContent->uploadSettings('__dummy');
+
 		foreach ($nc2MultidbContents as $nc2MultidbContent) {
 			$DbContent->begin();
-			//$DbContent->Behaviors->disable('Attachment');
 
 			try {
 				$data = $this->generateNc3MultidbContent($nc2MultidbContent);
@@ -487,8 +491,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 				$DbContent->validate = [];
 
-				//if (!$DbContent->saveContent($data, false)) {
-				if (!$DbContent->save($data, false)) {
+				if (!$DbContent->save($data, ['validate' => false])) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
 					$DbContent->rollback();
