@@ -429,6 +429,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			case 'vote' : // 投票順　
 				$sortType = '0'; // 指定無しにマッピングしておく
 				break;
+			case '': // 空 表示設定未保存時に空文字列になる
+				$sortType = '0'; // 指定無しにマッピングしておく
+				break;
             default:
 			    // タイトル順
                 //  default_sortが数字（seq, date, date_asc, vote以外）ならそれは並び順についかいたいカラムのmetadata_id
