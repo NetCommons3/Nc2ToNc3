@@ -729,8 +729,10 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 				}
 
-			} elseif ($metadata[$nc3MetadataId]['type'] == 'checkbox') {
+			} elseif ($metadata[$nc3MetadataId]['type'] === 'checkbox') {
 				$data['MultidatabaseContent']['value' . $colNo] = str_replace('|', '||', $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content']);
+			} elseif ($metadata[$nc3MetadataId]['type'] === 'wysiwyg') {
+				$data['MultidatabaseContent']['value' . $colNo] = $model->convertWYSIWYG($nc2metadataContent['Nc2MultidatabaseMetadataContent']['content']);
 			} else {
 				$data['MultidatabaseContent']['value' . $colNo] = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
 			}
