@@ -418,7 +418,11 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		switch($nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['default_sort']){
 			case 'seq': //カスタマイズ順
-				$sortType = '0'; // 指定無し　にマッピングしておく
+			case '': // 空 表示設定未保存時に空文字列になる NC2でこれもカスタマイズ順となる
+				// NC2でデフォルト（カスタマイズ順）のまま汎用DBコンテンツを追加すると、
+				// 作成日時順にdisplay_sequenceが設定され、手動で並べ替えない限り作成日時昇順になるので、
+				// NC2でカスタマイズ順になっていたら　作成日時の昇順として移行する
+				$sortType = 'created';
 				break;
 			case 'date': // 新着順
 				$sortType = 'created_desc'; // 作成日順
@@ -427,9 +431,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 				$sortType = 'created';
 				break;
 			case 'vote' : // 投票順　
-				$sortType = '0'; // 指定無しにマッピングしておく
-				break;
-			case '': // 空 表示設定未保存時に空文字列になる
 				$sortType = '0'; // 指定無しにマッピングしておく
 				break;
             default:
