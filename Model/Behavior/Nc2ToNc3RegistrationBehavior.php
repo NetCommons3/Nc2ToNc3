@@ -652,8 +652,8 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 				'item_id:' . $nc2Registration['Nc2RegistrationItem']['item_id'];
 		}
 
-		return 'Nc2RegistrationItemData ' .
-			'item_data_id:' . $nc2Registration['Nc2RegistrationItemData']['item_data_id'];
+		return 'Nc2RegistrationData ' .
+			'data_id:' . $nc2Registration['Nc2RegistrationItemData']['data_id'];
 	}
 
 }
