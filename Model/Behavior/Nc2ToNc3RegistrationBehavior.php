@@ -643,16 +643,16 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		}
 
 		if (isset($nc2Registration['Nc2RegistrationData'])) {
-			return 'Nc2RegistrationData' .
+			return 'Nc2RegistrationData ' .
 				'data_id:' . $nc2Registration['Nc2RegistrationData']['data_id'];
 		}
 
 		if (isset($nc2Registration['Nc2RegistrationItem'])) {
-			return 'Nc2RegistrationItem' .
+			return 'Nc2RegistrationItem ' .
 				'item_id:' . $nc2Registration['Nc2RegistrationItem']['item_id'];
 		}
 
-		return 'Nc2RegistrationItemData' .
+		return 'Nc2RegistrationItemData ' .
 			'item_data_id:' . $nc2Registration['Nc2RegistrationItemData']['item_data_id'];
 	}
 
