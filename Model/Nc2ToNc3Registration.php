@@ -346,7 +346,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				$RAnswerSummary->create();
 
 				if (!($nc3Summary = $RAnswerSummary->save($data))) {
-					$message = $this->getLogArgument($nc2ItemData) . "\n" .
+					$message = $this->getLogArgument($nc2RegistrationDatum) . "\n" .
 						var_export($RAnswerSummary->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -478,7 +478,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				if (!$Frame->saveFrame($data)) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。 var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2RBlocks) . "\n" .
+					$message = $this->getLogArgument($nc2RegistrationBlock) . "\n" .
 						var_export($Frame->validationErrors, true);
 						$this->writeMigrationLog($message);
 
