@@ -244,7 +244,9 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					$CabinetFile->rollback();
 					continue;
 				}
-				$downloadCount = intval($data['DownloadCount'] ?? 0);
+				// php7のコードをphp5系に修正
+				//$downloadCount = intval($data['DownloadCount'] ?? 0);
+				$downloadCount = isset($data['DownloadCount']) ? intval($data['DownloadCount']) : 0;
 				if ($downloadCount) {
 					// DownloadCount更新
 					$file = $UploadFile->find('first', [
