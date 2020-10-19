@@ -170,6 +170,7 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
  * @param array $nc2BbsPost Nc2BbsPost data.
  * @param array $nc2BbsPostBody Nc2BbsPostBody data.
  * @return array Nc3BbsArticle data.
+ * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
  */
 
 	public function generateNc3BbsArticleData(Model $model, $nc2BbsPost, $nc2BbsPostBody) {
@@ -219,7 +220,8 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 			//現時点でのBbsArticleTreeでのroot_idごとのarticle_no最大値を取得して、1インクリメントする。
 			//ただし、root_idのみのときは、root_idがnullのもの(article_noは1)しかなく取得できないため、'2'とする
 			$BbsArticleTree = ClassRegistry::init('Bbses.BbsArticleTree');
-			$BbsArticleTrees = $BbsArticleTree->findByRootId($nc3BbsRootId, array("fields" => "MAX(article_no) as max_article_no"));
+			$BbsArticleTrees = $BbsArticleTree->findByRootId(
+								$nc3BbsRootId, array("fields" => "MAX(article_no) as max_article_no"));
 			if (!$BbsArticleTrees[0]['max_article_no']) {
 				$nc3BbsArticleNo = '2';
 			} else {
@@ -247,6 +249,7 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'title_icon' => $this->_convertTitleIcon($nc2BbsPost['Nc2BbsPost']['icon_name']),
 				// 新着用に更新日を移行
 				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L146
+				'modified_user' => $Nc2ToNc3User->getModifiedUser($nc2BbsPost['Nc2BbsPost']),
 				'modified' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['update_time']),
 			],
 			'Bbs' => [
@@ -264,7 +267,11 @@ class Nc2ToNc3BbsBehavior extends Nc2ToNc3BaseBehavior {
 				'bbs_article_key' => '',
 				'root_id' => $nc3BbsRootId,
 				'parent_id' => $nc3BbsParentId,
-				'article_no' => $nc3BbsArticleNo
+				'article_no' => $nc3BbsArticleNo,
+				'created_user' => $Nc2ToNc3User->getCreatedUser($nc2BbsPost['Nc2BbsPost']),
+				'created' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['insert_time']),
+				'modified_user' => $Nc2ToNc3User->getModifiedUser($nc2BbsPost['Nc2BbsPost']),
+				'modified' => $this->_convertDate($nc2BbsPost['Nc2BbsPost']['update_time']),
 			],
 		];
 		if ($nc2BbsPost['Nc2BbsPost']['vote_num']) {
