@@ -188,7 +188,7 @@ class Nc2ToNc3CircularNoticeBehavior extends Nc2ToNc3BaseBehavior {
 				'is_active' => '1',
 				'is_latest' => '1',
 				'subject' => $nc2Circular['Nc2Circular']['circular_subject'],
-				'content' => $this->_convertWYSIWYG($nc2Circular['Nc2Circular']['circular_body']),
+				'content' => $model->convertWYSIWYG($nc2Circular['Nc2Circular']['circular_body']),
 				'reply_type' => $nc3ReplyType,
 				//'is_room_target' =>
 				'is_room_target' => '1',
