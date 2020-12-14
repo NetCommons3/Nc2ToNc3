@@ -264,6 +264,12 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		];
 		$excludePlugins = explode(',', $this->data['Nc2ToNc3']['exclude']);
 		foreach ($migrationModelNames as $migrationModelName) {
+			//前回処理のプラグインのデータが残存することを防ぐ
+			$Block = ClassRegistry::init('Blocks.Block');
+			$Frame = ClassRegistry::init('Frames.Frame');
+			$Block->clear();
+			$Frame->clear();
+
 			if (in_array(substr($migrationModelName, 8), $excludePlugins, true)) {
 				continue;
 			}
