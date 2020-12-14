@@ -142,6 +142,9 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 					$Questionnaire->rollback();
 					continue;
 				}
+				
+				// 画像保存の時にBlockが必要なので
+				$data['Block'] = Current::read('Block');
 
 				// Model::idを初期化しないとUpdateになってしまう。
 				// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/Questionnaire.php#L442
@@ -467,11 +470,17 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		if (!$frameMap) {
 			return false;
 		}
+		// Block情報も必要 上のFrame.block_idで存在は確かなので戻り値チェックはしない
+		$Block = ClassRegistry::init('Blocks.Block');
+		$nc3Block = $Block->findById($frameMap['Frame']['block_id'], null, null, -1);
+
 		$nc3RoomId = $frameMap['Frame']['room_id'];
 		Current::write('Frame.key', $frameMap['Frame']['key']);
 		Current::write('Frame.room_id', $nc3RoomId);
 		Current::write('Frame.plugin_key', 'questionnaires');
 		Current::write('Frame.block_id', $frameMap['Frame']['block_id']);
+		// CurrentにBlock情報も追加
+		Current::write('Block', $nc3Block['Block']);
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
 		Current::write('Plugin.key', 'questionnaires');
@@ -496,6 +505,7 @@ class Nc2ToNc3Questionnaire extends Nc2ToNc3AppModel {
 		Current::remove('Frame.block_id');
 		Current::remove('Plugin.key');
 		Current::remove('Room.id');
+		Current::remove('Block');
 
 		// Fatal error: Attempt to unset static property が発生。keyを指定した場合は発生しない。なんで？
 		//unset(Current::$permission);
