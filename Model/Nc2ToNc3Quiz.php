@@ -437,12 +437,17 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		if (!isset($frameMap['Frame']['block_id'])) {
 			return false;
 		}
+		// Block情報も必要 上のFrame.block_idで存在は確かなので戻り値チェックはしない
+		$Block = ClassRegistry::init('Blocks.Block');
+		$nc3Block = $Block->findById($frameMap['Frame']['block_id'], null, null, -1);
 
 		$nc3RoomId = $frameMap['Frame']['room_id'];
 		Current::write('Frame.key', $frameMap['Frame']['key']);
 		Current::write('Frame.room_id', $nc3RoomId);
 		Current::write('Frame.plugin_key', 'quizzes');
 		Current::write('Frame.block_id', $frameMap['Frame']['block_id']);
+		// CurrentにBlock情報も追加
+		Current::write('Block', $nc3Block['Block']);
 
 		// QuizFrameDisplayQuiz::validates に引っかかる。is_ativeも条件になり、一時保存データが取得できないので、content_editableもtrue
 		// Questionnaireはvalidateしてない。いいのか？
@@ -476,6 +481,7 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		Current::remove('Frame.Block.id');
 		Current::remove('Plugin.key');
 		Current::remove('Room.id');
+		Current::remove('Block');
 
 		// Fatal error: Attempt to unset static property が発生。keyを指定した場合は発生しない。なんで？
 		//unset(Current::$permission);

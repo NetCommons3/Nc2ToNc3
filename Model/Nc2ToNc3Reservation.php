@@ -334,7 +334,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				'language_id' => $this->getLanguageIdFromNc2(),
 				'category_id' => $categoryId,
 				'location_name' => $nc2Record['Nc2ReservationLocation']['location_name'],
-				'detail' => $detail['Nc2ReservationLocationDetail']['description'],
+				'detail' => $this->convertWYSIWYG($detail['Nc2ReservationLocationDetail']['description']),
 				'add_authority' => 0, // NC3では未使用
 				'time_table' => $this->_convertTimeTable($nc2Record['Nc2ReservationLocation']['time_table']),
 				'start_time' => $this->_convertLocationTime($nc2Record['Nc2ReservationLocation']['start_time']),
@@ -742,7 +742,7 @@ class Nc2ToNc3Reservation extends Nc2ToNc3AppModel {
 				'title_icon' => $titleiCon,
 				'location' => '',
 				'contact' => $contact,
-				'description' => $description,
+				'description' => $this->convertWYSIWYG($description),
 				'is_allday' => $nc2Record['Nc2ReservationReserve']['allday_flag'],
 				'start_date' => $nc2Record['Nc2ReservationReserve']['start_date'],
 				'start_time' => $nc2Record['Nc2ReservationReserve']['start_time'],
