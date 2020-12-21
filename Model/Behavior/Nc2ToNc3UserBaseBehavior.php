@@ -26,6 +26,16 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 	public function getCreatedUser(Model $model, $nc2Data) {
 		return $this->_getCreatedUser($nc2Data);
 	}
+/**
+ * Get Nc3 modified_uer.
+ *
+ * @param Model $model Model using this behavior.
+ * @param array $nc2Data Nc2 data having insert_user_id and insert_user_name
+ * @return string Nc3 created_uer.
+ */
+	public function getModifiedUser(Model $model, $nc2Data) {
+		return $this->_getModifiedUser($nc2Data);
+	}
 
 /**
  * Get map
@@ -103,6 +113,53 @@ class Nc2ToNc3UserBaseBehavior extends Nc2ToNc3BaseBehavior {
 		$data = [
 			'User' => [
 				'handlename' => $nc2Data['insert_user_name'],
+				'is_deleted' => '1',
+			]
+		];
+		$User->create($data);
+		$User->save($data, $saveOptions);
+
+		$idMap = [
+			$nc2UserId => $User->id
+		];
+		$this->_saveMap('User', $idMap);
+
+		return $User->id;
+	}
+/**
+ * Get Nc3 modified_uer.
+ *
+ * @param array $nc2Data Nc2 data having update_user_id and update_user_name
+ * @return string Nc3 updated_user.
+ */
+	protected function _getModifiedUser($nc2Data) {
+		$nc2UserId = $nc2Data['update_user_id'];
+		if (!$nc2UserId) {
+			return null;
+		}
+
+		$map = $this->_getMap($nc2UserId);
+		if ($map) {
+			return $map['User']['id'];
+		}
+
+		/* @var $User User */
+		$User = ClassRegistry::init('Users.User');
+		$saveOptions = [
+			'validate' => false,
+			'fieldList' => [
+				'handlename',
+				'is_deleted',
+				'created_user',
+				'created',
+				'modified_user',
+				'modified',
+			],
+			'callbacks' => false,
+		];
+		$data = [
+			'User' => [
+				'handlename' => $nc2Data['update_user_name'],
 				'is_deleted' => '1',
 			]
 		];
