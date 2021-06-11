@@ -44,6 +44,22 @@ class Nc2ToNc3PageBaseBehavior extends Nc2ToNc3BaseBehavior {
 	}
 
 /**
+ * Convert Nc2 permalink to Nc3Page slug.
+ *
+ * @param Model $model Model using this behavior.
+ * @param string $nc2Permalink Nc2Item data.
+ * @return string Converted Nc2Page permalink.
+ */
+	public function getConvertSlug(Model $model, $nc2Permalink) {
+		$permalink = $this->_convertPermalink($nc2Permalink);
+		$pos = strrpos($permalink, '/');
+		if ($pos === false) {
+			return $permalink;
+		}
+		return substr($permalink, strrpos($permalink, DS) + 1);
+	}
+
+/**
  * Get map
  *
  * @param array|string $nc2PageIds Nc2Page page_id.

@@ -615,7 +615,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 		// Page.slugに設定すれば良い？
 		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
 		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
-		$nc3Page['Page']['slug'] = $Nc2ToNc3Page->convertPermalink($nc2Page['Nc2Page']['permalink']);
+		$nc3Page['Page']['slug'] = $Nc2ToNc3Page->getConvertSlug($nc2Page['Nc2Page']['permalink']);
 		unset($nc3Page['Page']['theme']);	// themeのvalidationに引っかかる
 
 		if (!$Page->savePage($nc3Page)) {
