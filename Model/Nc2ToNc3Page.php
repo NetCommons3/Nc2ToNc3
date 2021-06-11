@@ -309,7 +309,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 				'room_id' => $roomMap['Room']['id'],
 				'root_id' => $this->getNc3RootId($nc2Page, $roomMap),
 				'parent_id' => $map['Page']['id'],
-				'slug' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
+				'slug' => $this->getConvertSlug($nc2Page['Nc2Page']['permalink']),
 			],
 			'Room' => [
 				'id' => $roomMap['Room']['id'],
