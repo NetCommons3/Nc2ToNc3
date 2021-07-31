@@ -1,10 +1,9 @@
 Nc2ToNc3
 ==============
 
-Migration plugin to Nc3 from Nc2 for NetComomns3
-
-[![Build Status](https://travis-ci.org/NetCommons3/Nc2ToNc3.svg?branch=master)](https://travis-ci.org/NetCommons3/Nc2ToNc3)
-[![Coverage Status](https://img.shields.io/coveralls/NetCommons3/Nc2ToNc3.svg)](https://coveralls.io/github/NetCommons3/Nc2ToNc3)
+[![Tests Status](https://github.com/NetCommons3/Nc2ToNc3/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/NetCommons3/Nc2ToNc3/actions/workflows/tests.yml)
+[![Coverage Status](https://coveralls.io/repos/NetCommons3/Nc2ToNc3/badge.svg?branch=master)](https://coveralls.io/r/NetCommons3/Nc2ToNc3?branch=master)
+[![Stable Version](https://img.shields.io/packagist/v/netcommons/nc2-to-nc3.svg?label=stable)](https://packagist.org/packages/netcommons/nc2-to-nc3)
 
 Nc2ToNc3(移行ツール)は、同一サーバにNC2のデータとNC3サイトを用意して移行するプラグインです。
 NC2最新版（2.4.2.1）からNC3最新版に移行します。
