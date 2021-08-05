@@ -248,6 +248,9 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 
+				// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L365
+				Current::write('Block.id', $data['Block']['id']);
+
 				Current::write('Room.id', $nc3RoomId);
 
 				$BlocksLanguage->create();
@@ -303,6 +306,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 			}
 		}
 
+		Current::remove('Block.id');
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
