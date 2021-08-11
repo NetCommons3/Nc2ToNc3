@@ -13,12 +13,26 @@ on:
 name: tests
 
 jobs:
+  setup:
+    name: setup
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Slack Notification on Start
+        uses: rtCamp/action-slack-notify@v2.2.0
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_TESTS }}
+          SLACK_CHANNEL: notify-nc3-tests
+          SLACK_TITLE: "${{ github.repository }}"
+          SLACK_COLOR: "#f0ad4e"
+
   tests:
     name: tests
+    needs: setup
     runs-on: ubuntu-18.04
     strategy:
       matrix:
         php: [ '7.1', '7.2', '7.3', '7.4' ]
+        mysql: [ '5.7', '8.0' ]
 
     env:
         NC3_BUILD_DIR: "/opt/nc3"
@@ -27,6 +41,7 @@ jobs:
         NC3_GIT_BRANCH: "master"
         PLUGIN_BUILD_DIR: ${{ github.workspace }}
         PHP_VERSION: ${{ matrix.php }}
+        MYSQL_VERSION: ${{ matrix.mysql }}
         MYSQL_ROOT_PASSWORD: root
         MYSQL_DATABASE: cakephp_test
 
@@ -38,6 +53,7 @@ jobs:
           echo "GITHUB_WORKSPACE=${GITHUB_WORKSPACE}"
           echo "PLUGIN_BUILD_DIR=${PLUGIN_BUILD_DIR}"
           echo "PHP_VERSION=${PHP_VERSION}"
+          echo "MYSQL_VERSION=${MYSQL_VERSION}"
           ls -al ${PLUGIN_BUILD_DIR}
 
       - name: docker-compose install
@@ -116,22 +132,27 @@ jobs:
           cd ${NC3_DOCKER_DIR}
           docker-compose rm -f
 
-      # テスト成功時はこちらのステップが実行される
-      - name: Slack Notification on Success
-        if: success()
-        uses: rtCamp/action-slack-notify@v2.2.0
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_CHANNEL: notify-netcommons3
-          SLACK_TITLE: "${{ github.repository }}(${{ matrix.php }})"
-          SLACK_COLOR: good
-
       # テスト失敗時はこちらのステップが実行される
       - name: Slack Notification on Failure
         uses: rtCamp/action-slack-notify@v2.2.0
         if: failure()
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_CHANNEL: notify-netcommons3
-          SLACK_TITLE: "${{ github.repository }}(${{ matrix.php }})"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_TESTS }}
+          SLACK_CHANNEL: notify-nc3-tests
+          SLACK_TITLE: "${{ github.repository }}(php${{ matrix.php }}, mysql${{ matrix.mysql }})"
           SLACK_COLOR: danger
+
+  teardown:
+    name: teardown
+    runs-on: ubuntu-18.04
+    needs: tests
+    steps:
+      # テスト成功時はこちらのステップが実行される
+      - name: Slack Notification on Success
+        if: success()
+        uses: rtCamp/action-slack-notify@v2.2.0
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_TESTS }}
+          SLACK_CHANNEL: notify-nc3-tests
+          SLACK_TITLE: "${{ github.repository }}"
+          SLACK_COLOR: good
