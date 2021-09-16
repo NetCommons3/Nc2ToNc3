@@ -220,6 +220,7 @@ class Nc2ToNc3RegistrationBehavior extends Nc2ToNc3QuestionBaseBehavior {
 		}
 
 		$data['RegistrationAnswerSummary'] = [
+			'serial_number' => $nc2DataId,
 			'answer_status' => '2',
 			'test_status' => '0',
 			'answer_number' => $nc3AnswerNumber,
