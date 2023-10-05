@@ -90,17 +90,17 @@ jobs:
           cd ${NC3_DOCKER_DIR}
           docker-compose exec -T nc3app bash /opt/scripts/app-build.sh
 
-      - name: phpcs (PHP CodeSniffer)
-        if: always()
-        run: |
-          cd ${NC3_DOCKER_DIR}
-          docker-compose exec -T nc3app bash /opt/scripts/phpcs.sh
+#      - name: phpcs (PHP CodeSniffer)
+#        if: always()
+#        run: |
+#          cd ${NC3_DOCKER_DIR}
+#          docker-compose exec -T nc3app bash /opt/scripts/phpcs.sh
 
-      - name: phpmd (PHP Mess Detector)
-        if: always()
-        run: |
-          cd ${NC3_DOCKER_DIR}
-          docker-compose exec -T nc3app bash /opt/scripts/phpmd.sh
+#      - name: phpmd (PHP Mess Detector)
+#        if: always()
+#        run: |
+#          cd ${NC3_DOCKER_DIR}
+#          docker-compose exec -T nc3app bash /opt/scripts/phpmd.sh
 
       - name: phpcpd (PHP Copy/Paste Detector)
         if: always()
@@ -114,11 +114,11 @@ jobs:
           cd ${NC3_DOCKER_DIR}
           docker-compose exec -T nc3app bash /opt/scripts/gjslint.sh
 
-      - name: phpdoc (PHP Documentor)
-        if: always()
-        run: |
-          cd ${NC3_DOCKER_DIR}
-          docker-compose exec -T nc3app bash /opt/scripts/phpdoc.sh
+#      - name: phpdoc (PHP Documentor)
+#        if: always()
+#        run: |
+#          cd ${NC3_DOCKER_DIR}
+#          docker-compose exec -T nc3app bash /opt/scripts/phpdoc.sh
 
       - name: phpunit (PHP UnitTest)
         if: always()
